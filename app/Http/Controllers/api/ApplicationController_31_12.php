@@ -1,0 +1,13190 @@
+<?php
+
+namespace App\Http\Controllers\api;
+
+use App\Http\Controllers\Controller;
+use App\Models\ExtraInformation;
+use App\Models\UserAddress;
+use App\Models\Voters;
+use App\Models\NewAddress;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
+use Stichoza\GoogleTranslate\GoogleTranslate;
+use Carbon\Carbon;
+
+class ApplicationController extends Controller
+{
+
+    public function allVoterList(Request $request)
+    {
+        // Validate the 'lang' parameter
+        $validator = Validator::make($request->all(), [
+            'lang' => 'required|in:en,mr,hi', // Adding Hindi support
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()], 400);
+        }
+
+        $translator = new GoogleTranslate($request->lang);
+
+        if ($request->lang == 'en') {
+
+        $voters = Voters::with('voterAddress','voterInformation')->get();
+
+        $votersMapped = $voters->map(function ($voter) {
+            return [
+                'id' => $voter->id,
+                'first_name' => $voter->first_name,
+                'middle_name' => $voter->middle_name,
+                'surname' => $voter->surname,
+                'email' => $voter->email,
+                'gender' => $voter->gender,
+                'age' => $voter->age,
+                'dob' => $voter->dob,
+                'cast' => $voter->cast,
+                'position' => $voter->position,
+                'voter_id' => $voter->voter_id,
+                'dead' => $voter->dead,
+                'voted' => $voter->voted,
+                'star_voter' => $voter->star_voter,
+                'colour_code' => $voter->colour_code,
+                'mobile_1' => $voter->mobile_1,
+                'mobile_2' => $voter->mobile_2,
+                'image' => $voter->image,
+                'voter_address' => $voter->voterAddress ? [
+                    'society' => $voter->voterAddress->society,
+                    'house_no' => $voter->voterAddress->house_no,
+                    'flat_no' => $voter->voterAddress->flat_no,
+                    'booth' => $voter->voterAddress->booth,
+                    'village' => $voter->voterAddress->village,
+                    'part_no' => $voter->voterAddress->part_no,
+                    'srn' => $voter->voterAddress->srn,
+                    'voting_centre' => $voter->voterAddress->voting_centre,
+                ] : null,
+                'voter_information' => $voter->voterInformation ? [
+                    'extra_info_1' => $voter->voterInformation->extra_info_1,
+                    'extra_info_2' => $voter->voterInformation->extra_info_2,
+                    'extra_info_3' => $voter->voterInformation->extra_info_3,
+                    'extra_info_4' => $voter->voterInformation->extra_info_4,
+                    'extra_info_5' => $voter->voterInformation->extra_info_5,
+                    'extra_check_1' => $voter->voterInformation->extra_check_1,
+                    'extra_check_2' => $voter->voterInformation->extra_check_2,
+                ]: null,
+            ];
+        });
+
+        // Prepare the response data
+        $data['status'] = 200;
+        $data['message'] = 'All Voters List in English';
+        $data['voters'] = $votersMapped;
+        }
+        else if ($request->lang == 'mr') {
+
+          // Target language: Marathi or Hindi
+            // dd($voters);
+            $voters = Voters::with('voterAddress','voterInformation')->get();
+
+            $votersMapped = $voters->map(function ($voter) use ($translator) {
+                // dd($voter);
+                return [
+                    'id' => $voter['id'],
+                    'first_name' => $voter->first_name_mr ?? ($voter->first_name ? $translator->translate($voter->first_name) : null),
+                    'middle_name' => $voter->middle_name_mr ?? ($voter->middle_name ? $translator->translate($voter->middle_name) : null),
+                    'surname' => $voter->surname_mr ?? ($voter->surname ? $translator->translate($voter->surname) : null),
+                    'email' => $voter->email, // Email is left as is
+                    'gender' => $voter->gender_mr ?? ($voter->gender ? $translator->translate($voter->gender) : null),
+                    'age' => $voter->age, // Age is left as is
+                    'dob' => $voter->dob, // Date of birth is left as is
+                    'cast' => $voter->cast_mr ?? ($voter->cast ? $translator->translate($voter->cast) : null),
+                    'position' => $voter->position_mr ?? ($voter->position ? $translator->translate($voter->position) : null),
+                    'voter_id' => $voter['voter_id'], // Voter ID is left as is
+                    'dead' => $voter['dead'], // Dead status left as is
+                    'voted' => $voter['voted'], // Voted status left as is
+                    'star_voter' => $voter['star_voter'], // Star voter status left as is
+                    'colour_code' => $voter->colour_code_mr ?? ($voter->colour_code ? $translator->translate($voter->colour_code) : null),
+                    'mobile_1' => $voter['mobile_1'], // Phone number is left as is
+                    'mobile_2' => $voter['mobile_2'], // Phone number is left as is
+                    'image' => $voter['image'], // Image URL is left as is
+                    'voter_address' => $voter->voterAddress ? [
+                        'society' => $voter->voterAddress->society_mr ?? ($voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null),
+                        'house_no' => $voter->voterAddress->house_no_mr ?? ($voter->voterAddress->house_no ? $translator->translate($voter->voterAddress->house_no) : null),
+                        'flat_no' => $voter->voterAddress->flat_no_mr  ?? ($voter->voterAddress->flat_no ? $translator->translate($voter->voterAddress->flat_no) : null),
+                        'booth' => $voter->voterAddress->booth_mr  ?? ($voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null),
+                        'village' => $voter->voterAddress->village_mr  ?? ($voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null),
+                        'part_no' => $voter->voterAddress->part_no_mr  ?? ($voter->voterAddress->part_no ? $translator->translate($voter->voterAddress->part_no) : null),
+                        'srn' => $voter->voterAddress->srn_mr  ?? ($voter->voterAddress->srn ? $translator->translate($voter->voterAddress->srn) : null),
+                        'voting_centre' => $voter->voterAddress->voting_centre_mr  ?? ($voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null),
+                        ] : null,
+                    'voter_information' => $voter->voterInformation ? [
+                        'extra_info_1' => $voter->voterInformation->extra_info_1_mr ?? ($voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null),
+                        'extra_info_2' => $voter->voterInformation->extra_info_2_mr ?? ($voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null),
+                        'extra_info_3' => $voter->voterInformation->extra_info_3_mr ?? ($voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null),
+                        'extra_info_4' => $voter->voterInformation->extra_info_4_mr ?? ($voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null),
+                        'extra_info_5' => $voter->voterInformation->extra_info_5_mr ?? ($voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null),
+                        'extra_check_1' => $voter->voterInformation->extra_check_1,
+                        'extra_check_2' => $voter->voterInformation->extra_check_2,
+                    ]: null,
+                ];
+            });
+            $data['status'] = 200;
+            $data['message'] = 'All Voters List in Marathi';
+            $data['voters'] = $votersMapped;
+        }
+
+        else if ($request->lang == 'hi') {
+
+            // Target language:  Hindi
+              // dd($voters);
+              $voters = Voters::with('voterAddress','voterInformation')->get();
+
+              $votersMapped = $voters->map(function ($voter) use ($translator) {
+                  // dd($voter);
+                  return [
+                      'id' => $voter['id'],
+                      'first_name' => $voter->first_name_hi ?? ($voter->first_name ? $translator->translate($voter->first_name) : null),
+                      'middle_name' => $voter->middle_name_hi ?? ($voter->middle_name ? $translator->translate($voter->middle_name) : null),
+                      'surname' => $voter->surname_hi ?? ($voter->surname ? $translator->translate($voter->surname) : null),
+                      'email' => $voter->email, // Email is left as is
+                      'gender' => $voter->gender_hi ?? ($voter->gender ? $translator->translate($voter->gender) : null),
+                      'age' => $voter->age, // Age is left as is
+                      'dob' => $voter->dob, // Date of birth is left as is
+                      'cast' => $voter->cast_hi ?? ($voter->cast ? $translator->translate($voter->cast) : null),
+                      'position' => $voter->position_hi ?? ($voter->position ? $translator->translate($voter->position) : null),
+                      'voter_id' => $voter['voter_id'], // Voter ID is left as is
+                      'dead' => $voter['dead'], // Dead status left as is
+                      'voted' => $voter['voted'], // Voted status left as is
+                      'star_voter' => $voter['star_voter'], // Star voter status left as is
+                      'colour_code' => $voter->colour_code_hi ?? ($voter->colour_code ? $translator->translate($voter->colour_code) : null),
+                      'mobile_1' => $voter['mobile_1'], // Phone number is left as is
+                      'mobile_2' => $voter['mobile_2'], // Phone number is left as is
+                      'image' => $voter['image'], // Image URL is left as is
+                      'voter_address' => $voter->voterAddress ? [
+                          'society' => $voter->voterAddress->society_hi ?? ($voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null),
+                          'house_no' => $voter->voterAddress->house_no_hi ?? ($voter->voterAddress->house_no ? $translator->translate($voter->voterAddress->house_no) : null),
+                          'flat_no' => $voter->voterAddress->flat_no_hi  ?? ($voter->voterAddress->flat_no ? $translator->translate($voter->voterAddress->flat_no) : null),
+                          'booth' => $voter->voterAddress->booth_hi  ?? ($voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null),
+                          'village' => $voter->voterAddress->village_hi  ?? ($voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null),
+                          'part_no' => $voter->voterAddress->part_no_hi  ?? ($voter->voterAddress->part_no ? $translator->translate($voter->voterAddress->part_no) : null),
+                          'srn' => $voter->voterAddress->srn_hi  ?? ($voter->voterAddress->srn ? $translator->translate($voter->voterAddress->srn) : null),
+                          'voting_centre' => $voter->voterAddress->voting_centre_hi  ?? ($voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null),
+                          ] : null,
+                      'voter_information' => $voter->voterInformation ? [
+                          'extra_info_1' => $voter->voterInformation->extra_info_1_hi ?? ($voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null),
+                          'extra_info_2' => $voter->voterInformation->extra_info_2_hi ?? ($voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null),
+                          'extra_info_3' => $voter->voterInformation->extra_info_3_hi ?? ($voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null),
+                          'extra_info_4' => $voter->voterInformation->extra_info_4_hi ?? ($voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null),
+                          'extra_info_5' => $voter->voterInformation->extra_info_5_hi ?? ($voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null),
+                          'extra_check_1' => $voter->voterInformation->extra_check_1,
+                          'extra_check_2' => $voter->voterInformation->extra_check_2,
+                      ]: null,
+                  ];
+              });
+              $data['status'] = 200;
+              $data['message'] = 'All Voters List in Hindi';
+              $data['voters'] = $votersMapped;
+          }
+
+
+        // Return the response with the mapped data
+        return response()->json($data, 200);
+    }
+
+    public function individualVoterDetails(Request $request)
+    {
+        // Validate the input parameters
+        $validator = Validator::make($request->all(), [
+            'lang' => 'required|in:en,mr,hi',
+            'id' => 'required|exists:voters,id', // Ensure the ID exists in the voters table
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()], 400);
+        }
+
+        // Fetch the voter with their address and information
+        $voter = Voters::with('voterAddress', 'voterInformation')->find($request->id);
+
+        if (!$voter) {
+            return response()->json(['error' => 'Voter not found'], 404);
+        }
+
+        // Initialize the translator
+        $translator = new GoogleTranslate($request->lang); // Set target language
+        if($request->lang == 'en'){
+
+             // Prepare the voter's details for response
+            $voterDetails = [
+            'id' => $voter->id,
+            'first_name' => $voter->first_name ? $translator->translate($voter->first_name) : null,
+            'middle_name' => $voter->middle_name ? $translator->translate($voter->middle_name) : null,
+            'surname' => $voter->surname ? $translator->translate($voter->surname) : null,
+            'email' => $voter->email ?? null, // Email is left as is
+            'gender' => $voter->gender ? $translator->translate($voter->gender) : null,
+            'age' => $voter->age ?? null, // Age is left as is
+            'dob' => $voter->dob ?? null, // Date of birth is left as is
+            'cast' => $voter->cast ? $translator->translate($voter->cast) : null,
+            'position' => $voter->position ? $translator->translate($voter->position) : null,
+            'demands' => $voter->demands ? $translator->translate($voter->demands) : null,
+            'voter_id' => $voter->voter_id ?? null, // Voter ID is left as is
+            'dead' => $voter->dead ?? null, // Dead status left as is
+            'voted' => $voter->voted ?? null, // Voted status left as is
+            'star_voter' => $voter->star_voter ?? null, // Star voter status left as is
+            'colour_code' => $voter->colour_code ?? null,
+            'mobile_1' => $voter->mobile_1 ?? null, // Phone number is left as is
+            'mobile_2' => $voter->mobile_2 ?? null, // Phone number is left as is
+            'image' => $voter->image ?? null, // Image URL is left as is
+            'voterAddress' => $voter->voterAddress ? [
+                'address' => $voter->voterAddress->address ? $translator->translate($voter->voterAddress->address) : null,
+                'society' => $voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null,
+                'house_no' => $voter->voterAddress->house_no ?? null, // Assuming this doesn't need translation
+                'flat_no' => $voter->voterAddress->flat_no ?? null, // Assuming this doesn't need translation
+                'booth' => $voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null,
+                'village' => $voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null,
+                'part_no' => $voter->voterAddress->part_no ?? null, // Assuming this doesn't need translation
+                'srn' => $voter->voterAddress->srn ?? null, // Assuming this doesn't need translation
+                'voting_centre' => $voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null,
+            ] : null,
+            'voter_information' => $voter->voterInformation ? [
+                'extra_info_1' => $voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null,
+                'extra_info_2' => $voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null,
+                'extra_info_3' => $voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null,
+                'extra_info_4' => $voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null,
+                'extra_info_5' => $voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null,
+                'extra_check_1' => $voter->voterInformation->extra_check_1 ?? null,
+                'extra_check_2' => $voter->voterInformation->extra_check_2 ?? null,
+                // Add other fields as needed
+            ] : null,
+        ];
+
+        // Return the voter's details as a JSON response
+        return response()->json([
+            'status' => 200,
+            'message' => 'Individuals voter details retrieved successfully in English',
+            'voter' => $voterDetails,
+        ], 200);
+
+        }
+        if($request->lang == 'mr'){
+
+             // Prepare the voter's details for response
+             $voterDetails = [
+                'id' => $voter->id,
+                'first_name' => $voter->first_name_mr ?? ($voter->first_name ? $translator->translate($voter->first_name) : null),
+                'middle_name' => $voter->middle_name_mr ?? ($voter->middle_name ? $translator->translate($voter->middle_name) : null),
+                'surname' => $voter->surname_mr ?? ($voter->surname ? $translator->translate($voter->surname) : null),
+                'email' => $voter->email ?? null, // Email is left as is
+                'gender' => $voter->gender_mr ?? ($voter->gender ? $translator->translate($voter->gender) : null),
+                'age' => $voter->age ?? null, // Age is left as is
+                'dob' => $voter->dob ?? null, // Date of birth is left as is
+                'cast' => $voter->cast_mr ?? ($voter->cast ? $translator->translate($voter->cast) : null),
+                'position' => $voter->position_mr ?? ($voter->position ? $translator->translate($voter->position) : null),
+                'demands' => $voter->demands_mr ?? ($voter->demands ? $translator->translate($voter->demands) : null),
+                'voter_id' => $voter->voter_id ?? null, // Voter ID is left as is
+                'dead' => $voter->dead ?? null, // Dead status left as is
+                'voted' => $voter->voted ?? null, // Voted status left as is
+                'star_voter' => $voter->star_voter ?? null, // Star voter status left as is
+                'colour_code' => $voter->colour_code ?? null,
+                'mobile_1' => $voter->mobile_1 ?? null, // Phone number is left as is
+                'mobile_2' => $voter->mobile_2 ?? null, // Phone number is left as is
+                'image' => $voter->image ?? null, // Image URL is left as is
+                'voterAddress' => $voter->voterAddress ? [
+                    'address' => $voter->voterAddress->address_mr ?? ($voter->voterAddress->address ? $translator->translate($voter->voterAddress->address) : null),
+                    'society' => $voter->voterAddress->society_mr ?? ($voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null),
+                    'house_no' => $voter->voterAddress->house_no_mr ?? ($voter->voterAddress->house_no ? $translator->translate($voter->voterAddress->house_no) : null), // Assuming this doesn't need translation
+                    'flat_no' => $voter->voterAddress->flat_no_mr ?? ($voter->voterAddress->flat_no ? $translator->translate($voter->voterAddress->flat_no) : null), // Assuming this doesn't need translation
+                    'booth' => $voter->voterAddress->booth_mr ?? ($voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null),
+                    'village' => $voter->voterAddress->village_mr ?? ($voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null),
+                    'part_no' => $voter->voterAddress->part_no_mr ?? ($voter->voterAddress->part_no ? $translator->translate($voter->voterAddress->part_no) : null), // Assuming this doesn't need translation
+                    'srn' => $voter->voterAddress->srn_mr ?? null, // Assuming this doesn't need translation
+                    'voting_centre' => $voter->voterAddress->voting_centre_mr ?? ($voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null),
+                ] : null,
+                'voter_information' => $voter->voterInformation ? [
+                    'extra_info_1' => $voter->voterInformation->extra_info_1_mr ?? ($voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null),
+                    'extra_info_2' => $voter->voterInformation->extra_info_2_mr ?? ($voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null),
+                    'extra_info_3' => $voter->voterInformation->extra_info_3_mr ?? ($voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null),
+                    'extra_info_4' => $voter->voterInformation->extra_info_4_mr ?? ($voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null),
+                    'extra_info_5' => $voter->voterInformation->extra_info_5_mr ?? ($voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null),
+                    'extra_check_1' => $voter->voterInformation->extra_check_1 ?? null,
+                    'extra_check_2' => $voter->voterInformation->extra_check_2 ?? null,
+                    // Add other fields as needed
+                ] : null,
+            ];
+
+            // Return the voter's details as a JSON response
+            return response()->json([
+                'status' => 200,
+                'message' => 'Individuals voter details retrieved successfully in Marathi',
+                'voter' => $voterDetails,
+            ], 200);
+
+        }
+
+        if($request->lang == 'hi'){
+
+            // Prepare the voter's details for response
+            $voterDetails = [
+               'id' => $voter->id,
+               'first_name' => $voter->first_name_hi ?? ($voter->first_name ? $translator->translate($voter->first_name) : null),
+               'middle_name' => $voter->middle_name_hi ?? ($voter->middle_name ? $translator->translate($voter->middle_name) : null),
+               'surname' => $voter->surname_hi ?? ($voter->surname ? $translator->translate($voter->surname) : null),
+               'email' => $voter->email ?? null, // Email is left as is
+               'gender' => $voter->gender_hi ?? ($voter->gender ? $translator->translate($voter->gender) : null),
+               'age' => $voter->age ?? null, // Age is left as is
+               'dob' => $voter->dob ?? null, // Date of birth is left as is
+               'cast' => $voter->cast_hi ?? ($voter->cast ? $translator->translate($voter->cast) : null),
+               'position' => $voter->position_hi ?? ($voter->position ? $translator->translate($voter->position) : null),
+               'demands' => $voter->demands_hi ?? ($voter->demands ? $translator->translate($voter->demands) : null),
+               'voter_id' => $voter->voter_id ?? null, // Voter ID is left as is
+               'dead' => $voter->dead ?? null, // Dead status left as is
+               'voted' => $voter->voted ?? null, // Voted status left as is
+               'star_voter' => $voter->star_voter ?? null, // Star voter status left as is
+               'colour_code' => $voter->colour_code ?? null,
+               'mobile_1' => $voter->mobile_1 ?? null, // Phone number is left as is
+               'mobile_2' => $voter->mobile_2 ?? null, // Phone number is left as is
+               'image' => $voter->image ?? null, // Image URL is left as is
+               'voterAddress' => $voter->voterAddress ? [
+                   'address' => $voter->voterAddress->address_hi ?? ($voter->voterAddress->address ? $translator->translate($voter->voterAddress->address) : null),
+                   'society' => $voter->voterAddress->society_hi ?? ($voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null),
+                   'house_no' => $voter->voterAddress->house_no_hi ?? ($voter->voterAddress->house_no ? $translator->translate($voter->voterAddress->house_no) : null),
+                   'flat_no' => $voter->voterAddress->flat_no_hi ?? ($voter->voterAddress->flat_no ? $translator->translate($voter->voterAddress->flat_no) : null),
+                   'booth' => $voter->voterAddress->booth_hi ?? ($voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null),
+                   'village' => $voter->voterAddress->village_hi ?? ($voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null),
+                   'part_no' => $voter->voterAddress->part_no_hi ?? ($voter->voterAddress->part_no ? $translator->translate($voter->voterAddress->part_no) : null),
+                   'srn' => $voter->voterAddress->srn_hi ?? null,
+                   'voting_centre' => $voter->voterAddress->voting_centre_hi ?? ($voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null),
+               ] : null,
+               'voter_information' => $voter->voterInformation ? [
+                   'extra_info_1' => $voter->voterInformation->extra_info_1_hi ?? ($voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null),
+                   'extra_info_2' => $voter->voterInformation->extra_info_2_hi ?? ($voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null),
+                   'extra_info_3' => $voter->voterInformation->extra_info_3_hi ?? ($voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null),
+                   'extra_info_4' => $voter->voterInformation->extra_info_4_hi ?? ($voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null),
+                   'extra_info_5' => $voter->voterInformation->extra_info_5_hi ?? ($voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null),
+                   'extra_check_1' => $voter->voterInformation->extra_check_1 ?? null,
+                   'extra_check_2' => $voter->voterInformation->extra_check_2 ?? null,
+               ] : null,
+           ];
+
+           // Return the voter's details as a JSON response
+           return response()->json([
+               'status' => 200,
+               'message' => 'Individuals voter details retrieved successfully in Hindi',
+               'voter' => $voterDetails,
+           ], 200);
+        }
+
+
+    }
+
+    public function searchByFirstName(Request $request)
+    {
+        // Validate the input parameters
+        $validator = Validator::make($request->all(), [
+            'lang' => 'required|in:en,mr,hi',
+            'first_name' => 'required_if:lang,en',
+            'first_name_mr' => 'required_if:lang,mr',
+            'first_name_hi' => 'required_if:lang,hi',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()], 400);
+        }
+
+        // Fetch voters based on the first name
+
+
+        // Initialize the translator
+        $translator = new GoogleTranslate($request->lang); // Set target language
+
+        if($request->lang == 'en'){
+
+            $voters = Voters::with('voterAddress', 'voterInformation')
+            ->where('first_name', $request->first_name)
+            ->get();
+
+        // Check if voters were found
+        if ($voters->isEmpty()) {
+            return response()->json(['error' => 'No voters found'], 404);
+        }
+
+            $votersMapped = $voters->map(function ($voter) use ($translator) {
+                return [
+                    'id' => $voter->id,
+                    'first_name' => $voter->first_name ? $translator->translate($voter->first_name) : null,
+                    'middle_name' => $voter->middle_name ? $translator->translate($voter->middle_name) : null,
+                    'surname' => $voter->surname ? $translator->translate($voter->surname) : null,
+                    'email' => $voter->email, // Email is left as is
+                    'gender' => $voter->gender ? $translator->translate($voter->gender) : null,
+                    'age' => $voter->age, // Age is left as is
+                    'dob' => $voter->dob, // Date of birth is left as is
+                    'cast' => $voter->cast ? $translator->translate($voter->cast) : null,
+                    'position' => $voter->position ? $translator->translate($voter->position) : null,
+                    'voter_id' => $voter->voter_id, // Voter ID is left as is
+                    'dead' => $voter->dead, // Dead status left as is
+                    'voted' => $voter->voted, // Voted status left as is
+                    'star_voter' => $voter->star_voter, // Star voter status left as is
+                    'colour_code' => $voter->colour_code ? $translator->translate($voter->colour_code) : null,
+                    'mobile_1' => $voter->mobile_1, // Phone number is left as is
+                    'mobile_2' => $voter->mobile_2, // Phone number is left as is
+                    'image' => $voter->image, // Image URL is left as is
+                    'voterAddress' => $voter->voterAddress ? [
+                        'society' => $voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null,
+                        'house_no' => $voter->voterAddress->house_no, // Assuming this doesn't need translation
+                        'flat_no' => $voter->voterAddress->flat_no, // Assuming this doesn't need translation
+                        'booth' => $voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null,
+                        'village' => $voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null,
+                        'part_no' => $voter->voterAddress->part_no, // Assuming this doesn't need translation
+                        'srn' => $voter->voterAddress->srn, // Assuming this doesn't need translation
+                        'voting_centre' => $voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null,
+                    ] : null,
+                    'voter_information' => $voter->voterInformation ? [
+                        // Assuming you have fields in voterInformation to translate as well
+                        'extra_info_1' => $voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null,
+                        'extra_info_2' => $voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null,
+                        'extra_info_3' => $voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null,
+                        'extra_info_4' => $voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null,
+                        'extra_info_5' => $voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null,
+                        'extra_check_1' => $voter->voterInformation->extra_check_1 ?? null,
+                        'extra_check_2' => $voter->voterInformation->extra_check_2 ?? null,
+                        // Add other fields as needed
+                    ] : null,
+                ];
+            });
+            // Prepare the response data
+            $data['status'] = 200;
+            $data['message'] = 'Voter search results retrieved successfully in English';
+            $data['voters'] = $votersMapped;
+
+            return response()->json($data, 200);
+        }
+
+        if ($request->lang == 'mr') {
+
+            $voters = Voters::with('voterAddress', 'voterInformation')
+            ->where('first_name_mr', $request->first_name_mr)
+            ->get();
+
+        // Check if voters were found
+        if ($voters->isEmpty()) {
+            return response()->json(['error' => 'No voters found'], 404);
+        }
+            $votersMapped = $voters->map(function ($voter) use ($translator) {
+                return [
+                    'id' => $voter->id,
+                    'first_name' => $voter->first_name_mr ?? ($voter->first_name ? $translator->translate($voter->first_name) : null),
+                    'middle_name' => $voter->middle_name_mr ?? ($voter->middle_name ? $translator->translate($voter->middle_name) : null),
+                    'surname' => $voter->surname_mr ?? ($voter->surname ? $translator->translate($voter->surname) : null),
+                    'email' => $voter->email,
+                    'gender' => $voter->gender_mr ?? ($voter->gender ? $translator->translate($voter->gender) : null),
+                    'age' => $voter->age,
+                    'dob' => $voter->dob,
+                    'cast' => $voter->cast_mr ?? ($voter->cast ? $translator->translate($voter->cast) : null),
+                    'position' => $voter->position_mr ?? ($voter->position ? $translator->translate($voter->position) : null),
+                    'voter_id' => $voter->voter_id,
+                    'dead' => $voter->dead,
+                    'voted' => $voter->voted,
+                    'star_voter' => $voter->star_voter,
+                    'colour_code' => $voter->colour_code ?? ($voter->colour_code ? $translator->translate($voter->colour_code) : null),
+                    'mobile_1' => $voter->mobile_1,
+                    'mobile_2' => $voter->mobile_2,
+                    'image' => $voter->image,
+                    'voterAddress' => $voter->voterAddress ? [
+                        'society' => $voter->voterAddress->society_mr ?? ($voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null),
+                        'house_no' => $voter->voterAddress->house_no_mr ?? ($voter->voterAddress->house_no ? $translator->translate($voter->voterAddress->house_no) : null),
+                        'flat_no' => $voter->voterAddress->flat_no_mr ?? ($voter->voterAddress->flat_no ? $translator->translate($voter->voterAddress->flat_no) : null),
+                        'booth' => $voter->voterAddress->booth_mr ?? ($voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null),
+                        'village' => $voter->voterAddress->village_mr ?? ($voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null),
+                        'part_no' => $voter->voterAddress->part_no_mr ??($voter->voterAddress->part_no ? $translator->translate($voter->voterAddress->part_no) : null),
+                        'srn' => $voter->voterAddress->srn_mr ?? ($voter->voterAddress->srn ? $translator->translate($voter->voterAddress->srn) : null),
+                        'voting_centre' => $voter->voterAddress->voting_centre_mr ?? ($voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null),
+                    ] : null,
+                    'voter_information' => $voter->voterInformation ? [
+                        'extra_info_1' => $voter->voterInformation->extra_info_1_mr ?? ($voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null),
+                        'extra_info_2' => $voter->voterInformation->extra_info_2_mr ?? ($voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null),
+                        'extra_info_3' => $voter->voterInformation->extra_info_3_mr ?? ($voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null),
+                        'extra_info_4' => $voter->voterInformation->extra_info_4_mr ?? ($voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null),
+                        'extra_info_5' => $voter->voterInformation->extra_info_5_mr ?? ($voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null),
+                        'extra_check_1' => $voter->voterInformation->extra_check_1 ?? null,
+                        'extra_check_2' => $voter->voterInformation->extra_check_2 ?? null,
+                    ] : null,
+                ];
+            });
+
+            // Prepare the response data
+            $data['status'] = 200;
+            $data['message'] = 'Voter search results retrieved successfully in Marathi';
+            $data['voters'] = $votersMapped;
+
+            return response()->json($data, 200);
+        }
+
+        if ($request->lang == 'hi') {
+
+            $voters = Voters::with('voterAddress', 'voterInformation')
+            ->where('first_name_hi', $request->first_name_hi)
+            ->get();
+            // dd($voters );
+
+        // Check if voters were found
+        if ($voters->isEmpty()) {
+            return response()->json(['error' => 'No voters found'], 404);
+        }
+            $votersMapped = $voters->map(function ($voter) use ($translator) {
+                return [
+                    'id' => $voter->id,
+                    'first_name' => $voter->first_name_hi ?? ($voter->first_name ? $translator->translate($voter->first_name) : null),
+                    'middle_name' => $voter->middle_name_hi ?? ($voter->middle_name ? $translator->translate($voter->middle_name) : null),
+                    'surname' => $voter->surname_hi ?? ($voter->surname ? $translator->translate($voter->surname) : null),
+                    'email' => $voter->email,
+                    'gender' => $voter->gender_hi ?? ($voter->gender ? $translator->translate($voter->gender) : null),
+                    'age' => $voter->age,
+                    'dob' => $voter->dob,
+                    'cast' => $voter->cast_hi ?? ($voter->cast ? $translator->translate($voter->cast) : null),
+                    'position' => $voter->position_hi ?? ($voter->position ? $translator->translate($voter->position) : null),
+                    'voter_id' => $voter->voter_id,
+                    'dead' => $voter->dead,
+                    'voted' => $voter->voted,
+                    'star_voter' => $voter->star_voter,
+                    'colour_code' => $voter->colour_code ?? ($voter->colour_code ? $translator->translate($voter->colour_code) : null),
+                    'mobile_1' => $voter->mobile_1,
+                    'mobile_2' => $voter->mobile_2,
+                    'image' => $voter->image,
+                    'voterAddress' => $voter->voterAddress ? [
+                        'society' => $voter->voterAddress->society_hi ?? ($voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null),
+                        'house_no' => $voter->voterAddress->house_no_hi ?? ($voter->voterAddress->house_no ? $translator->translate($voter->voterAddress->house_no) : null),
+                        'flat_no' => $voter->voterAddress->flat_no_hi ?? ($voter->voterAddress->flat_no ? $translator->translate($voter->voterAddress->flat_no) : null),
+                        'booth' => $voter->voterAddress->booth_hi ?? ($voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null),
+                        'village' => $voter->voterAddress->village_hi ?? ($voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null),
+                        'part_no' => $voter->voterAddress->part_no_hi ?? ($voter->voterAddress->part_no ? $translator->translate($voter->voterAddress->part_no) : null),
+                        'srn' => $voter->voterAddress->srn_hi ?? ($voter->voterAddress->srn ? $translator->translate($voter->voterAddress->srn) : null),
+                        'voting_centre' => $voter->voterAddress->voting_centre_hi ?? ($voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null),
+                    ] : null,
+                    'voter_information' => $voter->voterInformation ? [
+                        'extra_info_1' => $voter->voterInformation->extra_info_1_hi ?? ($voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null),
+                        'extra_info_2' => $voter->voterInformation->extra_info_2_hi ?? ($voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null),
+                        'extra_info_3' => $voter->voterInformation->extra_info_3_hi ?? ($voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null),
+                        'extra_info_4' => $voter->voterInformation->extra_info_4_hi ?? ($voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null),
+                        'extra_info_5' => $voter->voterInformation->extra_info_5_hi ?? ($voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null),
+                        'extra_check_1' => $voter->voterInformation->extra_check_1 ?? null,
+                        'extra_check_2' => $voter->voterInformation->extra_check_2 ?? null,
+                    ] : null,
+                ];
+            });
+
+            // Prepare the response data
+            $data['status'] = 200;
+            $data['message'] = 'Voter search results retrieved successfully in Hindi';
+            $data['voters'] = $votersMapped;
+
+            return response()->json($data, 200);
+        }
+
+
+
+    }
+
+    public function familyMemberAdd(Request $request)
+    {
+        // Validate the incoming request
+        $validator = Validator::make($request->all(), [
+            'id_who_add' => 'required|exists:voters,id',
+            'id_whom_add' => 'required|exists:voters,id',
+        ]);
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()], 400);
+        }
+
+        $whoAdd = Voters::find($request->id_who_add);
+        $whomAdd = Voters::find($request->id_whom_add);
+
+        // Prevent adding self as a family member
+        if ($whoAdd->id === $whomAdd->id) {
+            return response()->json(['error' => 'A voter cannot add themselves as a family member.'], 400);
+        }
+
+        // Ensure family_member_id is treated as an array
+        $existingFamilyMembers = is_null($whoAdd->family_member_id)
+        ? []
+        : (is_array(json_decode($whoAdd->family_member_id, true))
+            ? json_decode($whoAdd->family_member_id, true)
+            : []);
+
+        // Prevent duplicate entries
+        if (in_array($whomAdd->id, $existingFamilyMembers)) {
+            return response()->json(['error' => 'This voter is already a family member.'], 400);
+        }
+
+        // Add the new family member
+        $existingFamilyMembers[] = $whomAdd->id;
+
+        // Save the updated family members array
+        $whoAdd->family_member_id = json_encode($existingFamilyMembers);
+        $whoAdd->save();
+
+        return response()->json([
+            'status' => 200,
+            'message' => 'Family member added successfully.',
+            'family_member_ids' => $existingFamilyMembers,
+        ]);
+    }
+
+    public function familyMemberRemove(Request $request)
+    {
+        // Validate the incoming request
+        $validator = Validator::make($request->all(), [
+            'id_who_remove' => 'required|exists:voters,id', // The voter removing the family member
+            'id_whom_remove' => 'required|exists:voters,id', // The family member to be removed
+        ]);
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()], 400);
+        }
+
+        $whoRemove = Voters::find($request->id_who_remove);
+
+        // Ensure family_member_id is treated as an array
+        $existingFamilyMembers = is_null($whoRemove->family_member_id)
+        ? []
+        : (is_array(json_decode($whoRemove->family_member_id, true))
+            ? json_decode($whoRemove->family_member_id, true)
+            : []);
+
+        // Check if the family member exists in the list
+        if (!in_array($request->id_whom_remove, $existingFamilyMembers)) {
+            return response()->json(['error' => 'The specified voter is not a family member.'], 400);
+        }
+
+        // Remove the family member
+        $updatedFamilyMembers = array_filter($existingFamilyMembers, function ($id) use ($request) {
+            return $id != $request->id_whom_remove;
+        });
+
+        // Save the updated family members array
+        $whoRemove->family_member_id = empty($updatedFamilyMembers) ? null : json_encode(array_values($updatedFamilyMembers));
+        $whoRemove->save();
+
+        return response()->json([
+            'status' => 200,
+            'message' => 'Family member removed successfully.',
+            'family_member_ids' => $updatedFamilyMembers,
+        ]);
+    }
+
+    public function familyMemberList(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'id' => 'required|exists:voters,id',
+            'lang' => 'required|in:en,mr,hi',
+        ]);
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()], 400);
+        }
+
+        $voter = Voters::find($request->id);
+        $familyMemberIds = is_null($voter->family_member_id)
+        ? []
+        : (is_array(json_decode($voter->family_member_id, true))
+            ? json_decode($voter->family_member_id, true)
+            : []);
+        $VoterFamilyMembers = Voters::with('voterAddress', 'voterInformation')->whereIn('id', $familyMemberIds)->get();
+        // Check if voters were found
+        if ($VoterFamilyMembers->isEmpty()) {
+            return response()->json(['error' => 'No voters found'], 404);
+        }
+        // Initialize the translator
+        $translator = new GoogleTranslate($request->lang); // Set target language
+        // Map over the collection to include only the required fields
+        if($request->lang == 'en'){
+            $votersMapped = $VoterFamilyMembers->map(function ($voter) use ($translator) {
+                return [
+                    'id' => $voter->id,
+                    'first_name' => $voter->first_name ? $translator->translate($voter->first_name) : null,
+                    'middle_name' => $voter->middle_name ? $translator->translate($voter->middle_name) : null,
+                    'surname' => $voter->surname ? $translator->translate($voter->surname) : null,
+                    'email' => $voter->email, // Email is left as is
+                    'gender' => $voter->gender ? $translator->translate($voter->gender) : null,
+                    'age' => $voter->age, // Age is left as is
+                    'dob' => $voter->dob, // Date of birth is left as is
+                    'cast' => $voter->cast ? $translator->translate($voter->cast) : null,
+                    'position' => $voter->position ? $translator->translate($voter->position) : null,
+                    'voter_id' => $voter->voter_id, // Voter ID is left as is
+                    'dead' => $voter->dead, // Dead status left as is
+                    'voted' => $voter->voted, // Voted status left as is
+                    'star_voter' => $voter->star_voter, // Star voter status left as is
+                    'colour_code' => $voter->colour_code ? $translator->translate($voter->colour_code) : null,
+                    'mobile_1' => $voter->mobile_1, // Phone number is left as is
+                    'mobile_2' => $voter->mobile_2, // Phone number is left as is
+                    'image' => $voter->image, // Image URL is left as is
+                    'voter_address' => $voter->voterAddress ? [
+                        'society' => $voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null,
+                        'house_no' => $voter->voterAddress->house_no, // Assuming this doesn't need translation
+                        'flat_no' => $voter->voterAddress->flat_no, // Assuming this doesn't need translation
+                        'booth' => $voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null,
+                        'village' => $voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null,
+                        'part_no' => $voter->voterAddress->part_no, // Assuming this doesn't need translation
+                        'srn' => $voter->voterAddress->srn, // Assuming this doesn't need translation
+                        'voting_centre' => $voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null,
+                    ] : null,
+                    'voter_information' => $voter->voterInformation ? [
+                        // Assuming you have fields in voterInformation to translate as well
+                        'extra_info_1' => $voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null,
+                        'extra_info_2' => $voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null,
+                        'extra_info_3' => $voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null,
+                        'extra_info_4' => $voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null,
+                        'extra_info_5' => $voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null,
+                        'extra_check_1' => $voter->voterInformation->extra_check_1 ?? null,
+                        'extra_check_2' => $voter->voterInformation->extra_check_2 ?? null,
+                        // Add other fields as needed
+                    ] : null,
+                ];
+            });
+
+            // Prepare the response data
+            $data['status'] = 200;
+            $data['message'] = 'Voter family members fetched successfully';
+            $data['voters'] = $votersMapped;
+
+            return response()->json($data, 200);
+        }
+
+        if($request->lang == 'mr'){
+            $votersMapped = $VoterFamilyMembers->map(function ($voter) use ($translator) {
+                return [
+                    'id' => $voter->id,
+                    'first_name' => $voter->first_name_mr ?? ($voter->first_name ? $translator->translate($voter->first_name) : null),
+                    'middle_name' => $voter->middle_name_mr ?? ($voter->middle_name ? $translator->translate($voter->middle_name) : null),
+                    'surname' => $voter->surname_mr ?? ($voter->surname ? $translator->translate($voter->surname) : null),
+                    'email' => $voter->email, // Email is left as is
+                    'gender' => $voter->gender_mr ?? ($voter->gender ? $translator->translate($voter->gender) : null),
+                    'age' => $voter->age, // Age is left as is
+                    'dob' => $voter->dob, // Date of birth is left as is
+                    'cast' => $voter->cast_mr ?? ($voter->cast ? $translator->translate($voter->cast) : null),
+                    'position' => $voter->position_mr ?? ($voter->position ? $translator->translate($voter->position) : null),
+                    'voter_id' => $voter->voter_id, // Voter ID is left as is
+                    'dead' => $voter->dead, // Dead status left as is
+                    'voted' => $voter->voted, // Voted status left as is
+                    'star_voter' => $voter->star_voter, // Star voter status left as is
+                    'colour_code' => $voter->colour_code ?? ($voter->colour_code ? $translator->translate($voter->colour_code) : null),
+                    'mobile_1' => $voter->mobile_1, // Phone number is left as is
+                    'mobile_2' => $voter->mobile_2, // Phone number is left as is
+                    'image' => $voter->image, // Image URL is left as is
+                    'voter_address' => $voter->voterAddress ? [
+                        'society' => $voter->voterAddress->society_mr ?? ($voter-> voterAddress->society ? $translator->translate($voter->voterAddress->society) : null),
+                        'house_no' => $voter->voterAddress->house_no_mr ??($voter->voterAddress->house_no ? $translator->translate($voter->voterAddress->house_no) : null), // Assuming this doesn't need translation
+                        'flat_no' => $voter->voterAddress->flat_no_mr ?? ($voter->voterAddress->flat_no ? $translator->translate($voter->voterAddress->flat_no) : null), // Assuming this doesn't need translation
+                        'booth' => $voter->voterAddress->booth_mr ?? ($voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null),
+                        'village' => $voter->voterAddress->village_mr ?? ($voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null),
+                        'part_no' => $voter->voterAddress->part_no ?? ($voter->voterAddress->part_no ? $translator->translate($voter->voterAddress->part_no) : null), // Assuming this doesn't need translation
+                        'srn' => $voter->voterAddress->srn ?? ($voter->voterAddress->srn ? $translator->translate($voter->voterAddress->srn) : null), // Assuming this doesn't need translation
+                        'voting_centre' => $voter->voterAddress->voting_centre ?? ($voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null),
+                    ] : null,
+                    'voter_information' => $voter->voterInformation ? [
+                        // Assuming you have fields in voterInformation to translate as well
+                        'extra_info_1' => $voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null,
+                        'extra_info_2' => $voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null,
+                        'extra_info_3' => $voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null,
+                        'extra_info_4' => $voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null,
+                        'extra_info_5' => $voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null,
+                        'extra_check_1' => $voter->voterInformation->extra_check_1 ?? null,
+                        'extra_check_2' => $voter->voterInformation->extra_check_2 ?? null,
+                        // Add other fields as needed
+                    ] : null,
+                ];
+            });
+
+            // Prepare the response data
+            $data['status'] = 200;
+            $data['message'] = 'Voter family members fetched successfully';
+            $data['voters'] = $votersMapped;
+
+            return response()->json($data, 200);
+        }
+
+        if ($request->lang == 'hi') {
+            $votersMapped = $VoterFamilyMembers->map(function ($voter) use ($translator) {
+                return [
+                    'id' => $voter->id,
+                    'first_name' => $voter->first_name_hi ?? ($voter->first_name ? $translator->translate($voter->first_name) : null),
+                    'middle_name' => $voter->middle_name_hi ?? ($voter->middle_name ? $translator->translate($voter->middle_name) : null),
+                    'surname' => $voter->surname_hi ?? ($voter->surname ? $translator->translate($voter->surname) : null),
+                    'email' => $voter->email, // Email is left as is
+                    'gender' => $voter->gender_hi ?? ($voter->gender ? $translator->translate($voter->gender) : null),
+                    'age' => $voter->age, // Age is left as is
+                    'dob' => $voter->dob, // Date of birth is left as is
+                    'cast' => $voter->cast_hi ?? ($voter->cast ? $translator->translate($voter->cast) : null),
+                    'position' => $voter->position_hi ?? ($voter->position ? $translator->translate($voter->position) : null),
+                    'voter_id' => $voter->voter_id, // Voter ID is left as is
+                    'dead' => $voter->dead, // Dead status left as is
+                    'voted' => $voter->voted, // Voted status left as is
+                    'star_voter' => $voter->star_voter, // Star voter status left as is
+                    'colour_code' => $voter->colour_code ?? ($voter->colour_code ? $translator->translate($voter->colour_code) : null),
+                    'mobile_1' => $voter->mobile_1, // Phone number is left as is
+                    'mobile_2' => $voter->mobile_2, // Phone number is left as is
+                    'image' => $voter->image, // Image URL is left as is
+                    'voter_address' => $voter->voterAddress ? [
+                        'society' => $voter->voterAddress->society_hi ?? ($voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null),
+                        'house_no' => $voter->voterAddress->house_no_hi ?? ($voter->voterAddress->house_no ? $translator->translate($voter->voterAddress->house_no) : null), // Assuming this doesn't need translation
+                        'flat_no' => $voter->voterAddress->flat_no_hi ?? ($voter->voterAddress->flat_no ? $translator->translate($voter->voterAddress->flat_no) : null), // Assuming this doesn't need translation
+                        'booth' => $voter->voterAddress->booth_hi ?? ($voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null),
+                        'village' => $voter->voterAddress->village_hi ?? ($voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null),
+                        'part_no' => $voter->voterAddress->part_no ?? ($voter->voterAddress->part_no ? $translator->translate($voter->voterAddress->part_no) : null), // Assuming this doesn't need translation
+                        'srn' => $voter->voterAddress->srn ?? ($voter->voterAddress->srn ? $translator->translate($voter->voterAddress->srn) : null), // Assuming this doesn't need translation
+                        'voting_centre' => $voter->voterAddress->voting_centre ?? ($voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null),
+                    ] : null,
+                    'voter_information' => $voter->voterInformation ? [
+                        // Assuming you have fields in voterInformation to translate as well
+                        'extra_info_1' => $voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null,
+                        'extra_info_2' => $voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null,
+                        'extra_info_3' => $voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null,
+                        'extra_info_4' => $voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null,
+                        'extra_info_5' => $voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null,
+                        'extra_check_1' => $voter->voterInformation->extra_check_1 ?? null,
+                        'extra_check_2' => $voter->voterInformation->extra_check_2 ?? null,
+                        // Add other fields as needed
+                    ] : null,
+                ];
+            });
+
+            // Prepare the response data
+            $data['status'] = 200;
+            $data['message'] = 'Voter family members fetched successfully';
+            $data['voters'] = $votersMapped;
+
+            return response()->json($data, 200);
+        }
+
+    }
+
+    public function surveyDetailsUpdate(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'id' => 'required|exists:voters,id',
+            'lang' => 'required|in:en,mr,hi',
+            'mobile_1' => 'nullable',
+            'mobile_2' => 'nullable',
+            'colour_code' => 'nullable',
+            'cast' => 'nullable',
+
+            'cast_hi'  => 'nullable',
+            'position' => 'nullable',
+            'personnel' => 'nullable',
+            'address' => 'nullable',
+            'society' => 'nullable',
+            'flat_no' => 'nullable',
+            'email' => 'nullable|email',
+            'dob' => 'nullable|date',
+            'demands' => 'nullable',
+            'extra_info_1' => 'nullable',
+            'extra_info_2' => 'nullable',
+            'extra_info_3' => 'nullable',
+            'extra_info_4' => 'nullable',
+            'extra_info_5' => 'nullable',
+            'extra_check_1' => 'nullable',
+            'extra_check_2' => 'nullable',
+            'dead' => 'nullable|boolean',
+            'star_voter' => 'nullable',
+            'voted' => 'nullable',
+        ]);
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()], 400);
+        }
+        $voter = Voters::find($request->id);
+        $voterInformation = ExtraInformation::where('voter_user_id', $request->id)->first();
+        $voterAddress = UserAddress::where('voter_user_id', $request->id)->first();
+
+        if($request->lang == 'en'){
+            $response = [];
+            // Mobile 1
+            if ($request->mobile_1) {
+                $voter->mobile_1 = $request->mobile_1;
+                $response['mobile_1'] = 'Updated mobile_1';
+            } else {
+                $response['mobile_1'] = 'mobile_1 not provided or null';
+            }
+            // Mobile 2
+            if ($request->mobile_2) {
+                $voter->mobile_2 = $request->mobile_2;
+                $response['mobile_2'] = 'Updated mobile_2';
+            } else {
+                $response['mobile_2'] = 'mobile_2 not provided or null';
+            }
+            // Colour Code
+            if ($request->colour_code) {
+                $voter->colour_code = $request->colour_code;
+                $response['colour_code'] = 'Updated colour_code = ' . $request->colour_code;
+            } else {
+                $response['colour_code'] = 'colour_code not provided or null';
+            }
+            // Cast
+            if ($request->cast) {
+                $voter->cast = $request->cast;
+                $response['cast'] = 'Updated cast';
+            } else {
+                $response['cast'] = 'cast not provided or null';
+            }
+            // Position
+            if ($request->position) {
+                $voter->position = $request->position;
+                $response['position'] = 'Updated position';
+            } else {
+                $response['position'] = 'position not provided or null';
+            }
+            // Personnel
+            if ($request->personnel) {
+                $voter->personnel = $request->personnel;
+                $response['personnel'] = 'Updated personnel';
+            } else {
+                $response['personnel'] = 'personnel not provided or null';
+            }
+
+            // Address
+            if ($request->address) {
+                // $voterAddress->address = $request->address;
+                $voterId = NewAddress::where('voter_user_id', $voter->id)->first();
+
+                if ($voterId) {
+                    NewAddress::where('voter_user_id', $voter->id)->update([
+                        'new_address' => $request->address,
+                    ]);
+                }
+                else{
+                    NewAddress::create([
+                        'voter_user_id' => $voter->id,
+                        'new_address' => $request->address,
+                    ]);
+                }
+                $response['address'] = 'Updated address';
+            } else {
+                $response['address'] = 'address not provided or null';
+            }
+
+            // Society
+            if ($request->society) {
+                $voterAddress->society = $request->society;
+                $response['society'] = 'Updated society';
+            } else {
+                $response['society'] = 'society not provided or null';
+            }
+
+            // Flat No
+            if ($request->flat_no) {
+                $voterAddress->flat_no = $request->flat_no;
+                $response['flat_no'] = 'Updated flat_no';
+            } else {
+                $response['flat_no'] = 'flat_no not provided or null';
+            }
+
+            // Email
+            if ($request->email) {
+                $voter->email = $request->email;
+                $response['email'] = 'Updated email';
+            } else {
+                $response['email'] = 'email not provided or null';
+            }
+
+            // DOB
+            if ($request->dob) {
+                $voter->dob = $request->dob;
+                $response['dob'] = 'Updated dob';
+            } else {
+                $response['dob'] = 'dob not provided or null';
+            }
+
+            // Demands
+            if ($request->demands) {
+                $voter->demands = $request->demands;
+                $response['demands'] = 'Updated demands';
+            } else {
+                $response['demands'] = 'demands not provided or null';
+            }
+
+            // Extra Info 1
+            if ($request->extra_info_1) {
+                $voterInformation->extra_info_1 = $request->extra_info_1;
+                $response['extra_info_1'] = 'Updated extra_info_1';
+            } else {
+                $response['extra_info_1'] = 'extra_info_1 not provided or null';
+            }
+
+            // Extra Info 2
+            if ($request->extra_info_2) {
+                $voterInformation->extra_info_2 = $request->extra_info_2;
+                $response['extra_info_2'] = 'Updated extra_info_2';
+            } else {
+                $response['extra_info_2'] = 'extra_info_2 not provided or null';
+            }
+
+            // Extra Info 3
+            if ($request->extra_info_3) {
+                $voterInformation->extra_info_3 = $request->extra_info_3;
+                $response['extra_info_3'] = 'Updated extra_info_3';
+            } else {
+                $response['extra_info_3'] = 'extra_info_3 not provided or null';
+            }
+
+            // Extra Info 4
+            if ($request->extra_info_4) {
+                $voterInformation->extra_info_4 = $request->extra_info_4;
+                $response['extra_info_4'] = 'Updated extra_info_4';
+            } else {
+                $response['extra_info_4'] = 'extra_info_4 not provided or null';
+            }
+
+            // Extra Info 5
+            if ($request->extra_info_5) {
+                $voterInformation->extra_info_5 = $request->extra_info_5;
+                $response['extra_info_5'] = 'Updated extra_info_5';
+            } else {
+                $response['extra_info_5'] = 'extra_info_5 not provided or null';
+            }
+
+            // Extra Check 1
+            if ($request->extra_check_1 !== null) {
+
+                $voterInformation->extra_check_1 = $request->extra_check_1;
+                $response['extra_check_1'] = $request->extra_check_1;
+            } else {
+                $response['extra_check_1'] = 'extra_check_1 not provided or null';
+            }
+
+            // Extra Check 2
+            if ($request->extra_check_2 !== null) {
+                $voterInformation->extra_check_2 = $request->extra_check_2;
+                $response['extra_check_2'] = $request->extra_check_2;
+            } else {
+                $response['extra_check_2'] = 'extra_check_2 not provided or null';
+            }
+
+            // Dead
+            if ($request->dead !== null) {
+                $voter->dead = $request->dead;
+                $response['dead'] = 'Updated dead status';
+            } else {
+                $response['dead'] = 'dead status not provided or null';
+            }
+
+            // Star Voter
+            if ($request->star_voter !== null) {
+                $voter->star_voter = $request->star_voter;
+                $response['star_voter'] = 'Updated star_voter';
+            } else {
+                $response['star_voter'] = 'star_voter status not provided or null';
+            }
+
+            // Voted
+            if ($request->voted !== null) {
+                $voter->voted = $request->voted;
+                $response['voted'] = 'Updated voted status';
+            } else {
+                $response['voted'] = 'voted status not provided or null';
+            }
+
+            // Repeated
+            if ($request->repeated_voter !== null) {
+
+                $voter->repeated_voter = $request->repeated_voter;
+                $response['repeated_voter'] = $request->repeated_voter;
+            } else {
+                $response['repeated_voter'] = 'repeated voter not provided or null';
+            }
+
+            $voter->save();
+            $voterInformation->save();
+            $voterAddress->save();
+
+            return response()->json([
+                'status' => 200,
+                'message' => 'Voter details updated successfully in english.',
+                'updates' => $response,
+            ]);
+        }
+
+
+        if($request->lang == 'mr'){
+
+            $response = [];
+            // Mobile 1
+            if ($request->mobile_1) {
+                $voter->mobile_1 = $request->mobile_1;
+                $response['mobile_1'] = 'Updated mobile_1';
+            } else {
+                $response['mobile_1'] = 'mobile_1 not provided or null';
+            }
+            // Mobile 2
+            if ($request->mobile_2) {
+                $voter->mobile_2 = $request->mobile_2;
+                $response['mobile_2'] = 'Updated mobile_2';
+            } else {
+                $response['mobile_2'] = 'mobile_2 not provided or null';
+            }
+            // Colour Code
+            if ($request->colour_code) {
+                $voter->colour_code = $request->colour_code;
+                $response['colour_code'] = 'Updated colour_code = ' . $request->colour_code;
+            } else {
+                $response['colour_code'] = 'colour_code not provided or null';
+            }
+            // Cast
+            if ($request->cast) {
+                // dd('mr if');
+                $voter->cast_mr = $request->cast;
+                $response['cast'] = 'Updated cast in marathi';
+            } else {
+                // dd('mr else');
+                $response['cast'] = 'cast not provided or null';
+            }
+            // Position
+            if ($request->position) {
+                $voter->position_mr = $request->position;
+                $response['position'] = 'Updated position';
+            } else {
+                $response['position'] = 'position not provided or null';
+            }
+            // Personnel
+            if ($request->personnel) {
+                $voter->personnel_mr = $request->personnel;
+                $response['personnel'] = 'Updated personnel';
+            } else {
+                $response['personnel'] = 'personnel not provided or null';
+            }
+
+            // Address
+            // if ($request->address) {
+            //     $voterAddress->address_mr = $request->address;
+            //     $response['address'] = 'Updated address in marathi';
+            // } else {
+            //     $response['address'] = 'address not provided or null';
+            // }
+            if ($request->address) {
+                // $voterAddress->address = $request->address;
+                $voterId = NewAddress::where('voter_user_id', $voter->id)->first();
+
+                if ($voterId) {
+                    NewAddress::where('voter_user_id', $voter->id)->update([
+                        'new_address_mr' => $request->address,
+                    ]);
+                }
+                else{
+                    NewAddress::create([
+                        'voter_user_id' => $voter->id,
+                        'new_address_mr' => $request->address,
+                    ]);
+                }
+                $response['address'] = 'Updated address in Marathi';
+            } else {
+                $response['address'] = 'address not provided or null';
+            }
+
+            // Society
+            if ($request->society) {
+                $voterAddress->society_mr = $request->society;
+                $response['society'] = 'Updated society marathi';
+            } else {
+                $response['society'] = 'society not provided or null';
+            }
+
+            // Flat No
+            if ($request->flat_no) {
+                $voterAddress->flat_no_mr = $request->flat_no;
+                $response['flat_no'] = 'Updated flat_no marathi';
+            } else {
+                $response['flat_no'] = 'flat_no not provided or null';
+            }
+
+            // Email
+            if ($request->email) {
+                $voter->email = $request->email;
+                $response['email'] = 'Updated email';
+            } else {
+                $response['email'] = 'email not provided or null';
+            }
+
+            // DOB
+            if ($request->dob) {
+                $voter->dob = $request->dob;
+                $response['dob'] = 'Updated dob';
+            } else {
+                $response['dob'] = 'dob not provided or null';
+            }
+
+            // Demands
+            if ($request->demands) {
+                $voter->demands_mr = $request->demands;
+                $response['demands'] = 'Updated demands marathi';
+            } else {
+                $response['demands'] = 'demands not provided or null';
+            }
+
+            // Extra Info 1
+            if ($request->extra_info_1) {
+                $voterInformation->extra_info_1_mr = $request->extra_info_1;
+                $response['extra_info_1'] = 'Updated extra_info_1 in marathi';
+            } else {
+                $response['extra_info_1'] = 'extra_info_1 not provided or null';
+            }
+
+            // Extra Info 2
+            if ($request->extra_info_2) {
+                $voterInformation->extra_info_2_mr = $request->extra_info_2;
+                $response['extra_info_2'] = 'Updated extra_info_2 marathi';
+            } else {
+                $response['extra_info_2'] = 'extra_info_2 not provided or null';
+            }
+
+            // Extra Info 3
+            if ($request->extra_info_3) {
+                $voterInformation->extra_info_3_mr = $request->extra_info_3;
+                $response['extra_info_3'] = 'Updated extra_info_3 in marathi';
+            } else {
+                $response['extra_info_3'] = 'extra_info_3 not provided or null';
+            }
+
+            // Extra Info 4
+            if ($request->extra_info_4) {
+                $voterInformation->extra_info_4_mr = $request->extra_info_4;
+                $response['extra_info_4'] = 'Updated extra_info_4 marathi';
+            } else {
+                $response['extra_info_4'] = 'extra_info_4 not provided or null';
+            }
+
+            // Extra Info 5
+            if ($request->extra_info_5) {
+                $voterInformation->extra_info_5_mr = $request->extra_info_5;
+                $response['extra_info_5'] = 'Updated extra_info_5 marathi';
+            } else {
+                $response['extra_info_5'] = 'extra_info_5 not provided or null';
+            }
+
+            // Extra Check 1
+            if ($request->extra_check_1 !== null) {
+
+                $voterInformation->extra_check_1 = $request->extra_check_1;
+                $response['extra_check_1'] = $request->extra_check_1;
+            } else {
+                $response['extra_check_1'] = 'extra_check_1 not provided or null';
+            }
+
+            // Extra Check 2
+            if ($request->extra_check_2 !== null) {
+                $voterInformation->extra_check_2 = $request->extra_check_2;
+                $response['extra_check_2'] = $request->extra_check_2;
+            } else {
+                $response['extra_check_2'] = 'extra_check_2 not provided or null';
+            }
+
+            // Dead
+            if ($request->dead !== null) {
+                $voter->dead = $request->dead;
+                $response['dead'] = 'Updated dead status';
+            } else {
+                $response['dead'] = 'dead status not provided or null';
+            }
+
+            // Star Voter
+            if ($request->star_voter !== null) {
+                $voter->star_voter = $request->star_voter;
+                $response['star_voter'] = 'Updated star_voter';
+            } else {
+                $response['star_voter'] = 'star_voter status not provided or null';
+            }
+
+            // Voted
+            if ($request->voted !== null) {
+                $voter->voted = $request->voted;
+                $response['voted'] = 'Updated voted status';
+            } else {
+                $response['voted'] = 'voted status not provided or null';
+            }
+
+              // Repeated
+              if ($request->repeated_voter !== null) {
+
+                $voter->repeated_voter = $request->repeated_voter;
+                $response['repeated_voter'] = $request->repeated_voter;
+            } else {
+                $response['repeated_voter'] = 'repeated voter not provided or null';
+            }
+
+
+            $voter->save();
+            $voterInformation->save();
+            $voterAddress->save();
+
+            return response()->json([
+                'status' => 200,
+                'message' => 'Voter details updated successfully in marathi.',
+                'updates' => $response,
+            ]);
+        }
+
+
+        if ($request->lang == 'hi') {
+            $response = [];
+            // Mobile 1
+            if ($request->mobile_1) {
+                $voter->mobile_1 = $request->mobile_1;
+                $response['mobile_1'] = 'Updated mobile_1';
+            } else {
+                $response['mobile_1'] = 'mobile_1 not provided or null';
+            }
+            // Mobile 2
+            if ($request->mobile_2) {
+                $voter->mobile_2 = $request->mobile_2;
+                $response['mobile_2'] = 'Updated mobile_2';
+            } else {
+                $response['mobile_2'] = 'mobile_2 not provided or null';
+            }
+            // Colour Code
+            if ($request->colour_code) {
+                $voter->colour_code = $request->colour_code;
+                $response['colour_code'] = 'Updated colour_code = ' . $request->colour_code;
+            } else {
+                $response['colour_code'] = 'colour_code not provided or null';
+            }
+            // Cast
+            if ($request->cast) {
+                $voter->cast_hi = $request->cast;
+                $response['cast'] = 'Updated cast in hindi';
+            } else {
+                $response['cast'] = 'cast not provided or null';
+            }
+            // Position
+            if ($request->position) {
+                $voter->position_hi = $request->position;
+                $response['position'] = 'Updated position';
+            } else {
+                $response['position'] = 'position not provided or null';
+            }
+            // Personnel
+            if ($request->personnel) {
+                $voter->personnel_hi = $request->personnel;
+                $response['personnel'] = 'Updated personnel';
+            } else {
+                $response['personnel'] = 'personnel not provided or null';
+            }
+
+            // Address
+            // if ($request->address) {
+            //     $voterAddress->address_hi = $request->address;
+            //     $response['address'] = 'Updated address in hindi';
+            // } else {
+            //     $response['address'] = 'address not provided or null';
+            // }
+
+            if ($request->address) {
+                // $voterAddress->address = $request->address;
+                $voterId = NewAddress::where('voter_user_id', $voter->id)->first();
+
+                if ($voterId) {
+                    NewAddress::where('voter_user_id', $voter->id)->update([
+                        'new_address_hi' => $request->address,
+                    ]);
+                }
+                else{
+                    NewAddress::create([
+                        'voter_user_id' => $voter->id,
+                        'new_address_hi' => $request->address,
+                    ]);
+                }
+                $response['address'] = 'Updated address in Hindi';
+            } else {
+                $response['address'] = 'address not provided or null';
+            }
+
+            // Society
+            if ($request->society) {
+                $voterAddress->society_hi = $request->society;
+                $response['society'] = 'Updated society hindi';
+            } else {
+                $response['society'] = 'society not provided or null';
+            }
+
+            // Flat No
+            if ($request->flat_no) {
+                $voterAddress->flat_no_hi = $request->flat_no;
+                $response['flat_no'] = 'Updated flat_no hindi';
+            } else {
+                $response['flat_no'] = 'flat_no not provided or null';
+            }
+
+            // Email
+            if ($request->email) {
+                $voter->email = $request->email;
+                $response['email'] = 'Updated email';
+            } else {
+                $response['email'] = 'email not provided or null';
+            }
+
+            // DOB
+            if ($request->dob) {
+                $voter->dob = $request->dob;
+                $response['dob'] = 'Updated dob';
+            } else {
+                $response['dob'] = 'dob not provided or null';
+            }
+
+            // Demands
+            if ($request->demands) {
+                $voter->demands_hi = $request->demands;
+                $response['demands'] = 'Updated demands hindi';
+            } else {
+                $response['demands'] = 'demands not provided or null';
+            }
+
+            // Extra Info 1
+            if ($request->extra_info_1) {
+                $voterInformation->extra_info_1_hi = $request->extra_info_1;
+                $response['extra_info_1'] = 'Updated extra_info_1 in hindi';
+            } else {
+                $response['extra_info_1'] = 'extra_info_1 not provided or null';
+            }
+
+            // Extra Info 2
+            if ($request->extra_info_2) {
+                $voterInformation->extra_info_2_hi = $request->extra_info_2;
+                $response['extra_info_2'] = 'Updated extra_info_2 hindi';
+            } else {
+                $response['extra_info_2'] = 'extra_info_2 not provided or null';
+            }
+
+            // Extra Info 3
+            if ($request->extra_info_3) {
+                $voterInformation->extra_info_3_hi = $request->extra_info_3;
+                $response['extra_info_3'] = 'Updated extra_info_3 in hindi';
+            } else {
+                $response['extra_info_3'] = 'extra_info_3 not provided or null';
+            }
+
+            // Extra Info 4
+            if ($request->extra_info_4) {
+                $voterInformation->extra_info_4_hi = $request->extra_info_4;
+                $response['extra_info_4'] = 'Updated extra_info_4 hindi';
+            } else {
+                $response['extra_info_4'] = 'extra_info_4 not provided or null';
+            }
+
+            // Extra Info 5
+            if ($request->extra_info_5) {
+                $voterInformation->extra_info_5_hi = $request->extra_info_5;
+                $response['extra_info_5'] = 'Updated extra_info_5 hindi';
+            } else {
+                $response['extra_info_5'] = 'extra_info_5 not provided or null';
+            }
+
+            // Extra Check 1
+            if ($request->extra_check_1 !== null) {
+                $voterInformation->extra_check_1 = $request->extra_check_1;
+                $response['extra_check_1'] = $request->extra_check_1;
+            } else {
+                $response['extra_check_1'] = 'extra_check_1 not provided or null';
+            }
+
+            // Extra Check 2
+            if ($request->extra_check_2 !== null) {
+                $voterInformation->extra_check_2 = $request->extra_check_2;
+                $response['extra_check_2'] = $request->extra_check_2;
+            } else {
+                $response['extra_check_2'] = 'extra_check_2 not provided or null';
+            }
+
+            // Dead
+            if ($request->dead !== null) {
+                $voter->dead = $request->dead;
+                $response['dead'] = 'Updated dead status';
+            } else {
+                $response['dead'] = 'dead status not provided or null';
+            }
+
+            // Star Voter
+            if ($request->star_voter !== null) {
+                $voter->star_voter = $request->star_voter;
+                $response['star_voter'] = 'Updated star_voter';
+            } else {
+                $response['star_voter'] = 'star_voter status not provided or null';
+            }
+
+            // Voted
+            if ($request->voted !== null) {
+                $voter->voted = $request->voted;
+                $response['voted'] = 'Updated voted status';
+            } else {
+                $response['voted'] = 'voted status not provided or null';
+            }
+
+              // Repeated
+              if ($request->repeated_voter !== null) {
+
+                $voter->repeated_voter = $request->repeated_voter;
+                $response['repeated_voter'] = $request->repeated_voter;
+            } else {
+                $response['repeated_voter'] = 'repeated voter not provided or null';
+            }
+
+
+            $voter->save();
+            $voterInformation->save();
+            $voterAddress->save();
+
+            return response()->json([
+                'status' => 200,
+                'message' => 'Voter details updated successfully in hindi.',
+                'updates' => $response,
+            ]);
+        }
+
+
+
+    }
+
+    public function casteList(Request $request)
+    {
+
+        $validator = Validator::make($request->all(), [
+            'lang' => 'required|in:en,mr,hi',
+        ]);
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()], 400);
+        }
+        $lang = $request->input('lang');
+        $translator = new GoogleTranslate($lang);
+        $voters = Voters::all();
+        $castesGrouped = $voters->groupBy('cast');
+        $castes = $castesGrouped
+            ->map(function ($casteGroup) use ($translator) {
+                return [
+                    'cast' => $casteGroup->first()->cast ? $translator->translate($casteGroup->first()->cast) : null,
+
+                ];
+            })->values();
+
+        return response()->json([
+            'status' => 200,
+            'message' => 'Caste list retrieved successfully',
+            'castes' => $castes,
+        ], 200);
+    }
+
+    public function advanceSearch(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'lang' => 'required|in:en,mr,hi',
+            'surname' => 'nullable',
+            'first_name' => 'nullable',
+            'middle_name' => 'nullable',
+            'from_age' => 'nullable',
+            'to_age' => 'nullable',
+            'mobile_1' => 'nullable',
+            'part_no' => 'nullable',
+            'voter_id' => 'nullable',
+            'house_no' => 'nullable',
+        ]);
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()], 400);
+        }
+        if($request->lang == 'en'){
+            if ($request->surname) {
+                $voters = Voters::where('surname', $request->surname)->with('voterAddress', 'voterInformation')->get();
+                if ($voters->isEmpty()) {
+                    return response()->json(['error' => 'No voters found'], 404);
+                }
+                $translator = new GoogleTranslate($request->lang); // Set target language
+                $votersMapped = $voters->map(function ($voter) use ($translator) {
+                    return [
+                        'id' => $voter->id,
+                        'first_name' => $voter->first_name ? $translator->translate($voter->first_name) : null,
+                        'middle_name' => $voter->middle_name ? $translator->translate($voter->middle_name) : null,
+                        'surname' => $voter->surname ? $translator->translate($voter->surname) : null,
+                        'email' => $voter->email, // Email is left as is
+                        'gender' => $voter->gender ? $translator->translate($voter->gender) : null,
+                        'age' => $voter->age, // Age is left as is
+                        'dob' => $voter->dob, // Date of birth is left as is
+                        'cast' => $voter->cast ? $translator->translate($voter->cast) : null,
+                        'position' => $voter->position ? $translator->translate($voter->position) : null,
+                        'voter_id' => $voter->voter_id, // Voter ID is left as is
+                        'dead' => $voter->dead, // Dead status left as is
+                        'voted' => $voter->voted, // Voted status left as is
+                        'star_voter' => $voter->star_voter, // Star voter status left as is
+                        'colour_code' => $voter->colour_code ? $translator->translate($voter->colour_code) : null,
+                        'mobile_1' => $voter->mobile_1, // Phone number is left as is
+                        'mobile_2' => $voter->mobile_2, // Phone number is left as is
+                        'image' => $voter->image, // Image URL is left as is
+                        'voter_address' => $voter->voterAddress ? [
+                            'society' => $voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null,
+                            'house_no' => $voter->voterAddress->house_no, // Assuming this doesn't need translation
+                            'flat_no' => $voter->voterAddress->flat_no, // Assuming this doesn't need translation
+                            'booth' => $voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null,
+                            'village' => $voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null,
+                            'part_no' => $voter->voterAddress->part_no, // Assuming this doesn't need translation
+                            'srn' => $voter->voterAddress->srn, // Assuming this doesn't need translation
+                            'voting_centre' => $voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null,
+                        ] : null,
+                        'voter_information' => $voter->voterInformation ? [
+                            // Assuming you have fields in voterInformation to translate as well
+                            'extra_info_1' => $voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null,
+                            'extra_info_2' => $voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null,
+                            'extra_info_3' => $voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null,
+                            'extra_info_4' => $voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null,
+                            'extra_info_5' => $voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null,
+                            'extra_check_1' => $voter->voterInformation->extra_check_1 ?? null,
+                            'extra_check_2' => $voter->voterInformation->extra_check_2 ?? null,
+                            // Add other fields as needed
+                        ] : null,
+                    ];
+                });
+            }
+            if ($request->first_name) {
+                $voters = Voters::where('first_name', $request->first_name)->with('voterAddress', 'voterInformation')->get();
+                if ($voters->isEmpty()) {
+                    return response()->json(['error' => 'No voters found'], 404);
+                }
+                $translator = new GoogleTranslate($request->lang); // Set target language
+                $votersMapped = $voters->map(function ($voter) use ($translator) {
+                    return [
+                        'id' => $voter->id,
+                        'first_name' => $voter->first_name ? $translator->translate($voter->first_name) : null,
+                        'middle_name' => $voter->middle_name ? $translator->translate($voter->middle_name) : null,
+                        'surname' => $voter->surname ? $translator->translate($voter->surname) : null,
+                        'email' => $voter->email, // Email is left as is
+                        'gender' => $voter->gender ? $translator->translate($voter->gender) : null,
+                        'age' => $voter->age, // Age is left as is
+                        'dob' => $voter->dob, // Date of birth is left as is
+                        'cast' => $voter->cast ? $translator->translate($voter->cast) : null,
+                        'position' => $voter->position ? $translator->translate($voter->position) : null,
+                        'voter_id' => $voter->voter_id, // Voter ID is left as is
+                        'dead' => $voter->dead, // Dead status left as is
+                        'voted' => $voter->voted, // Voted status left as is
+                        'star_voter' => $voter->star_voter, // Star voter status left as is
+                        'colour_code' => $voter->colour_code ? $translator->translate($voter->colour_code) : null,
+                        'mobile_1' => $voter->mobile_1, // Phone number is left as is
+                        'mobile_2' => $voter->mobile_2, // Phone number is left as is
+                        'image' => $voter->image, // Image URL is left as is
+                        'voter_address' => $voter->voterAddress ? [
+                            'society' => $voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null,
+                            'house_no' => $voter->voterAddress->house_no, // Assuming this doesn't need translation
+                            'flat_no' => $voter->voterAddress->flat_no, // Assuming this doesn't need translation
+                            'booth' => $voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null,
+                            'village' => $voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null,
+                            'part_no' => $voter->voterAddress->part_no, // Assuming this doesn't need translation
+                            'srn' => $voter->voterAddress->srn, // Assuming this doesn't need translation
+                            'voting_centre' => $voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null,
+                        ] : null,
+                        'voter_information' => $voter->voterInformation ? [
+                            // Assuming you have fields in voterInformation to translate as well
+                            'extra_info_1' => $voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null,
+                            'extra_info_2' => $voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null,
+                            'extra_info_3' => $voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null,
+                            'extra_info_4' => $voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null,
+                            'extra_info_5' => $voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null,
+                            'extra_check_1' => $voter->voterInformation->extra_check_1 ?? null,
+                            'extra_check_2' => $voter->voterInformation->extra_check_2 ?? null,
+                            // Add other fields as needed
+                        ] : null,
+                    ];
+                });
+            }
+            if ($request->middle_name) {
+                $voters = Voters::where('middle_name', $request->middle_name)->with('voterAddress', 'voterInformation')->get();
+                if ($voters->isEmpty()) {
+                    return response()->json(['error' => 'No voters found'], 404);
+                }
+                $translator = new GoogleTranslate($request->lang); // Set target language
+                $votersMapped = $voters->map(function ($voter) use ($translator) {
+                    return [
+                        'id' => $voter->id,
+                        'first_name' => $voter->first_name ? $translator->translate($voter->first_name) : null,
+                        'middle_name' => $voter->middle_name ? $translator->translate($voter->middle_name) : null,
+                        'surname' => $voter->surname ? $translator->translate($voter->surname) : null,
+                        'email' => $voter->email, // Email is left as is
+                        'gender' => $voter->gender ? $translator->translate($voter->gender) : null,
+                        'age' => $voter->age, // Age is left as is
+                        'dob' => $voter->dob, // Date of birth is left as is
+                        'cast' => $voter->cast ? $translator->translate($voter->cast) : null,
+                        'position' => $voter->position ? $translator->translate($voter->position) : null,
+                        'voter_id' => $voter->voter_id, // Voter ID is left as is
+                        'dead' => $voter->dead, // Dead status left as is
+                        'voted' => $voter->voted, // Voted status left as is
+                        'star_voter' => $voter->star_voter, // Star voter status left as is
+                        'colour_code' => $voter->colour_code ? $translator->translate($voter->colour_code) : null,
+                        'mobile_1' => $voter->mobile_1, // Phone number is left as is
+                        'mobile_2' => $voter->mobile_2, // Phone number is left as is
+                        'image' => $voter->image, // Image URL is left as is
+                        'voter_address' => $voter->voterAddress ? [
+                            'society' => $voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null,
+                            'house_no' => $voter->voterAddress->house_no, // Assuming this doesn't need translation
+                            'flat_no' => $voter->voterAddress->flat_no, // Assuming this doesn't need translation
+                            'booth' => $voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null,
+                            'village' => $voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null,
+                            'part_no' => $voter->voterAddress->part_no, // Assuming this doesn't need translation
+                            'srn' => $voter->voterAddress->srn, // Assuming this doesn't need translation
+                            'voting_centre' => $voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null,
+                        ] : null,
+                        'voter_information' => $voter->voterInformation ? [
+                            // Assuming you have fields in voterInformation to translate as well
+                            'extra_info_1' => $voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null,
+                            'extra_info_2' => $voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null,
+                            'extra_info_3' => $voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null,
+                            'extra_info_4' => $voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null,
+                            'extra_info_5' => $voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null,
+                            'extra_check_1' => $voter->voterInformation->extra_check_1 ?? null,
+                            'extra_check_2' => $voter->voterInformation->extra_check_2 ?? null,
+                            // Add other fields as needed
+                        ] : null,
+                    ];
+                });
+            }
+
+            if ($request->to_age) {
+                $voters = Voters::where('age', '<=', $request->to_age)->with('voterAddress', 'voterInformation')->get();
+                if ($voters->isEmpty()) {
+                    return response()->json(['error' => 'No voters found'], 404);
+                }
+                $translator = new GoogleTranslate($request->lang); // Set target language
+                $votersMapped = $voters->map(function ($voter) use ($translator) {
+                    return [
+                        'id' => $voter->id,
+                        'first_name' => $voter->first_name ? $translator->translate($voter->first_name) : null,
+                        'middle_name' => $voter->middle_name ? $translator->translate($voter->middle_name) : null,
+                        'surname' => $voter->surname ? $translator->translate($voter->surname) : null,
+                        'email' => $voter->email, // Email is left as is
+                        'gender' => $voter->gender ? $translator->translate($voter->gender) : null,
+                        'age' => $voter->age, // Age is left as is
+                        'dob' => $voter->dob, // Date of birth is left as is
+                        'cast' => $voter->cast ? $translator->translate($voter->cast) : null,
+                        'position' => $voter->position ? $translator->translate($voter->position) : null,
+                        'voter_id' => $voter->voter_id, // Voter ID is left as is
+                        'dead' => $voter->dead, // Dead status left as is
+                        'voted' => $voter->voted, // Voted status left as is
+                        'star_voter' => $voter->star_voter, // Star voter status left as is
+                        'colour_code' => $voter->colour_code ? $translator->translate($voter->colour_code) : null,
+                        'mobile_1' => $voter->mobile_1, // Phone number is left as is
+                        'mobile_2' => $voter->mobile_2, // Phone number is left as is
+                        'image' => $voter->image, // Image URL is left as is
+                        'voter_address' => $voter->voterAddress ? [
+                            'society' => $voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null,
+                            'house_no' => $voter->voterAddress->house_no, // Assuming this doesn't need translation
+                            'flat_no' => $voter->voterAddress->flat_no, // Assuming this doesn't need translation
+                            'booth' => $voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null,
+                            'village' => $voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null,
+                            'part_no' => $voter->voterAddress->part_no, // Assuming this doesn't need translation
+                            'srn' => $voter->voterAddress->srn, // Assuming this doesn't need translation
+                            'voting_centre' => $voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null,
+                        ] : null,
+                        'voter_information' => $voter->voterInformation ? [
+                            // Assuming you have fields in voterInformation to translate as well
+                            'extra_info_1' => $voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null,
+                            'extra_info_2' => $voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null,
+                            'extra_info_3' => $voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null,
+                            'extra_info_4' => $voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null,
+                            'extra_info_5' => $voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null,
+                            'extra_check_1' => $voter->voterInformation->extra_check_1 ?? null,
+                            'extra_check_2' => $voter->voterInformation->extra_check_2 ?? null,
+                            // Add other fields as needed
+                        ] : null,
+                    ];
+                });
+            }
+
+            if ($request->from_age) {
+                $voters = Voters::where('age', '>=', $request->from_age)->with('voterAddress', 'voterInformation')->get();
+                if ($voters->isEmpty()) {
+                    return response()->json(['error' => 'No voters found'], 404);
+                }
+                $translator = new GoogleTranslate($request->lang); // Set target language
+                $votersMapped = $voters->map(function ($voter) use ($translator) {
+                    return [
+                        'id' => $voter->id,
+                        'first_name' => $voter->first_name ? $translator->translate($voter->first_name) : null,
+                        'middle_name' => $voter->middle_name ? $translator->translate($voter->middle_name) : null,
+                        'surname' => $voter->surname ? $translator->translate($voter->surname) : null,
+                        'email' => $voter->email, // Email is left as is
+                        'gender' => $voter->gender ? $translator->translate($voter->gender) : null,
+                        'age' => $voter->age, // Age is left as is
+                        'dob' => $voter->dob, // Date of birth is left as is
+                        'cast' => $voter->cast ? $translator->translate($voter->cast) : null,
+                        'position' => $voter->position ? $translator->translate($voter->position) : null,
+                        'voter_id' => $voter->voter_id, // Voter ID is left as is
+                        'dead' => $voter->dead, // Dead status left as is
+                        'voted' => $voter->voted, // Voted status left as is
+                        'star_voter' => $voter->star_voter, // Star voter status left as is
+                        'colour_code' => $voter->colour_code ? $translator->translate($voter->colour_code) : null,
+                        'mobile_1' => $voter->mobile_1, // Phone number is left as is
+                        'mobile_2' => $voter->mobile_2, // Phone number is left as is
+                        'image' => $voter->image, // Image URL is left as is
+                        'voter_address' => $voter->voterAddress ? [
+                            'society' => $voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null,
+                            'house_no' => $voter->voterAddress->house_no, // Assuming this doesn't need translation
+                            'flat_no' => $voter->voterAddress->flat_no, // Assuming this doesn't need translation
+                            'booth' => $voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null,
+                            'village' => $voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null,
+                            'part_no' => $voter->voterAddress->part_no, // Assuming this doesn't need translation
+                            'srn' => $voter->voterAddress->srn, // Assuming this doesn't need translation
+                            'voting_centre' => $voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null,
+                        ] : null,
+                        'voter_information' => $voter->voterInformation ? [
+                            // Assuming you have fields in voterInformation to translate as well
+                            'extra_info_1' => $voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null,
+                            'extra_info_2' => $voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null,
+                            'extra_info_3' => $voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null,
+                            'extra_info_4' => $voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null,
+                            'extra_info_5' => $voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null,
+                            'extra_check_1' => $voter->voterInformation->extra_check_1 ?? null,
+                            'extra_check_2' => $voter->voterInformation->extra_check_2 ?? null,
+                            // Add other fields as needed
+                        ] : null,
+                    ];
+                });
+            }
+
+            if ($request->mobile_1) {
+                $voters = Voters::where('mobile_1', $request->mobile_1)->with('voterAddress', 'voterInformation')->get();
+                if ($voters->isEmpty()) {
+                    return response()->json(['error' => 'No voters found'], 404);
+                }
+                $translator = new GoogleTranslate($request->lang); // Set target language
+                $votersMapped = $voters->map(function ($voter) use ($translator) {
+                    return [
+                        'id' => $voter->id,
+                        'first_name' => $voter->first_name ? $translator->translate($voter->first_name) : null,
+                        'middle_name' => $voter->middle_name ? $translator->translate($voter->middle_name) : null,
+                        'surname' => $voter->surname ? $translator->translate($voter->surname) : null,
+                        'email' => $voter->email, // Email is left as is
+                        'gender' => $voter->gender ? $translator->translate($voter->gender) : null,
+                        'age' => $voter->age, // Age is left as is
+                        'dob' => $voter->dob, // Date of birth is left as is
+                        'cast' => $voter->cast ? $translator->translate($voter->cast) : null,
+                        'position' => $voter->position ? $translator->translate($voter->position) : null,
+                        'voter_id' => $voter->voter_id, // Voter ID is left as is
+                        'dead' => $voter->dead, // Dead status left as is
+                        'voted' => $voter->voted, // Voted status left as is
+                        'star_voter' => $voter->star_voter, // Star voter status left as is
+                        'colour_code' => $voter->colour_code ? $translator->translate($voter->colour_code) : null,
+                        'mobile_1' => $voter->mobile_1, // Phone number is left as is
+                        'mobile_2' => $voter->mobile_2, // Phone number is left as is
+                        'image' => $voter->image, // Image URL is left as is
+                        'voter_address' => $voter->voterAddress ? [
+                            'society' => $voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null,
+                            'house_no' => $voter->voterAddress->house_no, // Assuming this doesn't need translation
+                            'flat_no' => $voter->voterAddress->flat_no, // Assuming this doesn't need translation
+                            'booth' => $voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null,
+                            'village' => $voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null,
+                            'part_no' => $voter->voterAddress->part_no, // Assuming this doesn't need translation
+                            'srn' => $voter->voterAddress->srn, // Assuming this doesn't need translation
+                            'voting_centre' => $voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null,
+                        ] : null,
+                        'voter_information' => $voter->voterInformation ? [
+                            // Assuming you have fields in voterInformation to translate as well
+                            'extra_info_1' => $voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null,
+                            'extra_info_2' => $voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null,
+                            'extra_info_3' => $voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null,
+                            'extra_info_4' => $voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null,
+                            'extra_info_5' => $voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null,
+                            'extra_check_1' => $voter->voterInformation->extra_check_1 ?? null,
+                            'extra_check_2' => $voter->voterInformation->extra_check_2 ?? null,
+                            // Add other fields as needed
+                        ] : null,
+                    ];
+                });
+            }
+            if ($request->part_no) {
+                $voters = UserAddress::where('part_no', $request->part_no)->with('voter', 'voterInformation')->get();
+                // dd($voters);
+                if ($voters->isEmpty()) {
+                    return response()->json(['error' => 'No voters found'], 404);
+                }
+                $translator = new GoogleTranslate($request->lang); // Set target language
+                $votersMapped = $voters->map(function ($voter) use ($translator) {
+                    return [
+                        'id' => $voter->id,
+                        'first_name' => $voter->voter->first_name ? $translator->translate($voter->voter->first_name) : null,
+                        'middle_name' => $voter->voter->middle_name ? $translator->translate($voter->voter->middle_name) : null,
+                        'surname' => $voter->voter->surname ? $translator->translate($voter->voter->surname) : null,
+                        'email' => $voter->voter->email, // Email is left as is
+                        'gender' => $voter->voter->gender ? $translator->translate($voter->voter->gender) : null,
+                        'age' => $voter->voter->age, // Age is left as is
+                        'dob' => $voter->voter->dob, // Date of birth is left as is
+                        'cast' => $voter->voter->cast ? $translator->translate($voter->voter->cast) : null,
+                        'position' => $voter->voter->position ? $translator->translate($voter->voter->position) : null,
+                        'voter_id' => $voter->voter->voter_id, // Voter ID is left as is
+                        'dead' => $voter->voter->dead, // Dead status left as is
+                        'voted' => $voter->voter->voted, // Voted status left as is
+                        'star_voter' => $voter->voter->star_voter, // Star voter status left as is
+                        'colour_code' => $voter->voter->colour_code ? $translator->translate($voter->voter->colour_code) : null,
+                        'mobile_1' => $voter->voter->mobile_1, // Phone number is left as is
+                        'mobile_2' => $voter->voter->mobile_2, // Phone number is left as is
+                        'image' => $voter->voter->image, // Image URL is left as is
+                        'voter_address' => $voter ? [
+                            'society' => $voter->society ? $translator->translate($voter->society) : null,
+                            'house_no' => $voter->house_no, // Assuming this doesn't need translation
+                            'flat_no' => $voter->flat_no, // Assuming this doesn't need translation
+                            'booth' => $voter->booth ? $translator->translate($voter->booth) : null,
+                            'village' => $voter->village ? $translator->translate($voter->village) : null,
+                            'part_no' => $voter->part_no, // Assuming this doesn't need translation
+                            'srn' => $voter->srn, // Assuming this doesn't need translation
+                            'voting_centre' => $voter->voting_centre ? $translator->translate($voter->voting_centre) : null,
+                        ] : null,
+                        'voter_information' => $voter->voterInformation ? [
+                            // Assuming you have fields in voterInformation to translate as well
+                            'extra_info_1' => $voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null,
+                            'extra_info_2' => $voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null,
+                            'extra_info_3' => $voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null,
+                            'extra_info_4' => $voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null,
+                            'extra_info_5' => $voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null,
+                            'extra_check_1' => $voter->voterInformation->extra_check_1 ?? null,
+                            'extra_check_2' => $voter->voterInformation->extra_check_2 ?? null,
+                            // Add other fields as needed
+                        ] : null,
+                    ];
+                });
+            }
+            if ($request->voter_id) {
+                $voters = Voters::where('voter_id', $request->voter_id)->with('voterAddress', 'voterInformation')->get();
+                if ($voters->isEmpty()) {
+                    return response()->json(['error' => 'No voters found'], 404);
+                }
+                $translator = new GoogleTranslate($request->lang); // Set target language
+                $votersMapped = $voters->map(function ($voter) use ($translator) {
+                    return [
+                        'id' => $voter->id,
+                        'first_name' => $voter->first_name ? $translator->translate($voter->first_name) : null,
+                        'middle_name' => $voter->middle_name ? $translator->translate($voter->middle_name) : null,
+                        'surname' => $voter->surname ? $translator->translate($voter->surname) : null,
+                        'email' => $voter->email, // Email is left as is
+                        'gender' => $voter->gender ? $translator->translate($voter->gender) : null,
+                        'age' => $voter->age, // Age is left as is
+                        'dob' => $voter->dob, // Date of birth is left as is
+                        'cast' => $voter->cast ? $translator->translate($voter->cast) : null,
+                        'position' => $voter->position ? $translator->translate($voter->position) : null,
+                        'voter_id' => $voter->voter_id, // Voter ID is left as is
+                        'dead' => $voter->dead, // Dead status left as is
+                        'voted' => $voter->voted, // Voted status left as is
+                        'star_voter' => $voter->star_voter, // Star voter status left as is
+                        'colour_code' => $voter->colour_code ? $translator->translate($voter->colour_code) : null,
+                        'mobile_1' => $voter->mobile_1, // Phone number is left as is
+                        'mobile_2' => $voter->mobile_2, // Phone number is left as is
+                        'image' => $voter->image, // Image URL is left as is
+                        'voter_address' => $voter->voterAddress ? [
+                            'society' => $voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null,
+                            'house_no' => $voter->voterAddress->house_no, // Assuming this doesn't need translation
+                            'flat_no' => $voter->voterAddress->flat_no, // Assuming this doesn't need translation
+                            'booth' => $voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null,
+                            'village' => $voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null,
+                            'part_no' => $voter->voterAddress->part_no, // Assuming this doesn't need translation
+                            'srn' => $voter->voterAddress->srn, // Assuming this doesn't need translation
+                            'voting_centre' => $voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null,
+                        ] : null,
+                        'voter_information' => $voter->voterInformation ? [
+                            // Assuming you have fields in voterInformation to translate as well
+                            'extra_info_1' => $voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null,
+                            'extra_info_2' => $voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null,
+                            'extra_info_3' => $voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null,
+                            'extra_info_4' => $voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null,
+                            'extra_info_5' => $voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null,
+                            'extra_check_1' => $voter->voterInformation->extra_check_1 ?? null,
+                            'extra_check_2' => $voter->voterInformation->extra_check_2 ?? null,
+                            // Add other fields as needed
+                        ] : null,
+                    ];
+                });
+            }
+            if ($request->house_no) {
+                $voters = UserAddress::where('house_no', $request->house_no)->with('voter', 'voterInformation')->get();
+                // dd($voters);
+                if ($voters->isEmpty()) {
+                    return response()->json(['error' => 'No voters found'], 404);
+                }
+                $translator = new GoogleTranslate($request->lang); // Set target language
+                $votersMapped = $voters->map(function ($voter) use ($translator) {
+                    return [
+                        'id' => $voter->id,
+                        'first_name' => $voter->voter->first_name ? $translator->translate($voter->voter->first_name) : null,
+                        'middle_name' => $voter->voter->middle_name ? $translator->translate($voter->voter->middle_name) : null,
+                        'surname' => $voter->voter->surname ? $translator->translate($voter->voter->surname) : null,
+                        'email' => $voter->voter->email, // Email is left as is
+                        'gender' => $voter->voter->gender ? $translator->translate($voter->voter->gender) : null,
+                        'age' => $voter->voter->age, // Age is left as is
+                        'dob' => $voter->voter->dob, // Date of birth is left as is
+                        'cast' => $voter->voter->cast ? $translator->translate($voter->voter->cast) : null,
+                        'position' => $voter->voter->position ? $translator->translate($voter->voter->position) : null,
+                        'voter_id' => $voter->voter->voter_id, // Voter ID is left as is
+                        'dead' => $voter->voter->dead, // Dead status left as is
+                        'voted' => $voter->voter->voted, // Voted status left as is
+                        'star_voter' => $voter->voter->star_voter, // Star voter status left as is
+                        'colour_code' => $voter->voter->colour_code ? $translator->translate($voter->voter->colour_code) : null,
+                        'mobile_1' => $voter->voter->mobile_1, // Phone number is left as is
+                        'mobile_2' => $voter->voter->mobile_2, // Phone number is left as is
+                        'image' => $voter->voter->image, // Image URL is left as is
+                        'voter_address' => $voter ? [
+                            'society' => $voter->society ? $translator->translate($voter->society) : null,
+                            'house_no' => $voter->house_no, // Assuming this doesn't need translation
+                            'flat_no' => $voter->flat_no, // Assuming this doesn't need translation
+                            'booth' => $voter->booth ? $translator->translate($voter->booth) : null,
+                            'village' => $voter->village ? $translator->translate($voter->village) : null,
+                            'part_no' => $voter->part_no, // Assuming this doesn't need translation
+                            'srn' => $voter->srn, // Assuming this doesn't need translation
+                            'voting_centre' => $voter->voting_centre ? $translator->translate($voter->voting_centre) : null,
+                        ] : null,
+                        'voter_information' => $voter->voterInformation ? [
+                            // Assuming you have fields in voterInformation to translate as well
+                            'extra_info_1' => $voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null,
+                            'extra_info_2' => $voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null,
+                            'extra_info_3' => $voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null,
+                            'extra_info_4' => $voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null,
+                            'extra_info_5' => $voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null,
+                            'extra_check_1' => $voter->voterInformation->extra_check_1 ?? null,
+                            'extra_check_2' => $voter->voterInformation->extra_check_2 ?? null,
+                            // Add other fields as needed
+                        ] : null,
+                    ];
+                });
+            }
+            $data['status'] = 200;
+            $data['message'] = 'Voter search results retrieved successfully';
+            $data['voters'] = $votersMapped;
+            $data['total'] = $voters->count();
+            return response()->json($data, 200);
+        }
+
+        if($request->lang == 'mr'){
+            if ($request->surname) {
+                $voters = Voters::where('surname_mr', $request->surname)
+                    ->with('voterAddress', 'voterInformation')
+                    ->get();
+
+                if ($voters->isEmpty()) {
+                    return response()->json(['error' => 'No voters found'], 404);
+                }
+
+                $translator = new GoogleTranslate($request->lang); // Set target language
+                $votersMapped = $voters->map(function ($voter) use ($translator) {
+                    return [
+                        'id' => $voter->id,
+                        'first_name' => $voter->first_name_mr ?? ($voter->first_name ?? null),
+                        'middle_name' => $voter->middle_name_mr ?? ($voter->middle_name ? $translator->translate($voter->middle_name) : null),
+                        'surname' => $voter->surname_mr ?? ($voter->surname ? $translator->translate($voter->surname) : null),
+                        'email' => $voter->email ?? null,
+                        'gender' => $voter->gender_mr ?? ($voter->gender ? $translator->translate($voter->gender) : null),
+                        'age' => $voter->age ?? null,
+                        'dob' => $voter->dob ?? null,
+                        'cast' => $voter->cast_mr ?? ($voter->cast ? $translator->translate($voter->cast) : null),
+                        'position' => $voter->position_mr ?? ($voter->position ? $translator->translate($voter->position) : null),
+                        'voter_id' => $voter->voter_id ?? null,
+                        'dead' => $voter->dead ?? null,
+                        'voted' => $voter->voted ?? null,
+                        'personnel' => $voter->personnel ?? null,
+                        'star_voter' => $voter->star_voter ?? null,
+                        'colour_code' => $voter->colour_code_mr ?? ($voter->colour_code ? $translator->translate($voter->colour_code) : null),
+                        'mobile_1' => $voter->mobile_1 ?? null,
+                        'mobile_2' => $voter->mobile_2 ?? null,
+                        'image' => $voter->image ?? null,
+                        'voter_address' => $voter->voterAddress ? [
+                            'society' => $voter->voterAddress->society_mr ?? ($voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null),
+                            'house_no' => $voter->voterAddress->house_no ?? null,
+                            'flat_no' => $voter->voterAddress->flat_no ?? null,
+                            'booth' => $voter->voterAddress->booth_mr ?? ($voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null),
+                            'village' => $voter->voterAddress->village_mr ?? ($voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null),
+                            'part_no' => $voter->voterAddress->part_no ?? null,
+                            'srn' => $voter->voterAddress->srn ?? null,
+                            'voting_centre' => $voter->voterAddress->voting_centre_mr ?? ($voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null),
+                        ] : null,
+                        'voter_information' => $voter->voterInformation ? [
+                            'extra_info_1' => $voter->voterInformation->extra_info_1_mr ?? ($voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null),
+                            'extra_info_2' => $voter->voterInformation->extra_info_2_mr ?? ($voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null),
+                            'extra_info_3' => $voter->voterInformation->extra_info_3_mr ?? ($voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null),
+                            'extra_info_4' => $voter->voterInformation->extra_info_4_mr ?? ($voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null),
+                            'extra_info_5' => $voter->voterInformation->extra_info_5_mr ?? ($voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null),
+                            'extra_check_1' => $voter->voterInformation->extra_check_1 ?? null,
+                            'extra_check_2' => $voter->voterInformation->extra_check_2 ?? null,
+                        ] : null,
+                    ];
+                });
+            }
+
+
+            if ($request->first_name) {
+                $voters = Voters::where('first_name_mr', $request->first_name)->with('voterAddress', 'voterInformation')->get();
+                if ($voters->isEmpty()) {
+                    return response()->json(['error' => 'No voters found'], 404);
+                }
+                $translator = new GoogleTranslate($request->lang); // Set target language
+                $votersMapped = $voters->map(function ($voter) use ($translator) {
+                    return [
+                        'id' => $voter->id,
+                        'first_name' => $voter->first_name_mr ?? ($voter->first_name ?? null),
+                        'middle_name' => $voter->middle_name_mr ?? ($voter->middle_name ? $translator->translate($voter->middle_name) : null),
+                        'surname' => $voter->surname_mr ?? ($voter->surname ? $translator->translate($voter->surname) : null),
+                        'email' => $voter->email ?? null,
+                        'gender' => $voter->gender_mr ?? ($voter->gender ? $translator->translate($voter->gender) : null),
+                        'age' => $voter->age ?? null,
+                        'dob' => $voter->dob ?? null,
+                        'cast' => $voter->cast_mr ?? ($voter->cast ? $translator->translate($voter->cast) : null),
+                        'position' => $voter->position_mr ?? ($voter->position ? $translator->translate($voter->position) : null),
+                        'voter_id' => $voter->voter_id ?? null,
+                        'dead' => $voter->dead ?? null,
+                        'voted' => $voter->voted ?? null,
+                        'personnel' => $voter->personnel ?? null,
+                        'star_voter' => $voter->star_voter ?? null,
+                        'colour_code' => $voter->colour_code_mr ?? ($voter->colour_code ? $translator->translate($voter->colour_code) : null),
+                        'mobile_1' => $voter->mobile_1 ?? null,
+                        'mobile_2' => $voter->mobile_2 ?? null,
+                        'image' => $voter->image ?? null,
+                        'voter_address' => $voter->voterAddress ? [
+                            'society' => $voter->voterAddress->society_mr ?? ($voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null),
+                            'house_no' => $voter->voterAddress->house_no ?? null,
+                            'flat_no' => $voter->voterAddress->flat_no ?? null,
+                            'booth' => $voter->voterAddress->booth_mr ?? ($voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null),
+                            'village' => $voter->voterAddress->village_mr ?? ($voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null),
+                            'part_no' => $voter->voterAddress->part_no ?? null,
+                            'srn' => $voter->voterAddress->srn ?? null,
+                            'voting_centre' => $voter->voterAddress->voting_centre_mr ?? ($voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null),
+                        ] : null,
+                        'voter_information' => $voter->voterInformation ? [
+                            'extra_info_1' => $voter->voterInformation->extra_info_1_mr ?? ($voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null),
+                            'extra_info_2' => $voter->voterInformation->extra_info_2_mr ?? ($voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null),
+                            'extra_info_3' => $voter->voterInformation->extra_info_3_mr ?? ($voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null),
+                            'extra_info_4' => $voter->voterInformation->extra_info_4_mr ?? ($voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null),
+                            'extra_info_5' => $voter->voterInformation->extra_info_5_mr ?? ($voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null),
+                            'extra_check_1' => $voter->voterInformation->extra_check_1 ?? null,
+                            'extra_check_2' => $voter->voterInformation->extra_check_2 ?? null,
+                        ] : null,
+                    ];
+                });
+            }
+
+            if ($request->middle_name) {
+                $voters = Voters::where('middle_name_mr', $request->middle_name)->with('voterAddress', 'voterInformation')->get();
+                if ($voters->isEmpty()) {
+                    return response()->json(['error' => 'No voters found'], 404);
+                }
+                $translator = new GoogleTranslate($request->lang); // Set target language
+                $votersMapped = $voters->map(function ($voter) use ($translator) {
+                    return [
+                        'id' => $voter->id,
+                        'first_name' => $voter->first_name_mr ?? ($voter->first_name ?? null),
+                        'middle_name' => $voter->middle_name_mr ?? ($voter->middle_name ? $translator->translate($voter->middle_name) : null),
+                        'surname' => $voter->surname_mr ?? ($voter->surname ? $translator->translate($voter->surname) : null),
+                        'email' => $voter->email ?? null,
+                        'gender' => $voter->gender_mr ?? ($voter->gender ? $translator->translate($voter->gender) : null),
+                        'age' => $voter->age ?? null,
+                        'dob' => $voter->dob ?? null,
+                        'cast' => $voter->cast_mr ?? ($voter->cast ? $translator->translate($voter->cast) : null),
+                        'position' => $voter->position_mr ?? ($voter->position ? $translator->translate($voter->position) : null),
+                        'voter_id' => $voter->voter_id ?? null,
+                        'dead' => $voter->dead ?? null,
+                        'voted' => $voter->voted ?? null,
+                        'personnel' => $voter->personnel ?? null,
+                        'star_voter' => $voter->star_voter ?? null,
+                        'colour_code' => $voter->colour_code_mr ?? ($voter->colour_code ? $translator->translate($voter->colour_code) : null),
+                        'mobile_1' => $voter->mobile_1 ?? null,
+                        'mobile_2' => $voter->mobile_2 ?? null,
+                        'image' => $voter->image ?? null,
+                        'voter_address' => $voter->voterAddress ? [
+                            'society' => $voter->voterAddress->society_mr ?? ($voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null),
+                            'house_no' => $voter->voterAddress->house_no ?? null,
+                            'flat_no' => $voter->voterAddress->flat_no ?? null,
+                            'booth' => $voter->voterAddress->booth_mr ?? ($voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null),
+                            'village' => $voter->voterAddress->village_mr ?? ($voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null),
+                            'part_no' => $voter->voterAddress->part_no ?? null,
+                            'srn' => $voter->voterAddress->srn ?? null,
+                            'voting_centre' => $voter->voterAddress->voting_centre_mr ?? ($voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null),
+                        ] : null,
+                        'voter_information' => $voter->voterInformation ? [
+                            'extra_info_1' => $voter->voterInformation->extra_info_1_mr ?? ($voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null),
+                            'extra_info_2' => $voter->voterInformation->extra_info_2_mr ?? ($voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null),
+                            'extra_info_3' => $voter->voterInformation->extra_info_3_mr ?? ($voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null),
+                            'extra_info_4' => $voter->voterInformation->extra_info_4_mr ?? ($voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null),
+                            'extra_info_5' => $voter->voterInformation->extra_info_5_mr ?? ($voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null),
+                            'extra_check_1' => $voter->voterInformation->extra_check_1 ?? null,
+                            'extra_check_2' => $voter->voterInformation->extra_check_2 ?? null,
+                        ] : null,
+                    ];
+                });
+            }
+
+            if ($request->to_age) {
+                $voters = Voters::where('age', '<=', $request->to_age)->with('voterAddress', 'voterInformation')->get();
+                if ($voters->isEmpty()) {
+                    return response()->json(['error' => 'No voters found'], 404);
+                }
+                $translator = new GoogleTranslate($request->lang); // Set target language
+                $votersMapped = $voters->map(function ($voter) use ($translator) {
+                    return [
+                        'id' => $voter->id,
+                        'first_name' => $voter->first_name_mr ?? ($voter->first_name ?? null),
+                        'middle_name' => $voter->middle_name_mr ?? ($voter->middle_name ? $translator->translate($voter->middle_name) : null),
+                        'surname' => $voter->surname_mr ?? ($voter->surname ? $translator->translate($voter->surname) : null),
+                        'email' => $voter->email ?? null,
+                        'gender' => $voter->gender_mr ?? ($voter->gender ? $translator->translate($voter->gender) : null),
+                        'age' => $voter->age ?? null,
+                        'dob' => $voter->dob ?? null,
+                        'cast' => $voter->cast_mr ?? ($voter->cast ? $translator->translate($voter->cast) : null),
+                        'position' => $voter->position_mr ?? ($voter->position ? $translator->translate($voter->position) : null),
+                        'voter_id' => $voter->voter_id ?? null,
+                        'dead' => $voter->dead ?? null,
+                        'voted' => $voter->voted ?? null,
+                        'personnel' => $voter->personnel ?? null,
+                        'star_voter' => $voter->star_voter ?? null,
+                        'colour_code' => $voter->colour_code_mr ?? ($voter->colour_code ? $translator->translate($voter->colour_code) : null),
+                        'mobile_1' => $voter->mobile_1 ?? null,
+                        'mobile_2' => $voter->mobile_2 ?? null,
+                        'image' => $voter->image ?? null,
+                        'voter_address' => $voter->voterAddress ? [
+                            'society' => $voter->voterAddress->society_mr ?? ($voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null),
+                            'house_no' => $voter->voterAddress->house_no ?? null,
+                            'flat_no' => $voter->voterAddress->flat_no ?? null,
+                            'booth' => $voter->voterAddress->booth_mr ?? ($voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null),
+                            'village' => $voter->voterAddress->village_mr ?? ($voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null),
+                            'part_no' => $voter->voterAddress->part_no ?? null,
+                            'srn' => $voter->voterAddress->srn ?? null,
+                            'voting_centre' => $voter->voterAddress->voting_centre_mr ?? ($voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null),
+                        ] : null,
+                        'voter_information' => $voter->voterInformation ? [
+                            'extra_info_1' => $voter->voterInformation->extra_info_1_mr ?? ($voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null),
+                            'extra_info_2' => $voter->voterInformation->extra_info_2_mr ?? ($voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null),
+                            'extra_info_3' => $voter->voterInformation->extra_info_3_mr ?? ($voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null),
+                            'extra_info_4' => $voter->voterInformation->extra_info_4_mr ?? ($voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null),
+                            'extra_info_5' => $voter->voterInformation->extra_info_5_mr ?? ($voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null),
+                            'extra_check_1' => $voter->voterInformation->extra_check_1 ?? null,
+                            'extra_check_2' => $voter->voterInformation->extra_check_2 ?? null,
+                        ] : null,
+                    ];
+                });
+            }
+
+            if ($request->from_age) {
+                $voters = Voters::where('age', '>=', $request->from_age)->with('voterAddress', 'voterInformation')->get();
+                if ($voters->isEmpty()) {
+                    return response()->json(['error' => 'No voters found'], 404);
+                }
+                $translator = new GoogleTranslate($request->lang); // Set target language
+                $votersMapped = $voters->map(function ($voter) use ($translator) {
+                    return [
+                        'id' => $voter->id,
+                        'first_name' => $voter->first_name_mr ?? ($voter->first_name ?? null),
+                        'middle_name' => $voter->middle_name_mr ?? ($voter->middle_name ? $translator->translate($voter->middle_name) : null),
+                        'surname' => $voter->surname_mr ?? ($voter->surname ? $translator->translate($voter->surname) : null),
+                        'email' => $voter->email ?? null,
+                        'gender' => $voter->gender_mr ?? ($voter->gender ? $translator->translate($voter->gender) : null),
+                        'age' => $voter->age ?? null,
+                        'dob' => $voter->dob ?? null,
+                        'cast' => $voter->cast_mr ?? ($voter->cast ? $translator->translate($voter->cast) : null),
+                        'position' => $voter->position_mr ?? ($voter->position ? $translator->translate($voter->position) : null),
+                        'voter_id' => $voter->voter_id ?? null,
+                        'dead' => $voter->dead ?? null,
+                        'voted' => $voter->voted ?? null,
+                        'personnel' => $voter->personnel ?? null,
+                        'star_voter' => $voter->star_voter ?? null,
+                        'colour_code' => $voter->colour_code_mr ?? ($voter->colour_code ? $translator->translate($voter->colour_code) : null),
+                        'mobile_1' => $voter->mobile_1 ?? null,
+                        'mobile_2' => $voter->mobile_2 ?? null,
+                        'image' => $voter->image ?? null,
+                        'voter_address' => $voter->voterAddress ? [
+                            'society' => $voter->voterAddress->society_mr ?? ($voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null),
+                            'house_no' => $voter->voterAddress->house_no ?? null,
+                            'flat_no' => $voter->voterAddress->flat_no ?? null,
+                            'booth' => $voter->voterAddress->booth_mr ?? ($voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null),
+                            'village' => $voter->voterAddress->village_mr ?? ($voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null),
+                            'part_no' => $voter->voterAddress->part_no ?? null,
+                            'srn' => $voter->voterAddress->srn ?? null,
+                            'voting_centre' => $voter->voterAddress->voting_centre_mr ?? ($voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null),
+                        ] : null,
+                        'voter_information' => $voter->voterInformation ? [
+                            'extra_info_1' => $voter->voterInformation->extra_info_1_mr ?? ($voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null),
+                            'extra_info_2' => $voter->voterInformation->extra_info_2_mr ?? ($voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null),
+                            'extra_info_3' => $voter->voterInformation->extra_info_3_mr ?? ($voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null),
+                            'extra_info_4' => $voter->voterInformation->extra_info_4_mr ?? ($voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null),
+                            'extra_info_5' => $voter->voterInformation->extra_info_5_mr ?? ($voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null),
+                            'extra_check_1' => $voter->voterInformation->extra_check_1 ?? null,
+                            'extra_check_2' => $voter->voterInformation->extra_check_2 ?? null,
+                        ] : null,
+                    ];
+                });
+            }
+
+            if ($request->mobile_1) {
+                $voters = Voters::where('mobile_1', $request->mobile_1)->with('voterAddress', 'voterInformation')->get();
+                if ($voters->isEmpty()) {
+                    return response()->json(['error' => 'No voters found'], 404);
+                }
+                $translator = new GoogleTranslate($request->lang); // Set target language
+                $votersMapped = $voters->map(function ($voter) use ($translator) {
+                    return [
+                        'id' => $voter->id,
+                        'first_name' => $voter->first_name_mr ?? ($voter->first_name ?? null),
+                        'middle_name' => $voter->middle_name_mr ?? ($voter->middle_name ? $translator->translate($voter->middle_name) : null),
+                        'surname' => $voter->surname_mr ?? ($voter->surname ? $translator->translate($voter->surname) : null),
+                        'email' => $voter->email ?? null,
+                        'gender' => $voter->gender_mr ?? ($voter->gender ? $translator->translate($voter->gender) : null),
+                        'age' => $voter->age ?? null,
+                        'dob' => $voter->dob ?? null,
+                        'cast' => $voter->cast_mr ?? ($voter->cast ? $translator->translate($voter->cast) : null),
+                        'position' => $voter->position_mr ?? ($voter->position ? $translator->translate($voter->position) : null),
+                        'voter_id' => $voter->voter_id ?? null,
+                        'dead' => $voter->dead ?? null,
+                        'voted' => $voter->voted ?? null,
+                        'personnel' => $voter->personnel ?? null,
+                        'star_voter' => $voter->star_voter ?? null,
+                        'colour_code' => $voter->colour_code_mr ?? ($voter->colour_code ? $translator->translate($voter->colour_code) : null),
+                        'mobile_1' => $voter->mobile_1 ?? null,
+                        'mobile_2' => $voter->mobile_2 ?? null,
+                        'image' => $voter->image ?? null,
+                        'voter_address' => $voter->voterAddress ? [
+                            'society' => $voter->voterAddress->society_mr ?? ($voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null),
+                            'house_no' => $voter->voterAddress->house_no ?? null,
+                            'flat_no' => $voter->voterAddress->flat_no ?? null,
+                            'booth' => $voter->voterAddress->booth_mr ?? ($voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null),
+                            'village' => $voter->voterAddress->village_mr ?? ($voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null),
+                            'part_no' => $voter->voterAddress->part_no ?? null,
+                            'srn' => $voter->voterAddress->srn ?? null,
+                            'voting_centre' => $voter->voterAddress->voting_centre_mr ?? ($voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null),
+                        ] : null,
+                        'voter_information' => $voter->voterInformation ? [
+                            'extra_info_1' => $voter->voterInformation->extra_info_1_mr ?? ($voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null),
+                            'extra_info_2' => $voter->voterInformation->extra_info_2_mr ?? ($voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null),
+                            'extra_info_3' => $voter->voterInformation->extra_info_3_mr ?? ($voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null),
+                            'extra_info_4' => $voter->voterInformation->extra_info_4_mr ?? ($voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null),
+                            'extra_info_5' => $voter->voterInformation->extra_info_5_mr ?? ($voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null),
+                            'extra_check_1' => $voter->voterInformation->extra_check_1 ?? null,
+                            'extra_check_2' => $voter->voterInformation->extra_check_2 ?? null,
+                        ] : null,
+                    ];
+                });
+            }
+            if ($request->part_no) {
+                $voters = UserAddress::where('part_no_mr', $request->part_no)->with('voter', 'voterInformation')->get();
+                // dd($voters);
+                if ($voters->isEmpty()) {
+                    return response()->json(['error' => 'No voters found'], 404);
+                }
+                $translator = new GoogleTranslate($request->lang); // Set target language
+                $votersMapped = $voters->map(function ($voter) use ($translator) {
+                    return [
+                        'id' => $voter->id,
+                        'first_name' => $voter->first_name_mr ?? ($voter->first_name ?? null),
+                        'middle_name' => $voter->middle_name_mr ?? ($voter->middle_name ? $translator->translate($voter->middle_name) : null),
+                        'surname' => $voter->surname_mr ?? ($voter->surname ? $translator->translate($voter->surname) : null),
+                        'email' => $voter->email ?? null,
+                        'gender' => $voter->gender_mr ?? ($voter->gender ? $translator->translate($voter->gender) : null),
+                        'age' => $voter->age ?? null,
+                        'dob' => $voter->dob ?? null,
+                        'cast' => $voter->cast_mr ?? ($voter->cast ? $translator->translate($voter->cast) : null),
+                        'position' => $voter->position_mr ?? ($voter->position ? $translator->translate($voter->position) : null),
+                        'voter_id' => $voter->voter_id ?? null,
+                        'dead' => $voter->dead ?? null,
+                        'voted' => $voter->voted ?? null,
+                        'personnel' => $voter->personnel ?? null,
+                        'star_voter' => $voter->star_voter ?? null,
+                        'colour_code' => $voter->colour_code_mr ?? ($voter->colour_code ? $translator->translate($voter->colour_code) : null),
+                        'mobile_1' => $voter->mobile_1 ?? null,
+                        'mobile_2' => $voter->mobile_2 ?? null,
+                        'image' => $voter->image ?? null,
+                        'voter_address' => $voter->voterAddress ? [
+                            'society' => $voter->voterAddress->society_mr ?? ($voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null),
+                            'house_no' => $voter->voterAddress->house_no ?? null,
+                            'flat_no' => $voter->voterAddress->flat_no ?? null,
+                            'booth' => $voter->voterAddress->booth_mr ?? ($voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null),
+                            'village' => $voter->voterAddress->village_mr ?? ($voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null),
+                            'part_no' => $voter->voterAddress->part_no ?? null,
+                            'srn' => $voter->voterAddress->srn ?? null,
+                            'voting_centre' => $voter->voterAddress->voting_centre_mr ?? ($voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null),
+                        ] : null,
+                        'voter_information' => $voter->voterInformation ? [
+                            'extra_info_1' => $voter->voterInformation->extra_info_1_mr ?? ($voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null),
+                            'extra_info_2' => $voter->voterInformation->extra_info_2_mr ?? ($voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null),
+                            'extra_info_3' => $voter->voterInformation->extra_info_3_mr ?? ($voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null),
+                            'extra_info_4' => $voter->voterInformation->extra_info_4_mr ?? ($voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null),
+                            'extra_info_5' => $voter->voterInformation->extra_info_5_mr ?? ($voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null),
+                            'extra_check_1' => $voter->voterInformation->extra_check_1 ?? null,
+                            'extra_check_2' => $voter->voterInformation->extra_check_2 ?? null,
+                        ] : null,
+                    ];
+                });
+            }
+            if ($request->voter_id) {
+                $voters = Voters::where('voter_id', $request->voter_id)->with('voterAddress', 'voterInformation')->get();
+                if ($voters->isEmpty()) {
+                    return response()->json(['error' => 'No voters found'], 404);
+                }
+                $translator = new GoogleTranslate($request->lang); // Set target language
+                $votersMapped = $voters->map(function ($voter) use ($translator) {
+                    return [
+                        'id' => $voter->id,
+                        'first_name' => $voter->first_name_mr ?? ($voter->first_name ?? null),
+                        'middle_name' => $voter->middle_name_mr ?? ($voter->middle_name ? $translator->translate($voter->middle_name) : null),
+                        'surname' => $voter->surname_mr ?? ($voter->surname ? $translator->translate($voter->surname) : null),
+                        'email' => $voter->email ?? null,
+                        'gender' => $voter->gender_mr ?? ($voter->gender ? $translator->translate($voter->gender) : null),
+                        'age' => $voter->age ?? null,
+                        'dob' => $voter->dob ?? null,
+                        'cast' => $voter->cast_mr ?? ($voter->cast ? $translator->translate($voter->cast) : null),
+                        'position' => $voter->position_mr ?? ($voter->position ? $translator->translate($voter->position) : null),
+                        'voter_id' => $voter->voter_id ?? null,
+                        'dead' => $voter->dead ?? null,
+                        'voted' => $voter->voted ?? null,
+                        'personnel' => $voter->personnel ?? null,
+                        'star_voter' => $voter->star_voter ?? null,
+                        'colour_code' => $voter->colour_code_mr ?? ($voter->colour_code ? $translator->translate($voter->colour_code) : null),
+                        'mobile_1' => $voter->mobile_1 ?? null,
+                        'mobile_2' => $voter->mobile_2 ?? null,
+                        'image' => $voter->image ?? null,
+                        'voter_address' => $voter->voterAddress ? [
+                            'society' => $voter->voterAddress->society_mr ?? ($voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null),
+                            'house_no' => $voter->voterAddress->house_no ?? null,
+                            'flat_no' => $voter->voterAddress->flat_no ?? null,
+                            'booth' => $voter->voterAddress->booth_mr ?? ($voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null),
+                            'village' => $voter->voterAddress->village_mr ?? ($voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null),
+                            'part_no' => $voter->voterAddress->part_no ?? null,
+                            'srn' => $voter->voterAddress->srn ?? null,
+                            'voting_centre' => $voter->voterAddress->voting_centre_mr ?? ($voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null),
+                        ] : null,
+                        'voter_information' => $voter->voterInformation ? [
+                            'extra_info_1' => $voter->voterInformation->extra_info_1_mr ?? ($voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null),
+                            'extra_info_2' => $voter->voterInformation->extra_info_2_mr ?? ($voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null),
+                            'extra_info_3' => $voter->voterInformation->extra_info_3_mr ?? ($voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null),
+                            'extra_info_4' => $voter->voterInformation->extra_info_4_mr ?? ($voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null),
+                            'extra_info_5' => $voter->voterInformation->extra_info_5_mr ?? ($voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null),
+                            'extra_check_1' => $voter->voterInformation->extra_check_1 ?? null,
+                            'extra_check_2' => $voter->voterInformation->extra_check_2 ?? null,
+                        ] : null,
+                    ];
+                });
+            }
+            if ($request->house_no) {
+                $voters = UserAddress::where('house_no_mr', $request->house_no)->with('voter', 'voterInformation')->get();
+                // dd($voters);
+                if ($voters->isEmpty()) {
+                    return response()->json(['error' => 'No voters found'], 404);
+                }
+                $translator = new GoogleTranslate($request->lang); // Set target language
+                $votersMapped = $voters->map(function ($voter) use ($translator) {
+                    return [
+                        'id' => $voter->id,
+                        'first_name' => $voter->first_name_mr ?? ($voter->first_name ?? null),
+                        'middle_name' => $voter->middle_name_mr ?? ($voter->middle_name ? $translator->translate($voter->middle_name) : null),
+                        'surname' => $voter->surname_mr ?? ($voter->surname ? $translator->translate($voter->surname) : null),
+                        'email' => $voter->email ?? null,
+                        'gender' => $voter->gender_mr ?? ($voter->gender ? $translator->translate($voter->gender) : null),
+                        'age' => $voter->age ?? null,
+                        'dob' => $voter->dob ?? null,
+                        'cast' => $voter->cast_mr ?? ($voter->cast ? $translator->translate($voter->cast) : null),
+                        'position' => $voter->position_mr ?? ($voter->position ? $translator->translate($voter->position) : null),
+                        'voter_id' => $voter->voter_id ?? null,
+                        'dead' => $voter->dead ?? null,
+                        'voted' => $voter->voted ?? null,
+                        'personnel' => $voter->personnel ?? null,
+                        'star_voter' => $voter->star_voter ?? null,
+                        'colour_code' => $voter->colour_code_mr ?? ($voter->colour_code ? $translator->translate($voter->colour_code) : null),
+                        'mobile_1' => $voter->mobile_1 ?? null,
+                        'mobile_2' => $voter->mobile_2 ?? null,
+                        'image' => $voter->image ?? null,
+                        'voter_address' => $voter->voterAddress ? [
+                            'society' => $voter->voterAddress->society_mr ?? ($voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null),
+                            'house_no' => $voter->voterAddress->house_no ?? null,
+                            'flat_no' => $voter->voterAddress->flat_no ?? null,
+                            'booth' => $voter->voterAddress->booth_mr ?? ($voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null),
+                            'village' => $voter->voterAddress->village_mr ?? ($voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null),
+                            'part_no' => $voter->voterAddress->part_no ?? null,
+                            'srn' => $voter->voterAddress->srn ?? null,
+                            'voting_centre' => $voter->voterAddress->voting_centre_mr ?? ($voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null),
+                        ] : null,
+                        'voter_information' => $voter->voterInformation ? [
+                            'extra_info_1' => $voter->voterInformation->extra_info_1_mr ?? ($voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null),
+                            'extra_info_2' => $voter->voterInformation->extra_info_2_mr ?? ($voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null),
+                            'extra_info_3' => $voter->voterInformation->extra_info_3_mr ?? ($voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null),
+                            'extra_info_4' => $voter->voterInformation->extra_info_4_mr ?? ($voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null),
+                            'extra_info_5' => $voter->voterInformation->extra_info_5_mr ?? ($voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null),
+                            'extra_check_1' => $voter->voterInformation->extra_check_1 ?? null,
+                            'extra_check_2' => $voter->voterInformation->extra_check_2 ?? null,
+                        ] : null,
+                    ];
+                });
+            }
+            $data['status'] = 200;
+            $data['message'] = 'Voter search results retrieved successfully';
+            $data['voters'] = $votersMapped;
+            $data['total'] = $voters->count();
+            return response()->json($data, 200);
+        }
+
+        if($request->lang == 'mr'){
+            if ($request->surname) {
+                $voters = Voters::where('surname_mr', $request->surname)
+                    ->with('voterAddress', 'voterInformation')
+                    ->get();
+
+                if ($voters->isEmpty()) {
+                    return response()->json(['error' => 'No voters found'], 404);
+                }
+
+                $translator = new GoogleTranslate($request->lang); // Set target language
+                $votersMapped = $voters->map(function ($voter) use ($translator) {
+                    return [
+                        'id' => $voter->id,
+                        'first_name' => $voter->first_name_mr ?? ($voter->first_name ?? null),
+                        'middle_name' => $voter->middle_name_mr ?? ($voter->middle_name ? $translator->translate($voter->middle_name) : null),
+                        'surname' => $voter->surname_mr ?? ($voter->surname ? $translator->translate($voter->surname) : null),
+                        'email' => $voter->email ?? null,
+                        'gender' => $voter->gender_mr ?? ($voter->gender ? $translator->translate($voter->gender) : null),
+                        'age' => $voter->age ?? null,
+                        'dob' => $voter->dob ?? null,
+                        'cast' => $voter->cast_mr ?? ($voter->cast ? $translator->translate($voter->cast) : null),
+                        'position' => $voter->position_mr ?? ($voter->position ? $translator->translate($voter->position) : null),
+                        'voter_id' => $voter->voter_id ?? null,
+                        'dead' => $voter->dead ?? null,
+                        'voted' => $voter->voted ?? null,
+                        'personnel' => $voter->personnel ?? null,
+                        'star_voter' => $voter->star_voter ?? null,
+                        'colour_code' => $voter->colour_code_mr ?? ($voter->colour_code ? $translator->translate($voter->colour_code) : null),
+                        'mobile_1' => $voter->mobile_1 ?? null,
+                        'mobile_2' => $voter->mobile_2 ?? null,
+                        'image' => $voter->image ?? null,
+                        'voter_address' => $voter->voterAddress ? [
+                            'society' => $voter->voterAddress->society_mr ?? ($voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null),
+                            'house_no' => $voter->voterAddress->house_no ?? null,
+                            'flat_no' => $voter->voterAddress->flat_no ?? null,
+                            'booth' => $voter->voterAddress->booth_mr ?? ($voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null),
+                            'village' => $voter->voterAddress->village_mr ?? ($voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null),
+                            'part_no' => $voter->voterAddress->part_no ?? null,
+                            'srn' => $voter->voterAddress->srn ?? null,
+                            'voting_centre' => $voter->voterAddress->voting_centre_mr ?? ($voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null),
+                        ] : null,
+                        'voter_information' => $voter->voterInformation ? [
+                            'extra_info_1' => $voter->voterInformation->extra_info_1_mr ?? ($voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null),
+                            'extra_info_2' => $voter->voterInformation->extra_info_2_mr ?? ($voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null),
+                            'extra_info_3' => $voter->voterInformation->extra_info_3_mr ?? ($voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null),
+                            'extra_info_4' => $voter->voterInformation->extra_info_4_mr ?? ($voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null),
+                            'extra_info_5' => $voter->voterInformation->extra_info_5_mr ?? ($voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null),
+                            'extra_check_1' => $voter->voterInformation->extra_check_1 ?? null,
+                            'extra_check_2' => $voter->voterInformation->extra_check_2 ?? null,
+                        ] : null,
+                    ];
+                });
+            }
+
+
+            if ($request->first_name) {
+                $voters = Voters::where('first_name_mr', $request->first_name)->with('voterAddress', 'voterInformation')->get();
+                if ($voters->isEmpty()) {
+                    return response()->json(['error' => 'No voters found'], 404);
+                }
+                $translator = new GoogleTranslate($request->lang); // Set target language
+                $votersMapped = $voters->map(function ($voter) use ($translator) {
+                    return [
+                        'id' => $voter->id,
+                        'first_name' => $voter->first_name_mr ?? ($voter->first_name ?? null),
+                        'middle_name' => $voter->middle_name_mr ?? ($voter->middle_name ? $translator->translate($voter->middle_name) : null),
+                        'surname' => $voter->surname_mr ?? ($voter->surname ? $translator->translate($voter->surname) : null),
+                        'email' => $voter->email ?? null,
+                        'gender' => $voter->gender_mr ?? ($voter->gender ? $translator->translate($voter->gender) : null),
+                        'age' => $voter->age ?? null,
+                        'dob' => $voter->dob ?? null,
+                        'cast' => $voter->cast_mr ?? ($voter->cast ? $translator->translate($voter->cast) : null),
+                        'position' => $voter->position_mr ?? ($voter->position ? $translator->translate($voter->position) : null),
+                        'voter_id' => $voter->voter_id ?? null,
+                        'dead' => $voter->dead ?? null,
+                        'voted' => $voter->voted ?? null,
+                        'personnel' => $voter->personnel ?? null,
+                        'star_voter' => $voter->star_voter ?? null,
+                        'colour_code' => $voter->colour_code_mr ?? ($voter->colour_code ? $translator->translate($voter->colour_code) : null),
+                        'mobile_1' => $voter->mobile_1 ?? null,
+                        'mobile_2' => $voter->mobile_2 ?? null,
+                        'image' => $voter->image ?? null,
+                        'voter_address' => $voter->voterAddress ? [
+                            'society' => $voter->voterAddress->society_mr ?? ($voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null),
+                            'house_no' => $voter->voterAddress->house_no ?? null,
+                            'flat_no' => $voter->voterAddress->flat_no ?? null,
+                            'booth' => $voter->voterAddress->booth_mr ?? ($voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null),
+                            'village' => $voter->voterAddress->village_mr ?? ($voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null),
+                            'part_no' => $voter->voterAddress->part_no ?? null,
+                            'srn' => $voter->voterAddress->srn ?? null,
+                            'voting_centre' => $voter->voterAddress->voting_centre_mr ?? ($voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null),
+                        ] : null,
+                        'voter_information' => $voter->voterInformation ? [
+                            'extra_info_1' => $voter->voterInformation->extra_info_1_mr ?? ($voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null),
+                            'extra_info_2' => $voter->voterInformation->extra_info_2_mr ?? ($voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null),
+                            'extra_info_3' => $voter->voterInformation->extra_info_3_mr ?? ($voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null),
+                            'extra_info_4' => $voter->voterInformation->extra_info_4_mr ?? ($voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null),
+                            'extra_info_5' => $voter->voterInformation->extra_info_5_mr ?? ($voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null),
+                            'extra_check_1' => $voter->voterInformation->extra_check_1 ?? null,
+                            'extra_check_2' => $voter->voterInformation->extra_check_2 ?? null,
+                        ] : null,
+                    ];
+                });
+            }
+
+            if ($request->middle_name) {
+                $voters = Voters::where('middle_name', $request->middle_name)->with('voterAddress', 'voterInformation')->get();
+                if ($voters->isEmpty()) {
+                    return response()->json(['error' => 'No voters found'], 404);
+                }
+                $translator = new GoogleTranslate($request->lang); // Set target language
+                $votersMapped = $voters->map(function ($voter) use ($translator) {
+                    return [
+                        'id' => $voter->id,
+                        'first_name' => $voter->first_name_mr ?? ($voter->first_name ?? null),
+                        'middle_name' => $voter->middle_name_mr ?? ($voter->middle_name ? $translator->translate($voter->middle_name) : null),
+                        'surname' => $voter->surname_mr ?? ($voter->surname ? $translator->translate($voter->surname) : null),
+                        'email' => $voter->email ?? null,
+                        'gender' => $voter->gender_mr ?? ($voter->gender ? $translator->translate($voter->gender) : null),
+                        'age' => $voter->age ?? null,
+                        'dob' => $voter->dob ?? null,
+                        'cast' => $voter->cast_mr ?? ($voter->cast ? $translator->translate($voter->cast) : null),
+                        'position' => $voter->position_mr ?? ($voter->position ? $translator->translate($voter->position) : null),
+                        'voter_id' => $voter->voter_id ?? null,
+                        'dead' => $voter->dead ?? null,
+                        'voted' => $voter->voted ?? null,
+                        'personnel' => $voter->personnel ?? null,
+                        'star_voter' => $voter->star_voter ?? null,
+                        'colour_code' => $voter->colour_code_mr ?? ($voter->colour_code ? $translator->translate($voter->colour_code) : null),
+                        'mobile_1' => $voter->mobile_1 ?? null,
+                        'mobile_2' => $voter->mobile_2 ?? null,
+                        'image' => $voter->image ?? null,
+                        'voter_address' => $voter->voterAddress ? [
+                            'society' => $voter->voterAddress->society_mr ?? ($voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null),
+                            'house_no' => $voter->voterAddress->house_no ?? null,
+                            'flat_no' => $voter->voterAddress->flat_no ?? null,
+                            'booth' => $voter->voterAddress->booth_mr ?? ($voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null),
+                            'village' => $voter->voterAddress->village_mr ?? ($voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null),
+                            'part_no' => $voter->voterAddress->part_no ?? null,
+                            'srn' => $voter->voterAddress->srn ?? null,
+                            'voting_centre' => $voter->voterAddress->voting_centre_mr ?? ($voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null),
+                        ] : null,
+                        'voter_information' => $voter->voterInformation ? [
+                            'extra_info_1' => $voter->voterInformation->extra_info_1_mr ?? ($voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null),
+                            'extra_info_2' => $voter->voterInformation->extra_info_2_mr ?? ($voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null),
+                            'extra_info_3' => $voter->voterInformation->extra_info_3_mr ?? ($voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null),
+                            'extra_info_4' => $voter->voterInformation->extra_info_4_mr ?? ($voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null),
+                            'extra_info_5' => $voter->voterInformation->extra_info_5_mr ?? ($voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null),
+                            'extra_check_1' => $voter->voterInformation->extra_check_1 ?? null,
+                            'extra_check_2' => $voter->voterInformation->extra_check_2 ?? null,
+                        ] : null,
+                    ];
+                });
+            }
+
+            if ($request->to_age) {
+                $voters = Voters::where('age', '<=', $request->to_age)->with('voterAddress', 'voterInformation')->get();
+                if ($voters->isEmpty()) {
+                    return response()->json(['error' => 'No voters found'], 404);
+                }
+                $translator = new GoogleTranslate($request->lang); // Set target language
+                $votersMapped = $voters->map(function ($voter) use ($translator) {
+                    return [
+                        'id' => $voter->id,
+                        'first_name' => $voter->first_name_mr ?? ($voter->first_name ?? null),
+                        'middle_name' => $voter->middle_name_mr ?? ($voter->middle_name ? $translator->translate($voter->middle_name) : null),
+                        'surname' => $voter->surname_mr ?? ($voter->surname ? $translator->translate($voter->surname) : null),
+                        'email' => $voter->email ?? null,
+                        'gender' => $voter->gender_mr ?? ($voter->gender ? $translator->translate($voter->gender) : null),
+                        'age' => $voter->age ?? null,
+                        'dob' => $voter->dob ?? null,
+                        'cast' => $voter->cast_mr ?? ($voter->cast ? $translator->translate($voter->cast) : null),
+                        'position' => $voter->position_mr ?? ($voter->position ? $translator->translate($voter->position) : null),
+                        'voter_id' => $voter->voter_id ?? null,
+                        'dead' => $voter->dead ?? null,
+                        'voted' => $voter->voted ?? null,
+                        'personnel' => $voter->personnel ?? null,
+                        'star_voter' => $voter->star_voter ?? null,
+                        'colour_code' => $voter->colour_code_mr ?? ($voter->colour_code ? $translator->translate($voter->colour_code) : null),
+                        'mobile_1' => $voter->mobile_1 ?? null,
+                        'mobile_2' => $voter->mobile_2 ?? null,
+                        'image' => $voter->image ?? null,
+                        'voter_address' => $voter->voterAddress ? [
+                            'society' => $voter->voterAddress->society_mr ?? ($voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null),
+                            'house_no' => $voter->voterAddress->house_no ?? null,
+                            'flat_no' => $voter->voterAddress->flat_no ?? null,
+                            'booth' => $voter->voterAddress->booth_mr ?? ($voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null),
+                            'village' => $voter->voterAddress->village_mr ?? ($voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null),
+                            'part_no' => $voter->voterAddress->part_no ?? null,
+                            'srn' => $voter->voterAddress->srn ?? null,
+                            'voting_centre' => $voter->voterAddress->voting_centre_mr ?? ($voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null),
+                        ] : null,
+                        'voter_information' => $voter->voterInformation ? [
+                            'extra_info_1' => $voter->voterInformation->extra_info_1_mr ?? ($voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null),
+                            'extra_info_2' => $voter->voterInformation->extra_info_2_mr ?? ($voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null),
+                            'extra_info_3' => $voter->voterInformation->extra_info_3_mr ?? ($voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null),
+                            'extra_info_4' => $voter->voterInformation->extra_info_4_mr ?? ($voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null),
+                            'extra_info_5' => $voter->voterInformation->extra_info_5_mr ?? ($voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null),
+                            'extra_check_1' => $voter->voterInformation->extra_check_1 ?? null,
+                            'extra_check_2' => $voter->voterInformation->extra_check_2 ?? null,
+                        ] : null,
+                    ];
+                });
+            }
+
+            if ($request->from_age) {
+                $voters = Voters::where('age', '>=', $request->from_age)->with('voterAddress', 'voterInformation')->get();
+                if ($voters->isEmpty()) {
+                    return response()->json(['error' => 'No voters found'], 404);
+                }
+                $translator = new GoogleTranslate($request->lang); // Set target language
+                $votersMapped = $voters->map(function ($voter) use ($translator) {
+                    return [
+                        'id' => $voter->id,
+                        'first_name' => $voter->first_name_mr ?? ($voter->first_name ?? null),
+                        'middle_name' => $voter->middle_name_mr ?? ($voter->middle_name ? $translator->translate($voter->middle_name) : null),
+                        'surname' => $voter->surname_mr ?? ($voter->surname ? $translator->translate($voter->surname) : null),
+                        'email' => $voter->email ?? null,
+                        'gender' => $voter->gender_mr ?? ($voter->gender ? $translator->translate($voter->gender) : null),
+                        'age' => $voter->age ?? null,
+                        'dob' => $voter->dob ?? null,
+                        'cast' => $voter->cast_mr ?? ($voter->cast ? $translator->translate($voter->cast) : null),
+                        'position' => $voter->position_mr ?? ($voter->position ? $translator->translate($voter->position) : null),
+                        'voter_id' => $voter->voter_id ?? null,
+                        'dead' => $voter->dead ?? null,
+                        'voted' => $voter->voted ?? null,
+                        'personnel' => $voter->personnel ?? null,
+                        'star_voter' => $voter->star_voter ?? null,
+                        'colour_code' => $voter->colour_code_mr ?? ($voter->colour_code ? $translator->translate($voter->colour_code) : null),
+                        'mobile_1' => $voter->mobile_1 ?? null,
+                        'mobile_2' => $voter->mobile_2 ?? null,
+                        'image' => $voter->image ?? null,
+                        'voter_address' => $voter->voterAddress ? [
+                            'society' => $voter->voterAddress->society_mr ?? ($voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null),
+                            'house_no' => $voter->voterAddress->house_no ?? null,
+                            'flat_no' => $voter->voterAddress->flat_no ?? null,
+                            'booth' => $voter->voterAddress->booth_mr ?? ($voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null),
+                            'village' => $voter->voterAddress->village_mr ?? ($voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null),
+                            'part_no' => $voter->voterAddress->part_no ?? null,
+                            'srn' => $voter->voterAddress->srn ?? null,
+                            'voting_centre' => $voter->voterAddress->voting_centre_mr ?? ($voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null),
+                        ] : null,
+                        'voter_information' => $voter->voterInformation ? [
+                            'extra_info_1' => $voter->voterInformation->extra_info_1_mr ?? ($voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null),
+                            'extra_info_2' => $voter->voterInformation->extra_info_2_mr ?? ($voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null),
+                            'extra_info_3' => $voter->voterInformation->extra_info_3_mr ?? ($voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null),
+                            'extra_info_4' => $voter->voterInformation->extra_info_4_mr ?? ($voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null),
+                            'extra_info_5' => $voter->voterInformation->extra_info_5_mr ?? ($voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null),
+                            'extra_check_1' => $voter->voterInformation->extra_check_1 ?? null,
+                            'extra_check_2' => $voter->voterInformation->extra_check_2 ?? null,
+                        ] : null,
+                    ];
+                });
+            }
+
+            if ($request->mobile_1) {
+                $voters = Voters::where('mobile_1', $request->mobile_1)->with('voterAddress', 'voterInformation')->get();
+                if ($voters->isEmpty()) {
+                    return response()->json(['error' => 'No voters found'], 404);
+                }
+                $translator = new GoogleTranslate($request->lang); // Set target language
+                $votersMapped = $voters->map(function ($voter) use ($translator) {
+                    return [
+                        'id' => $voter->id,
+                        'first_name' => $voter->first_name_mr ?? ($voter->first_name ?? null),
+                        'middle_name' => $voter->middle_name_mr ?? ($voter->middle_name ? $translator->translate($voter->middle_name) : null),
+                        'surname' => $voter->surname_mr ?? ($voter->surname ? $translator->translate($voter->surname) : null),
+                        'email' => $voter->email ?? null,
+                        'gender' => $voter->gender_mr ?? ($voter->gender ? $translator->translate($voter->gender) : null),
+                        'age' => $voter->age ?? null,
+                        'dob' => $voter->dob ?? null,
+                        'cast' => $voter->cast_mr ?? ($voter->cast ? $translator->translate($voter->cast) : null),
+                        'position' => $voter->position_mr ?? ($voter->position ? $translator->translate($voter->position) : null),
+                        'voter_id' => $voter->voter_id ?? null,
+                        'dead' => $voter->dead ?? null,
+                        'voted' => $voter->voted ?? null,
+                        'personnel' => $voter->personnel ?? null,
+                        'star_voter' => $voter->star_voter ?? null,
+                        'colour_code' => $voter->colour_code_mr ?? ($voter->colour_code ? $translator->translate($voter->colour_code) : null),
+                        'mobile_1' => $voter->mobile_1 ?? null,
+                        'mobile_2' => $voter->mobile_2 ?? null,
+                        'image' => $voter->image ?? null,
+                        'voter_address' => $voter->voterAddress ? [
+                            'society' => $voter->voterAddress->society_mr ?? ($voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null),
+                            'house_no' => $voter->voterAddress->house_no ?? null,
+                            'flat_no' => $voter->voterAddress->flat_no ?? null,
+                            'booth' => $voter->voterAddress->booth_mr ?? ($voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null),
+                            'village' => $voter->voterAddress->village_mr ?? ($voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null),
+                            'part_no' => $voter->voterAddress->part_no ?? null,
+                            'srn' => $voter->voterAddress->srn ?? null,
+                            'voting_centre' => $voter->voterAddress->voting_centre_mr ?? ($voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null),
+                        ] : null,
+                        'voter_information' => $voter->voterInformation ? [
+                            'extra_info_1' => $voter->voterInformation->extra_info_1_mr ?? ($voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null),
+                            'extra_info_2' => $voter->voterInformation->extra_info_2_mr ?? ($voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null),
+                            'extra_info_3' => $voter->voterInformation->extra_info_3_mr ?? ($voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null),
+                            'extra_info_4' => $voter->voterInformation->extra_info_4_mr ?? ($voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null),
+                            'extra_info_5' => $voter->voterInformation->extra_info_5_mr ?? ($voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null),
+                            'extra_check_1' => $voter->voterInformation->extra_check_1 ?? null,
+                            'extra_check_2' => $voter->voterInformation->extra_check_2 ?? null,
+                        ] : null,
+                    ];
+                });
+            }
+            if ($request->part_no) {
+                $voters = UserAddress::where('part_no', $request->part_no)->with('voter', 'voterInformation')->get();
+                // dd($voters);
+                if ($voters->isEmpty()) {
+                    return response()->json(['error' => 'No voters found'], 404);
+                }
+                $translator = new GoogleTranslate($request->lang); // Set target language
+                $votersMapped = $voters->map(function ($voter) use ($translator) {
+                    return [
+                        'id' => $voter->id,
+                        'first_name' => $voter->first_name_mr ?? ($voter->first_name ?? null),
+                        'middle_name' => $voter->middle_name_mr ?? ($voter->middle_name ? $translator->translate($voter->middle_name) : null),
+                        'surname' => $voter->surname_mr ?? ($voter->surname ? $translator->translate($voter->surname) : null),
+                        'email' => $voter->email ?? null,
+                        'gender' => $voter->gender_mr ?? ($voter->gender ? $translator->translate($voter->gender) : null),
+                        'age' => $voter->age ?? null,
+                        'dob' => $voter->dob ?? null,
+                        'cast' => $voter->cast_mr ?? ($voter->cast ? $translator->translate($voter->cast) : null),
+                        'position' => $voter->position_mr ?? ($voter->position ? $translator->translate($voter->position) : null),
+                        'voter_id' => $voter->voter_id ?? null,
+                        'dead' => $voter->dead ?? null,
+                        'voted' => $voter->voted ?? null,
+                        'personnel' => $voter->personnel ?? null,
+                        'star_voter' => $voter->star_voter ?? null,
+                        'colour_code' => $voter->colour_code_mr ?? ($voter->colour_code ? $translator->translate($voter->colour_code) : null),
+                        'mobile_1' => $voter->mobile_1 ?? null,
+                        'mobile_2' => $voter->mobile_2 ?? null,
+                        'image' => $voter->image ?? null,
+                        'voter_address' => $voter->voterAddress ? [
+                            'society' => $voter->voterAddress->society_mr ?? ($voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null),
+                            'house_no' => $voter->voterAddress->house_no ?? null,
+                            'flat_no' => $voter->voterAddress->flat_no ?? null,
+                            'booth' => $voter->voterAddress->booth_mr ?? ($voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null),
+                            'village' => $voter->voterAddress->village_mr ?? ($voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null),
+                            'part_no' => $voter->voterAddress->part_no ?? null,
+                            'srn' => $voter->voterAddress->srn ?? null,
+                            'voting_centre' => $voter->voterAddress->voting_centre_mr ?? ($voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null),
+                        ] : null,
+                        'voter_information' => $voter->voterInformation ? [
+                            'extra_info_1' => $voter->voterInformation->extra_info_1_mr ?? ($voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null),
+                            'extra_info_2' => $voter->voterInformation->extra_info_2_mr ?? ($voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null),
+                            'extra_info_3' => $voter->voterInformation->extra_info_3_mr ?? ($voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null),
+                            'extra_info_4' => $voter->voterInformation->extra_info_4_mr ?? ($voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null),
+                            'extra_info_5' => $voter->voterInformation->extra_info_5_mr ?? ($voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null),
+                            'extra_check_1' => $voter->voterInformation->extra_check_1 ?? null,
+                            'extra_check_2' => $voter->voterInformation->extra_check_2 ?? null,
+                        ] : null,
+                    ];
+                });
+            }
+            if ($request->voter_id) {
+                $voters = Voters::where('voter_id', $request->voter_id)->with('voterAddress', 'voterInformation')->get();
+                if ($voters->isEmpty()) {
+                    return response()->json(['error' => 'No voters found'], 404);
+                }
+                $translator = new GoogleTranslate($request->lang); // Set target language
+                $votersMapped = $voters->map(function ($voter) use ($translator) {
+                    return [
+                        'id' => $voter->id,
+                        'first_name' => $voter->first_name_mr ?? ($voter->first_name ?? null),
+                        'middle_name' => $voter->middle_name_mr ?? ($voter->middle_name ? $translator->translate($voter->middle_name) : null),
+                        'surname' => $voter->surname_mr ?? ($voter->surname ? $translator->translate($voter->surname) : null),
+                        'email' => $voter->email ?? null,
+                        'gender' => $voter->gender_mr ?? ($voter->gender ? $translator->translate($voter->gender) : null),
+                        'age' => $voter->age ?? null,
+                        'dob' => $voter->dob ?? null,
+                        'cast' => $voter->cast_mr ?? ($voter->cast ? $translator->translate($voter->cast) : null),
+                        'position' => $voter->position_mr ?? ($voter->position ? $translator->translate($voter->position) : null),
+                        'voter_id' => $voter->voter_id ?? null,
+                        'dead' => $voter->dead ?? null,
+                        'voted' => $voter->voted ?? null,
+                        'personnel' => $voter->personnel ?? null,
+                        'star_voter' => $voter->star_voter ?? null,
+                        'colour_code' => $voter->colour_code_mr ?? ($voter->colour_code ? $translator->translate($voter->colour_code) : null),
+                        'mobile_1' => $voter->mobile_1 ?? null,
+                        'mobile_2' => $voter->mobile_2 ?? null,
+                        'image' => $voter->image ?? null,
+                        'voter_address' => $voter->voterAddress ? [
+                            'society' => $voter->voterAddress->society_mr ?? ($voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null),
+                            'house_no' => $voter->voterAddress->house_no ?? null,
+                            'flat_no' => $voter->voterAddress->flat_no ?? null,
+                            'booth' => $voter->voterAddress->booth_mr ?? ($voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null),
+                            'village' => $voter->voterAddress->village_mr ?? ($voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null),
+                            'part_no' => $voter->voterAddress->part_no ?? null,
+                            'srn' => $voter->voterAddress->srn ?? null,
+                            'voting_centre' => $voter->voterAddress->voting_centre_mr ?? ($voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null),
+                        ] : null,
+                        'voter_information' => $voter->voterInformation ? [
+                            'extra_info_1' => $voter->voterInformation->extra_info_1_mr ?? ($voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null),
+                            'extra_info_2' => $voter->voterInformation->extra_info_2_mr ?? ($voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null),
+                            'extra_info_3' => $voter->voterInformation->extra_info_3_mr ?? ($voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null),
+                            'extra_info_4' => $voter->voterInformation->extra_info_4_mr ?? ($voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null),
+                            'extra_info_5' => $voter->voterInformation->extra_info_5_mr ?? ($voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null),
+                            'extra_check_1' => $voter->voterInformation->extra_check_1 ?? null,
+                            'extra_check_2' => $voter->voterInformation->extra_check_2 ?? null,
+                        ] : null,
+                    ];
+                });
+            }
+            if ($request->house_no) {
+                $voters = UserAddress::where('house_no_mr', $request->house_no)->with('voter', 'voterInformation')->get();
+                // dd($voters);
+                if ($voters->isEmpty()) {
+                    return response()->json(['error' => 'No voters found'], 404);
+                }
+                $translator = new GoogleTranslate($request->lang); // Set target language
+                $votersMapped = $voters->map(function ($voter) use ($translator) {
+                    return [
+                        'id' => $voter->id,
+                        'first_name' => $voter->first_name_mr ?? ($voter->first_name ?? null),
+                        'middle_name' => $voter->middle_name_mr ?? ($voter->middle_name ? $translator->translate($voter->middle_name) : null),
+                        'surname' => $voter->surname_mr ?? ($voter->surname ? $translator->translate($voter->surname) : null),
+                        'email' => $voter->email ?? null,
+                        'gender' => $voter->gender_mr ?? ($voter->gender ? $translator->translate($voter->gender) : null),
+                        'age' => $voter->age ?? null,
+                        'dob' => $voter->dob ?? null,
+                        'cast' => $voter->cast_mr ?? ($voter->cast ? $translator->translate($voter->cast) : null),
+                        'position' => $voter->position_mr ?? ($voter->position ? $translator->translate($voter->position) : null),
+                        'voter_id' => $voter->voter_id ?? null,
+                        'dead' => $voter->dead ?? null,
+                        'voted' => $voter->voted ?? null,
+                        'personnel' => $voter->personnel ?? null,
+                        'star_voter' => $voter->star_voter ?? null,
+                        'colour_code' => $voter->colour_code_mr ?? ($voter->colour_code ? $translator->translate($voter->colour_code) : null),
+                        'mobile_1' => $voter->mobile_1 ?? null,
+                        'mobile_2' => $voter->mobile_2 ?? null,
+                        'image' => $voter->image ?? null,
+                        'voter_address' => $voter->voterAddress ? [
+                            'society' => $voter->voterAddress->society_mr ?? ($voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null),
+                            'house_no' => $voter->voterAddress->house_no ?? null,
+                            'flat_no' => $voter->voterAddress->flat_no ?? null,
+                            'booth' => $voter->voterAddress->booth_mr ?? ($voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null),
+                            'village' => $voter->voterAddress->village_mr ?? ($voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null),
+                            'part_no' => $voter->voterAddress->part_no ?? null,
+                            'srn' => $voter->voterAddress->srn ?? null,
+                            'voting_centre' => $voter->voterAddress->voting_centre_mr ?? ($voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null),
+                        ] : null,
+                        'voter_information' => $voter->voterInformation ? [
+                            'extra_info_1' => $voter->voterInformation->extra_info_1_mr ?? ($voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null),
+                            'extra_info_2' => $voter->voterInformation->extra_info_2_mr ?? ($voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null),
+                            'extra_info_3' => $voter->voterInformation->extra_info_3_mr ?? ($voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null),
+                            'extra_info_4' => $voter->voterInformation->extra_info_4_mr ?? ($voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null),
+                            'extra_info_5' => $voter->voterInformation->extra_info_5_mr ?? ($voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null),
+                            'extra_check_1' => $voter->voterInformation->extra_check_1 ?? null,
+                            'extra_check_2' => $voter->voterInformation->extra_check_2 ?? null,
+                        ] : null,
+                    ];
+                });
+            }
+            $data['status'] = 200;
+            $data['message'] = 'Voter search results retrieved successfully in Marathi';
+            $data['voters'] = $votersMapped;
+            $data['total'] = $voters->count();
+            return response()->json($data, 200);
+        }
+
+        if($request->lang == 'hi'){
+            if ($request->surname) {
+                $voters = Voters::where('surname_hi', $request->surname)
+                    ->with('voterAddress', 'voterInformation')
+                    ->get();
+
+                if ($voters->isEmpty()) {
+                    return response()->json(['error' => 'No voters found'], 404);
+                }
+
+                $translator = new GoogleTranslate($request->lang); // Set target language
+                $votersMapped = $voters->map(function ($voter) use ($translator) {
+                    return [
+                        'id' => $voter->id,
+                        'first_name' => $voter->first_name_hi ?? ($voter->first_name ?? null),
+                        'middle_name' => $voter->middle_name_hi ?? ($voter->middle_name ? $translator->translate($voter->middle_name) : null),
+                        'surname' => $voter->surname_hi ?? ($voter->surname ? $translator->translate($voter->surname) : null),
+                        'email' => $voter->email ?? null,
+                        'gender' => $voter->gender_hi ?? ($voter->gender ? $translator->translate($voter->gender) : null),
+                        'age' => $voter->age ?? null,
+                        'dob' => $voter->dob ?? null,
+                        'cast' => $voter->cast_hi ?? ($voter->cast ? $translator->translate($voter->cast) : null),
+                        'position' => $voter->position_hi ?? ($voter->position ? $translator->translate($voter->position) : null),
+                        'voter_id' => $voter->voter_id ?? null,
+                        'dead' => $voter->dead ?? null,
+                        'voted' => $voter->voted ?? null,
+                        'personnel' => $voter->personnel ?? null,
+                        'star_voter' => $voter->star_voter ?? null,
+                        'colour_code' => $voter->colour_code_hi ?? ($voter->colour_code ? $translator->translate($voter->colour_code) : null),
+                        'mobile_1' => $voter->mobile_1 ?? null,
+                        'mobile_2' => $voter->mobile_2 ?? null,
+                        'image' => $voter->image ?? null,
+                        'voter_address' => $voter->voterAddress ? [
+                            'society' => $voter->voterAddress->society_hi ?? ($voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null),
+                            'house_no' => $voter->voterAddress->house_no ?? null,
+                            'flat_no' => $voter->voterAddress->flat_no ?? null,
+                            'booth' => $voter->voterAddress->booth_hi ?? ($voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null),
+                            'village' => $voter->voterAddress->village_hi ?? ($voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null),
+                            'part_no' => $voter->voterAddress->part_no ?? null,
+                            'srn' => $voter->voterAddress->srn ?? null,
+                            'voting_centre' => $voter->voterAddress->voting_centre_hi ?? ($voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null),
+                        ] : null,
+                        'voter_information' => $voter->voterInformation ? [
+                            'extra_info_1' => $voter->voterInformation->extra_info_1_hi ?? ($voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null),
+                            'extra_info_2' => $voter->voterInformation->extra_info_2_hi ?? ($voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null),
+                            'extra_info_3' => $voter->voterInformation->extra_info_3_hi ?? ($voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null),
+                            'extra_info_4' => $voter->voterInformation->extra_info_4_hi ?? ($voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null),
+                            'extra_info_5' => $voter->voterInformation->extra_info_5_hi ?? ($voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null),
+                            'extra_check_1' => $voter->voterInformation->extra_check_1 ?? null,
+                            'extra_check_2' => $voter->voterInformation->extra_check_2 ?? null,
+                        ] : null,
+                    ];
+                });
+
+                // return response()->json($votersMapped, 200);
+            }
+
+
+            if ($request->first_name) {
+                $voters = Voters::where('first_name_hi', $request->first_name)->with('voterAddress', 'voterInformation')->get();
+                if ($voters->isEmpty()) {
+                    return response()->json(['error' => 'No voters found'], 404);
+                }
+                $translator = new GoogleTranslate($request->lang); // Set target language
+                $votersMapped = $voters->map(function ($voter) use ($translator) {
+                    return [
+                        'id' => $voter->id,
+                        'first_name' => $voter->first_name_hi ?? ($voter->first_name ?? null),
+                        'middle_name' => $voter->middle_name_hi ?? ($voter->middle_name ? $translator->translate($voter->middle_name) : null),
+                        'surname' => $voter->surname_hi ?? ($voter->surname ? $translator->translate($voter->surname) : null),
+                        'email' => $voter->email ?? null,
+                        'gender' => $voter->gender_hi ?? ($voter->gender ? $translator->translate($voter->gender) : null),
+                        'age' => $voter->age ?? null,
+                        'dob' => $voter->dob ?? null,
+                        'cast' => $voter->cast_hi ?? ($voter->cast ? $translator->translate($voter->cast) : null),
+                        'position' => $voter->position_hi ?? ($voter->position ? $translator->translate($voter->position) : null),
+                        'voter_id' => $voter->voter_id ?? null,
+                        'dead' => $voter->dead ?? null,
+                        'voted' => $voter->voted ?? null,
+                        'personnel' => $voter->personnel ?? null,
+                        'star_voter' => $voter->star_voter ?? null,
+                        'colour_code' => $voter->colour_code_hi ?? ($voter->colour_code ? $translator->translate($voter->colour_code) : null),
+                        'mobile_1' => $voter->mobile_1 ?? null,
+                        'mobile_2' => $voter->mobile_2 ?? null,
+                        'image' => $voter->image ?? null,
+                        'voter_address' => $voter->voterAddress ? [
+                            'society' => $voter->voterAddress->society_hi ?? ($voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null),
+                            'house_no' => $voter->voterAddress->house_no ?? null,
+                            'flat_no' => $voter->voterAddress->flat_no ?? null,
+                            'booth' => $voter->voterAddress->booth_hi ?? ($voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null),
+                            'village' => $voter->voterAddress->village_hi ?? ($voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null),
+                            'part_no' => $voter->voterAddress->part_no ?? null,
+                            'srn' => $voter->voterAddress->srn ?? null,
+                            'voting_centre' => $voter->voterAddress->voting_centre_hi ?? ($voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null),
+                        ] : null,
+                        'voter_information' => $voter->voterInformation ? [
+                            'extra_info_1' => $voter->voterInformation->extra_info_1_hi ?? ($voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null),
+                            'extra_info_2' => $voter->voterInformation->extra_info_2_hi ?? ($voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null),
+                            'extra_info_3' => $voter->voterInformation->extra_info_3_hi ?? ($voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null),
+                            'extra_info_4' => $voter->voterInformation->extra_info_4_hi ?? ($voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null),
+                            'extra_info_5' => $voter->voterInformation->extra_info_5_hi ?? ($voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null),
+                            'extra_check_1' => $voter->voterInformation->extra_check_1 ?? null,
+                            'extra_check_2' => $voter->voterInformation->extra_check_2 ?? null,
+                        ] : null,
+                    ];
+                });
+            }
+
+
+            if ($request->middle_name) {
+                $voters = Voters::where('middle_name_hi', $request->middle_name)->with('voterAddress', 'voterInformation')->get();
+                if ($voters->isEmpty()) {
+                    return response()->json(['error' => 'No voters found'], 404);
+                }
+                $translator = new GoogleTranslate($request->lang); // Set target language
+                $votersMapped = $voters->map(function ($voter) use ($translator) {
+                    return [
+                        'id' => $voter->id,
+                        'first_name' => $voter->first_name_hi ?? ($voter->first_name ?? null),
+                        'middle_name' => $voter->middle_name_hi ?? ($voter->middle_name ? $translator->translate($voter->middle_name) : null),
+                        'surname' => $voter->surname_hi ?? ($voter->surname ? $translator->translate($voter->surname) : null),
+                        'email' => $voter->email ?? null,
+                        'gender' => $voter->gender_hi ?? ($voter->gender ? $translator->translate($voter->gender) : null),
+                        'age' => $voter->age ?? null,
+                        'dob' => $voter->dob ?? null,
+                        'cast' => $voter->cast_hi ?? ($voter->cast ? $translator->translate($voter->cast) : null),
+                        'position' => $voter->position_hi ?? ($voter->position ? $translator->translate($voter->position) : null),
+                        'voter_id' => $voter->voter_id ?? null,
+                        'dead' => $voter->dead ?? null,
+                        'voted' => $voter->voted ?? null,
+                        'personnel' => $voter->personnel ?? null,
+                        'star_voter' => $voter->star_voter ?? null,
+                        'colour_code' => $voter->colour_code_hi ?? ($voter->colour_code ? $translator->translate($voter->colour_code) : null),
+                        'mobile_1' => $voter->mobile_1 ?? null,
+                        'mobile_2' => $voter->mobile_2 ?? null,
+                        'image' => $voter->image ?? null,
+                        'voter_address' => $voter->voterAddress ? [
+                            'society' => $voter->voterAddress->society_hi ?? ($voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null),
+                            'house_no' => $voter->voterAddress->house_no ?? null,
+                            'flat_no' => $voter->voterAddress->flat_no ?? null,
+                            'booth' => $voter->voterAddress->booth_hi ?? ($voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null),
+                            'village' => $voter->voterAddress->village_hi ?? ($voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null),
+                            'part_no' => $voter->voterAddress->part_no ?? null,
+                            'srn' => $voter->voterAddress->srn ?? null,
+                            'voting_centre' => $voter->voterAddress->voting_centre_hi ?? ($voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null),
+                        ] : null,
+                        'voter_information' => $voter->voterInformation ? [
+                            'extra_info_1' => $voter->voterInformation->extra_info_1_hi ?? ($voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null),
+                            'extra_info_2' => $voter->voterInformation->extra_info_2_hi ?? ($voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null),
+                            'extra_info_3' => $voter->voterInformation->extra_info_3_hi ?? ($voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null),
+                            'extra_info_4' => $voter->voterInformation->extra_info_4_hi ?? ($voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null),
+                            'extra_info_5' => $voter->voterInformation->extra_info_5_hi ?? ($voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null),
+                            'extra_check_1' => $voter->voterInformation->extra_check_1 ?? null,
+                            'extra_check_2' => $voter->voterInformation->extra_check_2 ?? null,
+                        ] : null,
+                    ];
+                });
+            }
+
+
+            if ($request->to_age) {
+                $voters = Voters::where('age', '<=', $request->to_age)->with('voterAddress', 'voterInformation')->get();
+                if ($voters->isEmpty()) {
+                    return response()->json(['error' => 'No voters found'], 404);
+                }
+                $translator = new GoogleTranslate($request->lang); // Set target language
+                $votersMapped = $voters->map(function ($voter) use ($translator) {
+                    return [
+                        'id' => $voter->id,
+                        'first_name' => $voter->first_name_hi ?? ($voter->first_name ?? null),
+                        'middle_name' => $voter->middle_name_hi ?? ($voter->middle_name ? $translator->translate($voter->middle_name) : null),
+                        'surname' => $voter->surname_hi ?? ($voter->surname ? $translator->translate($voter->surname) : null),
+                        'email' => $voter->email ?? null,
+                        'gender' => $voter->gender_hi ?? ($voter->gender ? $translator->translate($voter->gender) : null),
+                        'age' => $voter->age ?? null,
+                        'dob' => $voter->dob ?? null,
+                        'cast' => $voter->cast_hi ?? ($voter->cast ? $translator->translate($voter->cast) : null),
+                        'position' => $voter->position_hi ?? ($voter->position ? $translator->translate($voter->position) : null),
+                        'voter_id' => $voter->voter_id ?? null,
+                        'dead' => $voter->dead ?? null,
+                        'voted' => $voter->voted ?? null,
+                        'personnel' => $voter->personnel ?? null,
+                        'star_voter' => $voter->star_voter ?? null,
+                        'colour_code' => $voter->colour_code_hi ?? ($voter->colour_code ? $translator->translate($voter->colour_code) : null),
+                        'mobile_1' => $voter->mobile_1 ?? null,
+                        'mobile_2' => $voter->mobile_2 ?? null,
+                        'image' => $voter->image ?? null,
+                        'voter_address' => $voter->voterAddress ? [
+                            'society' => $voter->voterAddress->society_hi ?? ($voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null),
+                            'house_no' => $voter->voterAddress->house_no ?? null,
+                            'flat_no' => $voter->voterAddress->flat_no ?? null,
+                            'booth' => $voter->voterAddress->booth_hi ?? ($voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null),
+                            'village' => $voter->voterAddress->village_hi ?? ($voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null),
+                            'part_no' => $voter->voterAddress->part_no ?? null,
+                            'srn' => $voter->voterAddress->srn ?? null,
+                            'voting_centre' => $voter->voterAddress->voting_centre_hi ?? ($voter->voterAddress->voting_centre ? $translator->translate($voter->voting_centre) : null),
+                        ] : null,
+                        'voter_information' => $voter->voterInformation ? [
+                            'extra_info_1' => $voter->voterInformation->extra_info_1_hi ?? ($voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null),
+                            'extra_info_2' => $voter->voterInformation->extra_info_2_hi ?? ($voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null),
+                            'extra_info_3' => $voter->voterInformation->extra_info_3_hi ?? ($voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null),
+                            'extra_info_4' => $voter->voterInformation->extra_info_4_hi ?? ($voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null),
+                            'extra_info_5' => $voter->voterInformation->extra_info_5_hi ?? ($voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null),
+                            'extra_check_1' => $voter->voterInformation->extra_check_1 ?? null,
+                            'extra_check_2' => $voter->voterInformation->extra_check_2 ?? null,
+                        ] : null,
+                    ];
+                });
+            }
+
+
+            if ($request->from_age) {
+                $voters = Voters::where('age', '>=', $request->from_age)->with('voterAddress', 'voterInformation')->get();
+                if ($voters->isEmpty()) {
+                    return response()->json(['error' => 'No voters found'], 404);
+                }
+                $translator = new GoogleTranslate($request->lang); // Set target language
+                $votersMapped = $voters->map(function ($voter) use ($translator) {
+                    return [
+                        'id' => $voter->id,
+                        'first_name' => $voter->first_name_hi ?? ($voter->first_name ?? null),
+                        'middle_name' => $voter->middle_name_hi ?? ($voter->middle_name ? $translator->translate($voter->middle_name) : null),
+                        'surname' => $voter->surname_hi ?? ($voter->surname ? $translator->translate($voter->surname) : null),
+                        'email' => $voter->email ?? null,
+                        'gender' => $voter->gender_hi ?? ($voter->gender ? $translator->translate($voter->gender) : null),
+                        'age' => $voter->age ?? null,
+                        'dob' => $voter->dob ?? null,
+                        'cast' => $voter->cast_hi ?? ($voter->cast ? $translator->translate($voter->cast) : null),
+                        'position' => $voter->position_hi ?? ($voter->position ? $translator->translate($voter->position) : null),
+                        'voter_id' => $voter->voter_id ?? null,
+                        'dead' => $voter->dead ?? null,
+                        'voted' => $voter->voted ?? null,
+                        'personnel' => $voter->personnel ?? null,
+                        'star_voter' => $voter->star_voter ?? null,
+                        'colour_code' => $voter->colour_code_hi ?? ($voter->colour_code ? $translator->translate($voter->colour_code) : null),
+                        'mobile_1' => $voter->mobile_1 ?? null,
+                        'mobile_2' => $voter->mobile_2 ?? null,
+                        'image' => $voter->image ?? null,
+                        'voter_address' => $voter->voterAddress ? [
+                            'society' => $voter->voterAddress->society_hi ?? ($voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null),
+                            'house_no' => $voter->voterAddress->house_no ?? null,
+                            'flat_no' => $voter->voterAddress->flat_no ?? null,
+                            'booth' => $voter->voterAddress->booth_hi ?? ($voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null),
+                            'village' => $voter->voterAddress->village_hi ?? ($voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null),
+                            'part_no' => $voter->voterAddress->part_no ?? null,
+                            'srn' => $voter->voterAddress->srn ?? null,
+                            'voting_centre' => $voter->voterAddress->voting_centre_hi ?? ($voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null),
+                        ] : null,
+                        'voter_information' => $voter->voterInformation ? [
+                            'extra_info_1' => $voter->voterInformation->extra_info_1_hi ?? ($voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null),
+                            'extra_info_2' => $voter->voterInformation->extra_info_2_hi ?? ($voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null),
+                            'extra_info_3' => $voter->voterInformation->extra_info_3_hi ?? ($voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null),
+                            'extra_info_4' => $voter->voterInformation->extra_info_4_hi ?? ($voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null),
+                            'extra_info_5' => $voter->voterInformation->extra_info_5_hi ?? ($voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null),
+                            'extra_check_1' => $voter->voterInformation->extra_check_1 ?? null,
+                            'extra_check_2' => $voter->voterInformation->extra_check_2 ?? null,
+                        ] : null,
+                    ];
+                });
+            }
+
+            if ($request->mobile_1) {
+                $voters = Voters::where('mobile_1', $request->mobile_1)->with('voterAddress', 'voterInformation')->get();
+                if ($voters->isEmpty()) {
+                    return response()->json(['error' => 'No voters found'], 404);
+                }
+                $translator = new GoogleTranslate($request->lang); // Set target language
+                $votersMapped = $voters->map(function ($voter) use ($translator) {
+                    return [
+                        'id' => $voter->id,
+                        'first_name' => $voter->first_name_hi ?? ($voter->first_name ?? null),
+                        'middle_name' => $voter->middle_name_hi ?? ($voter->middle_name ? $translator->translate($voter->middle_name) : null),
+                        'surname' => $voter->surname_hi ?? ($voter->surname ? $translator->translate($voter->surname) : null),
+                        'email' => $voter->email ?? null,
+                        'gender' => $voter->gender_hi ?? ($voter->gender ? $translator->translate($voter->gender) : null),
+                        'age' => $voter->age ?? null,
+                        'dob' => $voter->dob ?? null,
+                        'cast' => $voter->cast_hi ?? ($voter->cast ? $translator->translate($voter->cast) : null),
+                        'position' => $voter->position_hi ?? ($voter->position ? $translator->translate($voter->position) : null),
+                        'voter_id' => $voter->voter_id ?? null,
+                        'dead' => $voter->dead ?? null,
+                        'voted' => $voter->voted ?? null,
+                        'personnel' => $voter->personnel ?? null,
+                        'star_voter' => $voter->star_voter ?? null,
+                        'colour_code' => $voter->colour_code_hi ?? ($voter->colour_code ? $translator->translate($voter->colour_code) : null),
+                        'mobile_1' => $voter->mobile_1 ?? null,
+                        'mobile_2' => $voter->mobile_2 ?? null,
+                        'image' => $voter->image ?? null,
+                        'voter_address' => $voter->voterAddress ? [
+                            'society' => $voter->voterAddress->society_hi ?? ($voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null),
+                            'house_no' => $voter->voterAddress->house_no ?? null,
+                            'flat_no' => $voter->voterAddress->flat_no ?? null,
+                            'booth' => $voter->voterAddress->booth_hi ?? ($voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null),
+                            'village' => $voter->voterAddress->village_hi ?? ($voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null),
+                            'part_no' => $voter->voterAddress->part_no ?? null,
+                            'srn' => $voter->voterAddress->srn ?? null,
+                            'voting_centre' => $voter->voterAddress->voting_centre_hi ?? ($voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null),
+                        ] : null,
+                        'voter_information' => $voter->voterInformation ? [
+                            'extra_info_1' => $voter->voterInformation->extra_info_1_hi ?? ($voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null),
+                            'extra_info_2' => $voter->voterInformation->extra_info_2_hi ?? ($voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null),
+                            'extra_info_3' => $voter->voterInformation->extra_info_3_hi ?? ($voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null),
+                            'extra_info_4' => $voter->voterInformation->extra_info_4_hi ?? ($voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null),
+                            'extra_info_5' => $voter->voterInformation->extra_info_5_hi ?? ($voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null),
+                            'extra_check_1' => $voter->voterInformation->extra_check_1 ?? null,
+                            'extra_check_2' => $voter->voterInformation->extra_check_2 ?? null,
+                        ] : null,
+                    ];
+                });
+            }
+
+            if ($request->part_no) {
+                $voters = UserAddress::where('part_no_hi', $request->part_no)->with('voter', 'voterInformation')->get();
+                // dd($voters);
+                if ($voters->isEmpty()) {
+                    return response()->json(['error' => 'No voters found'], 404);
+                }
+                $translator = new GoogleTranslate($request->lang); // Set target language
+                $votersMapped = $voters->map(function ($voter) use ($translator) {
+                    return [
+                        'id' => $voter->id,
+                        'first_name' => $voter->first_name_hi ?? ($voter->first_name ?? null),
+                        'middle_name' => $voter->middle_name_hi ?? ($voter->middle_name ? $translator->translate($voter->middle_name) : null),
+                        'surname' => $voter->surname_hi ?? ($voter->surname ? $translator->translate($voter->surname) : null),
+                        'email' => $voter->email ?? null,
+                        'gender' => $voter->gender_hi ?? ($voter->gender ? $translator->translate($voter->gender) : null),
+                        'age' => $voter->age ?? null,
+                        'dob' => $voter->dob ?? null,
+                        'cast' => $voter->cast_hi ?? ($voter->cast ? $translator->translate($voter->cast) : null),
+                        'position' => $voter->position_hi ?? ($voter->position ? $translator->translate($voter->position) : null),
+                        'voter_id' => $voter->voter_id ?? null,
+                        'dead' => $voter->dead ?? null,
+                        'voted' => $voter->voted ?? null,
+                        'personnel' => $voter->personnel ?? null,
+                        'star_voter' => $voter->star_voter ?? null,
+                        'colour_code' => $voter->colour_code_hi ?? ($voter->colour_code ? $translator->translate($voter->colour_code) : null),
+                        'mobile_1' => $voter->mobile_1 ?? null,
+                        'mobile_2' => $voter->mobile_2 ?? null,
+                        'image' => $voter->image ?? null,
+                        'voter_address' => $voter->voterAddress ? [
+                            'society' => $voter->voterAddress->society_hi ?? ($voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null),
+                            'house_no' => $voter->voterAddress->house_no ?? null,
+                            'flat_no' => $voter->voterAddress->flat_no ?? null,
+                            'booth' => $voter->voterAddress->booth_hi ?? ($voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null),
+                            'village' => $voter->voterAddress->village_hi ?? ($voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null),
+                            'part_no' => $voter->voterAddress->part_no ?? null,
+                            'srn' => $voter->voterAddress->srn ?? null,
+                            'voting_centre' => $voter->voterAddress->voting_centre_hi ?? ($voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null),
+                        ] : null,
+                        'voter_information' => $voter->voterInformation ? [
+                            'extra_info_1' => $voter->voterInformation->extra_info_1_hi ?? ($voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null),
+                            'extra_info_2' => $voter->voterInformation->extra_info_2_hi ?? ($voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null),
+                            'extra_info_3' => $voter->voterInformation->extra_info_3_hi ?? ($voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null),
+                            'extra_info_4' => $voter->voterInformation->extra_info_4_hi ?? ($voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null),
+                            'extra_info_5' => $voter->voterInformation->extra_info_5_hi ?? ($voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null),
+                            'extra_check_1' => $voter->voterInformation->extra_check_1 ?? null,
+                            'extra_check_2' => $voter->voterInformation->extra_check_2 ?? null,
+                        ] : null,
+                    ];
+                });
+            }
+
+            if ($request->voter_id) {
+                $voters = Voters::where('voter_id', $request->voter_id)->with('voterAddress', 'voterInformation')->get();
+                if ($voters->isEmpty()) {
+                    return response()->json(['error' => 'No voters found'], 404);
+                }
+                $translator = new GoogleTranslate($request->lang); // Set target language
+                $votersMapped = $voters->map(function ($voter) use ($translator) {
+                    return [
+                        'id' => $voter->id,
+                        'first_name' => $voter->first_name_hi ?? ($voter->first_name ?? null),
+                        'middle_name' => $voter->middle_name_hi ?? ($voter->middle_name ? $translator->translate($voter->middle_name) : null),
+                        'surname' => $voter->surname_hi ?? ($voter->surname ? $translator->translate($voter->surname) : null),
+                        'email' => $voter->email ?? null,
+                        'gender' => $voter->gender_hi ?? ($voter->gender ? $translator->translate($voter->gender) : null),
+                        'age' => $voter->age ?? null,
+                        'dob' => $voter->dob ?? null,
+                        'cast' => $voter->cast_hi ?? ($voter->cast ? $translator->translate($voter->cast) : null),
+                        'position' => $voter->position_hi ?? ($voter->position ? $translator->translate($voter->position) : null),
+                        'voter_id' => $voter->voter_id ?? null,
+                        'dead' => $voter->dead ?? null,
+                        'voted' => $voter->voted ?? null,
+                        'personnel' => $voter->personnel ?? null,
+                        'star_voter' => $voter->star_voter ?? null,
+                        'colour_code' => $voter->colour_code_hi ?? ($voter->colour_code ? $translator->translate($voter->colour_code) : null),
+                        'mobile_1' => $voter->mobile_1 ?? null,
+                        'mobile_2' => $voter->mobile_2 ?? null,
+                        'image' => $voter->image ?? null,
+                        'voter_address' => $voter->voterAddress ? [
+                            'society' => $voter->voterAddress->society_hi ?? ($voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null),
+                            'house_no' => $voter->voterAddress->house_no ?? null,
+                            'flat_no' => $voter->voterAddress->flat_no ?? null,
+                            'booth' => $voter->voterAddress->booth_hi ?? ($voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null),
+                            'village' => $voter->voterAddress->village_hi ?? ($voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null),
+                            'part_no' => $voter->voterAddress->part_no ?? null,
+                            'srn' => $voter->voterAddress->srn ?? null,
+                            'voting_centre' => $voter->voterAddress->voting_centre_hi ?? ($voter->voterAddress->voting_centre ? $translator->translate($voter->voting_centre) : null),
+                        ] : null,
+                        'voter_information' => $voter->voterInformation ? [
+                            'extra_info_1' => $voter->voterInformation->extra_info_1_hi ?? ($voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null),
+                            'extra_info_2' => $voter->voterInformation->extra_info_2_hi ?? ($voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null),
+                            'extra_info_3' => $voter->voterInformation->extra_info_3_hi ?? ($voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null),
+                            'extra_info_4' => $voter->voterInformation->extra_info_4_hi ?? ($voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null),
+                            'extra_info_5' => $voter->voterInformation->extra_info_5_hi ?? ($voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null),
+                            'extra_check_1' => $voter->voterInformation->extra_check_1 ?? null,
+                            'extra_check_2' => $voter->voterInformation->extra_check_2 ?? null,
+                        ] : null,
+                    ];
+                });
+            }
+
+            if ($request->house_no) {
+                $voters = UserAddress::where('house_no_hi', $request->house_no)->with('voter', 'voterInformation')->get();
+                // dd($voters);
+                if ($voters->isEmpty()) {
+                    return response()->json(['error' => 'No voters found'], 404);
+                }
+                $translator = new GoogleTranslate($request->lang); // Set target language
+                $votersMapped = $voters->map(function ($voter) use ($translator) {
+                    return [
+                        'id' => $voter->id,
+                        'first_name' => $voter->first_name_hi ?? ($voter->first_name ?? null),
+                        'middle_name' => $voter->middle_name_hi ?? ($voter->middle_name ? $translator->translate($voter->middle_name) : null),
+                        'surname' => $voter->surname_hi ?? ($voter->surname ? $translator->translate($voter->surname) : null),
+                        'email' => $voter->email ?? null,
+                        'gender' => $voter->gender_hi ?? ($voter->gender ? $translator->translate($voter->gender) : null),
+                        'age' => $voter->age ?? null,
+                        'dob' => $voter->dob ?? null,
+                        'cast' => $voter->cast_hi ?? ($voter->cast ? $translator->translate($voter->cast) : null),
+                        'position' => $voter->position_hi ?? ($voter->position ? $translator->translate($voter->position) : null),
+                        'voter_id' => $voter->voter_id ?? null,
+                        'dead' => $voter->dead ?? null,
+                        'voted' => $voter->voted ?? null,
+                        'personnel' => $voter->personnel ?? null,
+                        'star_voter' => $voter->star_voter ?? null,
+                        'colour_code' => $voter->colour_code_hi ?? ($voter->colour_code ? $translator->translate($voter->colour_code) : null),
+                        'mobile_1' => $voter->mobile_1 ?? null,
+                        'mobile_2' => $voter->mobile_2 ?? null,
+                        'image' => $voter->image ?? null,
+                        'voter_address' => $voter->voterAddress ? [
+                            'society' => $voter->voterAddress->society_hi ?? ($voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null),
+                            'house_no' => $voter->voterAddress->house_no ?? null,
+                            'flat_no' => $voter->voterAddress->flat_no ?? null,
+                            'booth' => $voter->voterAddress->booth_hi ?? ($voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null),
+                            'village' => $voter->voterAddress->village_hi ?? ($voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null),
+                            'part_no' => $voter->voterAddress->part_no ?? null,
+                            'srn' => $voter->voterAddress->srn ?? null,
+                            'voting_centre' => $voter->voterAddress->voting_centre_hi ?? ($voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null),
+                        ] : null,
+                        'voter_information' => $voter->voterInformation ? [
+                            'extra_info_1' => $voter->voterInformation->extra_info_1_hi ?? ($voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null),
+                            'extra_info_2' => $voter->voterInformation->extra_info_2_hi ?? ($voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null),
+                            'extra_info_3' => $voter->voterInformation->extra_info_3_hi ?? ($voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null),
+                            'extra_info_4' => $voter->voterInformation->extra_info_4_hi ?? ($voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null),
+                            'extra_info_5' => $voter->voterInformation->extra_info_5_hi ?? ($voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null),
+                            'extra_check_1' => $voter->voterInformation->extra_check_1 ?? null,
+                            'extra_check_2' => $voter->voterInformation->extra_check_2 ?? null,
+                        ] : null,
+                    ];
+                });
+            }
+
+            $data['status'] = 200;
+            $data['message'] = 'Voter search results retrieved successfully in Hindi';
+            $data['voters'] = $votersMapped;
+            $data['total'] = $voters->count();
+            return response()->json($data, 200);
+        }
+
+
+    }
+
+    public function searchByFirstMiddleSurname(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'lang' => 'required|in:en,mr,hi',
+            'name' => 'required|string|min:1',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()], 400);
+        }
+
+        $lang = $request->input('lang');
+        $name = $request->input('name');
+        $translator = new GoogleTranslate($lang);
+
+        if($request->lang == 'en'){
+                $voters = Voters::where('first_name', 'like', "%$name%")
+                ->orWhere('middle_name', 'like', "%$name%")
+                ->orWhere('surname', 'like', "%$name%")
+                ->with(['voterAddress', 'voterInformation']) // Eager load relationships
+                ->get()
+                ->map(function ($voter) use ($translator) {
+                return [
+                    'voter_details' => [
+                        'first_name' => $voter->first_name ? $translator->translate($voter->first_name) : null,
+                        'middle_name' => $voter->middle_name ? $translator->translate($voter->middle_name) : null,
+                        'surname' => $voter->surname ? $translator->translate($voter->surname) : null,
+                        'email' => $voter->email ? $translator->translate($voter->email) : null,
+                        'gender' => $voter->gender ? $translator->translate($voter->gender) : null,
+                        'age' => $voter->age,
+                        'dob' => $voter->dob,
+                        'cast' => $voter->cast ? $translator->translate($voter->cast) : null,
+                        'position' => $voter->position ? $translator->translate($voter->position) : null,
+                        'personnel' => $voter->personnel ?? null,
+                        'voter_id' => $voter->voter_id,
+                    ],
+                    'extra_information' => $voter->voterInformation ? [
+                        'extra_info_1' => $voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null,
+                        'extra_info_2' => $voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null,
+                        'extra_info_3' => $voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null,
+                        'extra_info_4' => $voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null,
+                        'extra_info_5' => $voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null,
+                        'extra_check_1' => $voter->voterInformation->extra_check_1 ?? null,
+                        'extra_check_2' => $voter->voterInformation->extra_check_2 ?? null,
+                    ] : null,
+                    'address_details' => $voter->voterAddress ? [
+                        'society' => $voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null,
+                        'house_no' => $voter->voterAddress->house_no ? $translator->translate($voter->voterAddress->house_no) : null,
+                        'flat_no' => $voter->voterAddress->flat_no ? $translator->translate($voter->voterAddress->flat_no) : null,
+                        'address' => $voter->voterAddress->address ? $translator->translate($voter->voterAddress->address) : null,
+                        'booth' => $voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null,
+                        'village' => $voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null,
+                        'part_no' => $voter->voterAddress->part_no,
+                        'srn' => $voter->voterAddress->srn,
+                        'voting_centre' => $voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null,
+                    ] : null,
+                ];
+            });
+
+
+            if ($voters->isEmpty()) {
+                return response()->json([
+                    'status' => 404,
+                    'message' => 'No voters found matching the given name',
+                ], 404);
+            }
+
+            return response()->json([
+                'status' => 200,
+                'message' => 'Voters retrieved successfully',
+                'voters' => $voters,
+            ], 200);
+        }
+
+
+        if($request->lang == 'mr'){
+            $voters = Voters::where('first_name_mr', 'like', "%$name%")
+            ->orWhere('middle_name_mr', 'like', "%$name%")
+            ->orWhere('surname_mr', 'like', "%$name%")
+            ->with(['voterAddress', 'voterInformation']) // Eager load relationships
+            ->get()
+            ->map(function ($voter) use ($translator) {
+            return [
+                'voter_details' => [
+                    'first_name' => $voter->first_name_mr ?? ($voter->first_name ? $translator->translate($voter->first_name) : null),
+                    'middle_name' => $voter->middle_name_mr ?? ($voter->middle_name ? $translator->translate($voter->middle_name) : null),
+                    'surname' => $voter->surname_mr ?? ($voter->surname ? $translator->translate($voter->surname) : null),
+                    'email' => $voter->email ? $translator->translate($voter->email) : null,
+                    'gender' => $voter->gender_mr ?? ($voter->gender ? $translator->translate($voter->gender) : null),
+                    'age' => $voter->age,
+                    'dob' => $voter->dob,
+                    'cast' => $voter->cast_mr ?? ($voter->cast ? $translator->translate($voter->cast) : null),
+                    'position' => $voter->position_mr ?? ($voter->position ? $translator->translate($voter->position) : null),
+                    'personnel' => $voter->personnel ??  null,
+                    'voter_id' => $voter->voter_id,
+                ],
+                'extra_information' => $voter->voterInformation ? [
+                    'extra_info_1' => $voter->voterInformation->extra_info_1_mr ?? ($voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null),
+                    'extra_info_2' => $voter->voterInformation->extra_info_2_mr ?? ($voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null),
+                    'extra_info_3' => $voter->voterInformation->extra_info_3_mr ?? ($voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null),
+                    'extra_info_4' => $voter->voterInformation->extra_info_4_mr ?? ($voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null),
+                    'extra_info_5' => $voter->voterInformation->extra_info_5_mr ?? ($voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null),
+                    'extra_check_1' => $voter->voterInformation->extra_check_1 ?? null,
+                    'extra_check_2' => $voter->voterInformation->extra_check_2 ?? null,
+                ] : null,
+                'address_details' => $voter->voterAddress ? [
+                    'society' => $voter->voterAddress->society_mr ?? ($voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null),
+                    'house_no' => $voter->voterAddress->house_no_mr ?? ($voter->voterAddress->house_no ? $translator->translate($voter->voterAddress->house_no) : null),
+                    'flat_no' => $voter->voterAddress->flat_no_mr ?? ($voter->voterAddress->flat_no ? $translator->translate($voter->voterAddress->flat_no) : null),
+                    'address' => $voter->voterAddress->address_mr ?? ($voter->voterAddress->address ? $translator->translate($voter->voterAddress->address) : null),
+                    'booth' => $voter->voterAddress->booth_mr ?? ($voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null),
+                    'village' => $voter->voterAddress->village_mr ?? ($voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null),
+                    'part_no' => $voter->voterAddress->part_no_mr ?? ($voter->voterAddress->part_no ? $translator->translate($voter->voterAddress->part_no) : null),
+                    'srn' => $voter->voterAddress->srn_mr ?? ($voter->voterAddress->srn ? $translator->translate($voter->voterAddress->srn) : null),
+                    'voting_centre' => $voter->voterAddress->voting_centre_mr ?? ($voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null),
+                ] : null,
+            ];
+          });
+
+
+            if ($voters->isEmpty()) {
+                return response()->json([
+                    'status' => 404,
+                    'message' => 'No voters found matching the given name',
+                ], 404);
+            }
+
+            return response()->json([
+                'status' => 200,
+                'message' => 'Voters retrieved successfully',
+                'voters' => $voters,
+            ], 200);
+        }
+
+        if($request->lang == 'hi'){
+            $voters = Voters::where('first_name_hi', 'like', "%$name%")
+                ->orWhere('middle_name_hi', 'like', "%$name%")
+                ->orWhere('surname_hi', 'like', "%$name%")
+                ->with(['voterAddress', 'voterInformation']) // Eager load relationships
+                ->get()
+                ->map(function ($voter) use ($translator) {
+                return [
+                    'voter_details' => [
+                        'first_name' => $voter->first_name_hi ?? ($voter->first_name ? $translator->translate($voter->first_name) : null),
+                        'middle_name' => $voter->middle_name_hi ?? ($voter->middle_name ? $translator->translate($voter->middle_name) : null),
+                        'surname' => $voter->surname_hi ?? ($voter->surname ? $translator->translate($voter->surname) : null),
+                        'email' => $voter->email ? $translator->translate($voter->email) : null,
+                        'gender' => $voter->gender_hi ?? ($voter->gender ? $translator->translate($voter->gender) : null),
+                        'age' => $voter->age,
+                        'dob' => $voter->dob,
+                        'cast' => $voter->cast_hi ?? ($voter->cast ? $translator->translate($voter->cast) : null),
+                        'position' => $voter->position_hi ?? ($voter->position ? $translator->translate($voter->position) : null),
+                        'personnel' => $voter->personnel ?? null,
+                        'voter_id' => $voter->voter_id,
+                    ],
+                    'extra_information' => $voter->voterInformation ? [
+                        'extra_info_1' => $voter->voterInformation->extra_info_1_hi ?? ($voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null),
+                        'extra_info_2' => $voter->voterInformation->extra_info_2_hi ?? ($voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null),
+                        'extra_info_3' => $voter->voterInformation->extra_info_3_hi ?? ($voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null),
+                        'extra_info_4' => $voter->voterInformation->extra_info_4_hi ?? ($voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null),
+                        'extra_info_5' => $voter->voterInformation->extra_info_5_hi ?? ($voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null),
+                        'extra_check_1' => $voter->voterInformation->extra_check_1 ?? null,
+                        'extra_check_2' => $voter->voterInformation->extra_check_2 ?? null,
+                    ] : null,
+                    'address_details' => $voter->voterAddress ? [
+                        'society' => $voter->voterAddress->society_hi ?? ($voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null),
+                        'house_no' => $voter->voterAddress->house_no_hi ?? ($voter->voterAddress->house_no ? $translator->translate($voter->voterAddress->house_no) : null),
+                        'flat_no' => $voter->voterAddress->flat_no_hi ?? ($voter->voterAddress->flat_no ? $translator->translate($voter->voterAddress->flat_no) : null),
+                        'address' => $voter->voterAddress->address_hi ?? ($voter->voterAddress->address ? $translator->translate($voter->voterAddress->address) : null),
+                        'booth' => $voter->voterAddress->booth_hi ?? ($voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null),
+                        'village' => $voter->voterAddress->village_hi ?? ($voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null),
+                        'part_no' => $voter->voterAddress->part_no_hi ?? ($voter->voterAddress->part_no ? $translator->translate($voter->voterAddress->part_no) : null),
+                        'srn' => $voter->voterAddress->srn_hi ?? ($voter->voterAddress->srn ? $translator->translate($voter->voterAddress->srn) : null),
+                        'voting_centre' => $voter->voterAddress->voting_centre_hi ?? ($voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null),
+                    ] : null,
+                ];
+              });
+
+            if ($voters->isEmpty()) {
+                return response()->json([
+                    'status' => 404,
+                    'message' => 'No voters found matching the given name',
+                ], 404);
+            }
+
+            return response()->json([
+                'status' => 200,
+                'message' => 'Voters retrieved successfully',
+                'voters' => $voters,
+            ], 200);
+        }
+
+    }
+
+    public function votersListAlphabetically(Request $request)
+    {
+        // Validate the input parameters
+        $validator = Validator::make($request->all(), [
+            'lang' => 'required|in:en,mr,hi',
+        ]);
+        if ($validator->fails()) {
+            return response()->json(['error' => 'Invalid language selected'], 400);
+        }
+
+        // Fetch voters with related models
+        $voters = Voters::with('voterAddress', 'voterInformation')
+            ->orderBy('first_name', 'asc')
+            ->get();
+
+        // Initialize the translator
+        $translator = new GoogleTranslate($request->lang);
+        if($request->lang == 'en'){
+             // Map voter data with translations and null checks
+            $votersMapped = $voters->map(function ($voter) use ($translator) {
+            return [
+                'id' => $voter->id,
+                'first_name' => $voter->first_name ?? null,
+                'middle_name' => $voter->middle_name ? $translator->translate($voter->middle_name) : null,
+                'surname' => $voter->surname ? $translator->translate($voter->surname) : null,
+                'gender' => $voter->gender ?? null,
+                'age' => $voter->age ?? null,
+                'dob' => $voter->dob ?? null,
+                'cast' => $voter->cast ? $translator->translate($voter->cast) : null,
+                'position' => $voter->position ? $translator->translate($voter->position) : null,
+                'voter_id' => $voter->voter_id ?? null,
+                'dead' => $voter->dead ?? null,
+                'voted' => $voter->voted ?? null,
+                'star_voter' => $voter->star_voter ?? null,
+                'colour_code' => $voter->colour_code ? $translator->translate($voter->colour_code) : null,
+                'mobile_1' => $voter->mobile_1 ?? null,
+                'mobile_2' => $voter->mobile_2 ?? null,
+                'image' => $voter->image ?? null,
+                'voter_address' => $voter->voterAddress ? [
+                    'society' => $voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null,
+                    'house_no' => $voter->voterAddress->house_no ?? null,
+                    'flat_no' => $voter->voterAddress->flat_no ?? null,
+                    'booth' => $voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null,
+                    'village' => $voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null,
+                    'part_no' => $voter->voterAddress->part_no ?? null,
+                    'srn' => $voter->voterAddress->srn ?? null,
+                    'voting_centre' => $voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null,
+                ] : null,
+                'voter_information' => $voter->voterInformation ? [
+                    'extra_info_1' => $voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null,
+                    'extra_info_2' => $voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null,
+                    'extra_info_3' => $voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null,
+                    'extra_info_4' => $voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null,
+                    'extra_info_5' => $voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null,
+                    'extra_check_1' => $voter->voterInformation->extra_check_1 ?? null,
+                    'extra_check_2' => $voter->voterInformation->extra_check_2 ?? null,
+                ] : null,
+            ];
+            });
+
+            // Return response
+            return response()->json([
+                'status' => 200,
+                'message' => 'Voter list alphabetically retrieved successfully',
+                'voters' => $votersMapped,
+                'total' => $voters->count(),
+            ], 200);
+        }
+        if($request->lang == 'mr'){
+            // Map voter data with translations and null checks
+           $votersMapped = $voters->map(function ($voter) use ($translator) {
+           return [
+               'id' => $voter->id,
+               'first_name' => $voter->first_name_mr ?? ($voter->first_name ? $translator->translate($voter->first_name) : null),
+               'middle_name' => $voter->middle_name_mr ?? ($voter->middle_name ? $translator->translate($voter->middle_name) : null),
+               'surname' => $voter->surname_mr ?? ($voter->surname ? $translator->translate($voter->surname) : null),
+               'gender' => $voter->gender_mr ?? ($voter->gender ? $translator->translate($voter->gender) : null),
+               'age' => $voter->age ?? null,
+               'dob' => $voter->dob ?? null,
+               'cast' => $voter->cast_mr ?? ($voter->cast ? $translator->translate($voter->cast) : null),
+               'position' => $voter->position_mr ?? ($voter->position ? $translator->translate($voter->position) : null),
+               'voter_id' => $voter->voter_id ?? null,
+               'dead' => $voter->dead ?? null,
+               'voted' => $voter->voted ?? null,
+               'star_voter' => $voter->star_voter ?? null,
+               'colour_code' => $voter->colour_code_mr ?? ($voter->colour_code ? $translator->translate($voter->colour_code) : null),
+               'mobile_1' => $voter->mobile_1 ?? null,
+               'mobile_2' => $voter->mobile_2 ?? null,
+               'image' => $voter->image ?? null,
+               'voter_address' => $voter->voterAddress ? [
+                   'society' => $voter->voterAddress->society_mr ?? ($voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null),
+                   'house_no' => $voter->voterAddress->house_no_mr ?? ($voter->voterAddress->house_no ? $translator->translate($voter->voterAddress->house_no) : null),
+                   'flat_no' => $voter->voterAddress->flat_no_mr ?? ($voter->voterAddress->flat_no ? $translator->translate($voter->voterAddress->flat_no) : null),
+                   'booth' => $voter->voterAddress->booth_mr ?? ($voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null),
+                   'village' => $voter->voterAddress->village_mr ?? ($voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null),
+                   'part_no' => $voter->voterAddress->part_no_mr ?? ($voter->voterAddress->part_no ? $translator->translate($voter->voterAddress->part_no) : null),
+                   'srn' => $voter->voterAddress->srn_mr ?? ($voter->voterAddress->srn ? $translator->translate($voter->voterAddress->srn) : null),
+                   'voting_centre' => $voter->voterAddress->voting_centre_mr ?? ($voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null),
+               ] : null,
+
+
+               'voter_information' => $voter->voterInformation ? [
+                   'extra_info_1' => $voter->voterInformation->extra_info_1_mr ?? ($voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null),
+                   'extra_info_2' => $voter->voterInformation->extra_info_2_mr ?? ($voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_1) : null),
+                   'extra_info_3' => $voter->voterInformation->extra_info_3_mr ?? ($voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_1) : null),
+                   'extra_info_4' => $voter->voterInformation->extra_info_4_mr ?? ($voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_1) : null),
+                   'extra_info_5' => $voter->voterInformation->extra_info_5_mr ?? ($voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_1) : null),
+                   'extra_check_1' => $voter->voterInformation->extra_check_1 ?? null,
+                   'extra_check_2' => $voter->voterInformation->extra_check_2 ?? null,
+               ] : null,
+           ];
+           });
+
+           // Return response
+           return response()->json([
+               'status' => 200,
+               'message' => 'Voter list alphabetically retrieved successfully',
+               'voters' => $votersMapped,
+               'total' => $voters->count(),
+           ], 200);
+        }
+
+        if($request->lang == 'hi'){
+            // Map voter data with translations and null checks
+            $votersMapped = $voters->map(function ($voter) use ($translator) {
+                return [
+                    'id' => $voter->id,
+                    'first_name' => $voter->first_name_hi ?? ($voter->first_name ? $translator->translate($voter->first_name) : null),
+                    'middle_name' => $voter->middle_name_hi ?? ($voter->middle_name ? $translator->translate($voter->middle_name) : null),
+                    'surname' => $voter->surname_hi ?? ($voter->surname ? $translator->translate($voter->surname) : null),
+                    'gender' => $voter->gender_hi ?? ($voter->gender ? $translator->translate($voter->gender) : null),
+                    'age' => $voter->age ?? null,
+                    'dob' => $voter->dob ?? null,
+                    'cast' => $voter->cast_hi ?? ($voter->cast ? $translator->translate($voter->cast) : null),
+                    'position' => $voter->position_mr ?? ($voter->position ? $translator->translate($voter->position) : null),
+                    'voter_id' => $voter->voter_id ?? null,
+                    'dead' => $voter->dead ?? null,
+                    'voted' => $voter->voted ?? null,
+                    'star_voter' => $voter->star_voter ?? null,
+                    'colour_code' => $voter->colour_code_hi ?? ($voter->colour_code ? $translator->translate($voter->colour_code) : null),
+                    'mobile_1' => $voter->mobile_1 ?? null,
+                    'mobile_2' => $voter->mobile_2 ?? null,
+                    'image' => $voter->image ?? null,
+                    'voter_address' => $voter->voterAddress ? [
+                        'society' => $voter->voterAddress->society_hi ?? ($voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null),
+                        'house_no' => $voter->voterAddress->house_no_hi ?? ($voter->voterAddress->house_no ? $translator->translate($voter->voterAddress->house_no) : null),
+                        'flat_no' => $voter->voterAddress->flat_no_hi ?? ($voter->voterAddress->flat_no ? $translator->translate($voter->voterAddress->flat_no) : null),
+                        'booth' => $voter->voterAddress->booth_hi ?? ($voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null),
+                        'village' => $voter->voterAddress->village_hi ?? ($voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null),
+                        'part_no' => $voter->voterAddress->part_no_hi ?? ($voter->voterAddress->part_no ? $translator->translate($voter->voterAddress->part_no) : null),
+                        'srn' => $voter->voterAddress->srn_hi ?? ($voter->voterAddress->srn ? $translator->translate($voter->voterAddress->srn) : null),
+                        'voting_centre' => $voter->voterAddress->voting_centre_hi ?? ($voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null),
+                    ] : null,
+
+                    'voter_information' => $voter->voterInformation ? [
+                        'extra_info_1' => $voter->voterInformation->extra_info_1_hi ?? ($voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null),
+                        'extra_info_2' => $voter->voterInformation->extra_info_2_hi ?? ($voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_1) : null),
+                        'extra_info_3' => $voter->voterInformation->extra_info_3_hi ?? ($voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_1) : null),
+                        'extra_info_4' => $voter->voterInformation->extra_info_4_hi ?? ($voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_1) : null),
+                        'extra_info_5' => $voter->voterInformation->extra_info_5_hi ?? ($voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_1) : null),
+                        'extra_check_1' => $voter->voterInformation->extra_check_1 ?? null,
+                        'extra_check_2' => $voter->voterInformation->extra_check_2 ?? null,
+                    ] : null,
+                ];
+            });
+
+            // Return response
+            return response()->json([
+                'status' => 200,
+                'message' => 'Voter list alphabetically retrieved successfully',
+                'voters' => $votersMapped,
+                'total' => $voters->count(),
+            ], 200);
+        }
+
+
+    }
+    public function searchVotersAlphabeticalList(Request $request)
+    {
+        // Validate the input parameters
+        $validator = Validator::make($request->all(), [
+            'lang' => 'required|in:en,mr,hi',
+            'query' => 'required|string|max:255',
+        ]);
+        if ($validator->fails()) {
+            return response()->json(['error' => 'Invalid input provided'], 400);
+        }
+
+        // Get the search query and the selected language
+        $query = $request->input('query');
+        $lang = $request->input('lang');
+         // Initialize the translator
+        $translator = new GoogleTranslate($lang);
+        if($request->lang == 'en'){
+            $voters = Voters::with('voterAddress', 'voterInformation')
+            ->where('first_name', 'LIKE', '%' . $query . '%')
+            ->orWhere('middle_name', 'LIKE', '%' . $query . '%')
+            ->orWhere('surname', 'LIKE', '%' . $query . '%')
+            ->orderBy('first_name', 'asc')
+            ->get();
+            if ($voters->count() == 0) {
+                return response()->json(['error' => 'No voters found.'], 400);
+            }
+
+
+            // Map voter data with translations and null checks
+            $votersMapped = $voters->map(function ($voter) use ($translator) {
+                return [
+                    'id' => $voter->id,
+                    'first_name' => $voter->first_name ? $translator->translate($voter->first_name) : null,
+                    'middle_name' => $voter->middle_name ? $translator->translate($voter->middle_name) : null,
+                    'surname' => $voter->surname ? $translator->translate($voter->surname) : null,
+                    'gender' => $voter->gender ?? null,
+                    'age' => $voter->age ?? null,
+                    'dob' => $voter->dob ?? null,
+                    'cast' => $voter->cast ? $translator->translate($voter->cast) : null,
+                    'position' => $voter->position ? $translator->translate($voter->position) : null,
+                    'voter_id' => $voter->voter_id ?? null,
+                    'dead' => $voter->dead ?? null,
+                    'voted' => $voter->voted ?? null,
+                    'star_voter' => $voter->star_voter ?? null,
+                    'colour_code' => $voter->colour_code ? $translator->translate($voter->colour_code) : null,
+                    'mobile_1' => $voter->mobile_1 ?? null,
+                    'mobile_2' => $voter->mobile_2 ?? null,
+                    'image' => $voter->image ?? null,
+                    'voter_address' => $voter->voterAddress ? [
+                        'society' => $voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null,
+                        'house_no' => $voter->voterAddress->house_no ?? null,
+                        'flat_no' => $voter->voterAddress->flat_no ?? null,
+                        'booth' => $voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null,
+                        'village' => $voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null,
+                        'part_no' => $voter->voterAddress->part_no ?? null,
+                        'srn' => $voter->voterAddress->srn ?? null,
+                        'voting_centre' => $voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null,
+                    ] : null,
+                    'voter_information' => $voter->voterInformation ? [
+                        'extra_info_1' => $voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null,
+                        'extra_info_2' => $voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null,
+                        'extra_info_3' => $voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null,
+                        'extra_info_4' => $voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null,
+                        'extra_info_5' => $voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null,
+                        'extra_check_1' => $voter->voterInformation->extra_check_1 ?? null,
+                        'extra_check_2' => $voter->voterInformation->extra_check_2 ?? null,
+                    ] : null,
+                ];
+            });
+
+            // Return response
+            return response()->json([
+                'status' => 200,
+                'message' => 'Voter search results retrieved successfully',
+                'voters' => $votersMapped,
+                'total' => $voters->count(),
+            ], 200);
+        }
+
+        if($request->lang == 'mr'){
+            $voters = Voters::with('voterAddress', 'voterInformation')
+            ->where('first_name_mr', 'LIKE', '%' . $query . '%')
+            ->orWhere('middle_name_mr', 'LIKE', '%' . $query . '%')
+            ->orWhere('surname_mr', 'LIKE', '%' . $query . '%')
+            ->orderBy('first_name_mr', 'asc')
+            ->get();
+            if ($voters->count() == 0) {
+                return response()->json(['error' => 'No voters found.'], 400);
+            }
+
+
+            // Map voter data with translations and null checks
+            $votersMapped = $voters->map(function ($voter) use ($translator) {
+                return [
+                    'id' => $voter->id,
+                    'first_name' => $voter->first_name_mr ?? ($voter->first_name ? $translator->translate($voter->first_name) : null),
+                    'middle_name' => $voter->middle_name_mr ?? ($voter->middle_name ? $translator->translate($voter->first_name) : null),
+                    'surname' => $voter->surname_mr ?? ($voter->surname ? $translator->translate($voter->surname) : null),
+                    'gender' => $voter->gender_mr ?? ($voter->gender ? $translator->translate($voter->gender) : null),
+                    'age' => $voter->age_mr ?? ($voter->age ? $translator->translate($voter->age) : null),
+                    'dob' => $voter->dob ?? null,
+                    'cast' => $voter->cast_mr ?? ($voter->cast ? $translator->translate($voter->cast) : null),
+                    'position' => $voter->position ?? ($voter->position ? $translator->translate($voter->position) : null),
+                    'voter_id' => $voter->voter_id ?? null,
+                    'dead' => $voter->dead ?? null,
+                    'voted' => $voter->voted ?? null,
+                    'star_voter' => $voter->star_voter ?? null,
+                    'colour_code' => $voter->colour_code ? $translator->translate($voter->colour_code) : null,
+                    'mobile_1' => $voter->mobile_1 ?? null,
+                    'mobile_2' => $voter->mobile_2 ?? null,
+                    'image' => $voter->image ?? null,
+                    'voter_address' => $voter->voterAddress ? [
+                        'society' => $voter->voterAddress->society_mr ?? $voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null,
+                        'house_no' => $voter->voterAddress->house_no_mr ?? ($voter->voterAddress->house_no ? $translator->translate($voter->voterAddress->house_no) : null),
+                        'flat_no' => $voter->voterAddress->flat_no_mr ?? ($voter->voterAddress->flat_no ? $translator->translate($voter->voterAddress->flat_no) : null),
+                        'booth' => $voter->voterAddress->booth_mr ?? ($voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null),
+                        'village' => $voter->voterAddress->village_mr ?? ($voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null),
+                        'part_no' => $voter->voterAddress->part_no_mr ?? ($voter->voterAddress->part_no ? $translator->translate($voter->voterAddress->part_no) : null),
+                        'srn' => $voter->voterAddress->srn_mr ?? ($voter->voterAddress->srn ? $translator->translate($voter->voterAddress->srn) : null),
+                        'voting_centre' => $voter->voterAddress->voting_centre_mr ?? ($voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null),
+                    ] : null,
+                    'voter_information' => $voter->voterInformation ? [
+                        'extra_info_1' => $voter->voterInformation->extra_info_1_mr ?? ($voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null),
+                        'extra_info_2' => $voter->voterInformation->extra_info_2_mr ?? ($voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null),
+                        'extra_info_3' => $voter->voterInformation->extra_info_3_mr ?? ($voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null),
+                        'extra_info_4' => $voter->voterInformation->extra_info_4_mr ?? ($voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null),
+                        'extra_info_5' => $voter->voterInformation->extra_info_5_mr ?? ($voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null),
+                        'extra_check_1' => $voter->voterInformation->extra_check_1 ?? null,
+                        'extra_check_2' => $voter->voterInformation->extra_check_2 ?? null,
+                    ] : null,
+                ];
+            });
+
+            // Return response
+            return response()->json([
+                'status' => 200,
+                'message' => 'Voter search results retrieved successfully',
+                'voters' => $votersMapped,
+                'total' => $voters->count(),
+            ], 200);
+        }
+
+        if($request->lang == 'hi'){
+            $voters = Voters::with('voterAddress', 'voterInformation')
+                ->where('first_name_hi', 'LIKE', '%' . $query . '%')
+                ->orWhere('middle_name_hi', 'LIKE', '%' . $query . '%')
+                ->orWhere('surname_hi', 'LIKE', '%' . $query . '%')
+                ->orderBy('first_name_hi', 'asc')
+                ->get();
+
+            if ($voters->count() == 0) {
+                return response()->json(['error' => 'No voters found.'], 400);
+            }
+
+            // Map voter data with translations and null checks
+            $votersMapped = $voters->map(function ($voter) use ($translator) {
+                return [
+                    'id' => $voter->id,
+                    'first_name' => $voter->first_name_hi ?? ($voter->first_name ? $translator->translate($voter->first_name) : null),
+                    'middle_name' => $voter->middle_name_hi ?? ($voter->middle_name ? $translator->translate($voter->middle_name) : null),
+                    'surname' => $voter->surname_hi ?? ($voter->surname ? $translator->translate($voter->surname) : null),
+                    'gender' => $voter->gender_hi ?? ($voter->gender ? $translator->translate($voter->gender) : null),
+                    'age' => $voter->age_hi ?? ($voter->age ? $translator->translate($voter->age) : null),
+                    'dob' => $voter->dob ?? null,
+                    'cast' => $voter->cast_hi ?? ($voter->cast ? $translator->translate($voter->cast) : null),
+                    'position' => $voter->position ?? ($voter->position ? $translator->translate($voter->position) : null),
+                    'voter_id' => $voter->voter_id ?? null,
+                    'dead' => $voter->dead ?? null,
+                    'voted' => $voter->voted ?? null,
+                    'star_voter' => $voter->star_voter ?? null,
+                    'colour_code' => $voter->colour_code ? $translator->translate($voter->colour_code) : null,
+                    'mobile_1' => $voter->mobile_1 ?? null,
+                    'mobile_2' => $voter->mobile_2 ?? null,
+                    'image' => $voter->image ?? null,
+                    'voter_address' => $voter->voterAddress ? [
+                        'society' => $voter->voterAddress->society_hi ?? $voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null,
+                        'house_no' => $voter->voterAddress->house_no_hi ?? ($voter->voterAddress->house_no ? $translator->translate($voter->voterAddress->house_no) : null),
+                        'flat_no' => $voter->voterAddress->flat_no_hi ?? ($voter->voterAddress->flat_no ? $translator->translate($voter->voterAddress->flat_no) : null),
+                        'booth' => $voter->voterAddress->booth_hi ?? ($voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null),
+                        'village' => $voter->voterAddress->village_hi ?? ($voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null),
+                        'part_no' => $voter->voterAddress->part_no_hi ?? ($voter->voterAddress->part_no ? $translator->translate($voter->voterAddress->part_no) : null),
+                        'srn' => $voter->voterAddress->srn_hi ?? ($voter->voterAddress->srn ? $translator->translate($voter->voterAddress->srn) : null),
+                        'voting_centre' => $voter->voterAddress->voting_centre_hi ?? ($voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null),
+                    ] : null,
+                    'voter_information' => $voter->voterInformation ? [
+                        'extra_info_1' => $voter->voterInformation->extra_info_1_hi ?? ($voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null),
+                        'extra_info_2' => $voter->voterInformation->extra_info_2_hi ?? ($voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null),
+                        'extra_info_3' => $voter->voterInformation->extra_info_3_hi ?? ($voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null),
+                        'extra_info_4' => $voter->voterInformation->extra_info_4_hi ?? ($voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null),
+                        'extra_info_5' => $voter->voterInformation->extra_info_5_hi ?? ($voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null),
+                        'extra_check_1' => $voter->voterInformation->extra_check_1 ?? null,
+                        'extra_check_2' => $voter->voterInformation->extra_check_2 ?? null,
+                    ] : null,
+                ];
+            });
+
+            // Return response
+            return response()->json([
+                'status' => 200,
+                'message' => 'Voter search results retrieved successfully',
+                'voters' => $votersMapped,
+                'total' => $voters->count(),
+            ], 200);
+        }
+
+
+    }
+    public function villagesList(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'lang' => 'required|in:en,mr,hi',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()], 400);
+        }
+
+        $userAddresses = UserAddress::all();
+        if($request->lang == 'en'){
+            $villagesGrouped = $userAddresses->groupBy('village')
+            ->map(function ($villageGroup) {
+                return [
+                    'village' => $villageGroup->first()->village ?? null,
+                    'total_villagers' => $villageGroup->count(),
+                ];
+            })->values();
+            $totalVillages = $villagesGrouped->count();
+            return response()->json([
+                'status' => 200,
+                'message' => 'Village list retrieved successfully',
+                'total_villages' => $totalVillages,
+                'villages' => $villagesGrouped,
+            ], 200);
+        }
+        if($request->lang == 'mr'){
+            $villagesGrouped = $userAddresses->groupBy('village_mr')
+            ->map(function ($villageGroup) {
+                return [
+                    'village' => $villageGroup->first()->village_mr ?? null,
+                    'total_villagers' => $villageGroup->count(),
+                ];
+            })->values();
+            $totalVillages = $villagesGrouped->count();
+            return response()->json([
+                'status' => 200,
+                'message' => 'Village list retrieved successfully in marathi',
+                'total_villages' => $totalVillages,
+                'villages' => $villagesGrouped,
+            ], 200);
+        }
+        if($request->lang == 'hi'){
+            $villagesGrouped = $userAddresses->groupBy('village_hi')
+            ->map(function ($villageGroup) {
+                return [
+                    'village' => $villageGroup->first()->village_hi ?? null,
+                    'total_villagers' => $villageGroup->count(),
+                ];
+            })->values();
+            $totalVillages = $villagesGrouped->count();
+            return response()->json([
+                'status' => 200,
+                'message' => 'Village list retrieved successfully in english',
+                'total_villages' => $totalVillages,
+                'villages' => $villagesGrouped,
+            ], 200);
+        }
+
+    }
+    public function searchVillages(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'lang' => 'required|in:en,mr,hi',
+            'village' => 'required',
+        ]);
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()], 400);
+        }
+        $lang = $request->input('lang');
+        $translator = new GoogleTranslate($lang);
+        if($request->lang == 'en'){
+            $villages = UserAddress::
+            where('village', 'LIKE', '%' . $request->village . '%')->orderBy('village', 'asc')
+            ->get();
+            $villages = $villages->groupBy('village')
+            ->map(function ($villageGroup) use ($translator) {
+                return [
+                    'village' => $villageGroup->first()->village ?? null,
+                    'total_villagers' => $villageGroup->count(),
+                ];
+            })->values();
+            return response()->json([
+                'status' => 200,
+                'message' => 'Village list searched successfully in English',
+                'villages' => $villages,
+            ], 200);
+        }
+
+        if($request->lang == 'mr'){
+            $villages = UserAddress::
+            where('village_mr', 'LIKE', '%' . $request->village . '%')->orderBy('village_mr', 'asc')
+            ->get();
+            $villages = $villages->groupBy('village_mr')
+            ->map(function ($villageGroup) use ($translator) {
+                return [
+                    'village' => $villageGroup->first()->village_mr ??  null,
+                    'total_villagers' => $villageGroup->count(),
+                ];
+            })->values();
+            return response()->json([
+                'status' => 200,
+                'message' => 'Village list searched successfully in marathi',
+                'villages' => $villages,
+            ], 200);
+        }
+
+        if($request->lang == 'hi'){
+            $villages = UserAddress::
+            where('village_hi', 'LIKE', '%' . $request->village . '%')->orderBy('village_hi', 'asc')
+            ->get();
+            $villages = $villages->groupBy('village_hi')
+            ->map(function ($villageGroup) use ($translator) {
+                return [
+                    'village' => $villageGroup->first()->village_hi ??  null,
+                    'total_villagers' => $villageGroup->count(),
+                ];
+            })->values();
+            return response()->json([
+                'status' => 200,
+                'message' => 'Village list searched successfully in hindi',
+                'villages' => $villages,
+            ], 200);
+        }
+
+
+
+    }
+    public function voterDetailsByVillage(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'lang' => 'required|in:en,mr,hi',
+            'village' => 'required',
+        ]);
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()], 400);
+        }
+        $lang = $request->input('lang');
+        $translator = new GoogleTranslate($lang);
+        if($request->lang == 'en'){
+            $users = UserAddress::where('village', $request->village)
+            ->with(['voter', 'voter.voterInformation']) // Eager load voter and extra information
+            ->get()
+            ->map(function ($address) use ($translator) {
+                return [
+                    'voter_details' => [
+                        'id' => $address->voter->id,
+                        'first_name' => $address->voter->first_name ? $translator->translate($address->voter->first_name) : null,
+                        'middle_name' => $address->voter->middle_name ? $translator->translate($address->voter->middle_name) : null,
+                        'surname' => $address->voter->surname ? $translator->translate($address->voter->surname) : null,
+                        'email' => $address->voter->email ? $translator->translate($address->voter->email) : null,
+                        'gender' => $address->voter->gender ? $translator->translate($address->voter->gender) : null,
+                        'age' => $address->voter->age ? $translator->translate($address->voter->age) : null,
+                        'dob' => $address->voter->dob ? $translator->translate($address->voter->dob) : null,
+                        'cast' => $address->voter->cast ? $translator->translate($address->voter->cast) : null,
+                        'position' => $address->voter->position ? $translator->translate($address->voter->position) : null,
+                        'personnel' => $address->voter->personnel ? $translator->translate($address->voter->personnel) : null,
+                        'voter_id' => $address->voter->voter_id ? $translator->translate($address->voter->voter_id) : null,
+                    ],
+                    'extra_information' => $address->voter->voterInformation ? [
+                        'extra_info_1' => $address->voter->voterInformation->extra_info_1 ? $translator->translate($address->voter->voterInformation->extra_info_1) : null,
+                        'extra_info_2' => $address->voter->voterInformation->extra_info_2 ? $translator->translate($address->voter->voterInformation->extra_info_2) : null,
+                        'extra_info_3' => $address->voter->voterInformation->extra_info_3 ? $translator->translate($address->voter->voterInformation->extra_info_3) : null,
+                        'extra_info_4' => $address->voter->voterInformation->extra_info_4 ? $translator->translate($address->voter->voterInformation->extra_info_4) : null,
+                        'extra_info_5' => $address->voter->voterInformation->extra_info_5 ? $translator->translate($address->voter->voterInformation->extra_info_5) : null,
+                        'extra_check_1' => $address->voter->voterInformation->extra_check_1 ?? null,
+                        'extra_check_2' => $address->voter->voterInformation->extra_check_2 ?? null,
+
+                        // Add more fields as needed
+                    ] : null, // Include null if extra information is not available
+                    'address_details' => [
+                        'society' => $address->society ? $translator->translate($address->society) : null,
+                        'house_no' => $address->house_no ? $translator->translate($address->house_no) : null,
+                        'flat_no' => $address->flat_no ? $translator->translate($address->flat_no) : null,
+                        'address' => $address->address ? $translator->translate($address->address) : null,
+                        'booth' => $address->booth ? $translator->translate($address->booth) : null,
+                        'village' => $address->village ? $translator->translate($address->village) : null,
+                        'part_no' => $address->part_no ? $translator->translate($address->part_no) : null,
+                        'srn' => $address->srn ? $translator->translate($address->srn) : null,
+                        'voting_centre' => $address->voting_centre ? $translator->translate($address->voting_centre) : null,
+                    ],
+                ];
+            });
+            return response()->json([
+                'status' => 200,
+                'message' => 'Voter details retrieved successfully',
+                'voters' => $users,
+            ], 200);
+
+        }
+        if($request->lang == 'mr'){
+            $users = UserAddress::where('village_mr', $request->village)
+            ->with(['voter', 'voter.voterInformation']) // Eager load voter and extra information
+            ->get()
+            ->map(function ($address) use ($translator) {
+                return [
+                    'voter_details' => [
+                        'id' => $address->voter->id,
+                        'first_name' => $address->voter->first_name_mr ?? ($address->voter->first_name ? $translator->translate($address->voter->first_name) : null),
+                        'middle_name' => $address->voter->middle_name_mr ?? ($address->voter->middle_name ? $translator->translate($address->voter->middle_name) : null),
+                        'surname' => $address->voter->surname_mr ?? ($address->voter->surname ? $translator->translate($address->voter->surname) : null),
+                        'email' => $address->voter->email ?? null,
+                        'gender' => $address->voter->gender_mr ?? ($address->voter->gender ? $translator->translate($address->voter->gender) : null),
+                        'age' => $address->voter->age ?? null,
+                        'dob' => $address->voter->dob ?? null,
+                        'cast' => $address->voter->cast_mr ?? ($address->voter->cast ? $translator->translate($address->voter->cast) : null),
+                        'position' => $address->voter->position_mr ?? ($address->voter->position ? $translator->translate($address->voter->position) : null),
+                        'personnel' => $address->voter->personnel ?? null,
+                        'voter_id' => $address->voter->voter_id ?? null,
+                    ],
+                    'extra_information' => $address->voter->voterInformation ? [
+                        'extra_info_1' => $address->voter->voterInformation->extra_info_1_mr ?? ($address->voter->voterInformation->extra_info_1 ? $translator->translate($address->voter->voterInformation->extra_info_1) : null),
+                        'extra_info_2' => $address->voter->voterInformation->extra_info_2_mr ?? ($address->voter->voterInformation->extra_info_2 ? $translator->translate($address->voter->voterInformation->extra_info_2) : null),
+                        'extra_info_3' => $address->voter->voterInformation->extra_info_3_mr ?? ($address->voter->voterInformation->extra_info_3 ? $translator->translate($address->voter->voterInformation->extra_info_3) : null),
+                        'extra_info_4' => $address->voter->voterInformation->extra_info_4_mr ?? ($address->voter->voterInformation->extra_info_4 ? $translator->translate($address->voter->voterInformation->extra_info_4) : null),
+                        'extra_info_5' => $address->voter->voterInformation->extra_info_5_mr ?? ($address->voter->voterInformation->extra_info_5 ? $translator->translate($address->voter->voterInformation->extra_info_5) : null),
+                        'extra_check_1' => $address->voter->voterInformation->extra_check_1 ?? null,
+                        'extra_check_2' => $address->voter->voterInformation->extra_check_2 ?? null,
+
+                        // Add more fields as needed
+                    ] : null, // Include null if extra information is not available
+                    'address_details' => [
+                        'society' => $address->society_mr ?? ($address->society ? $translator->translate($address->society) : null),
+                        'house_no' => $address->house_no_mr ?? ($address->house_no ? $translator->translate($address->house_no) : null),
+                        'flat_no' => $address->flat_no_mr ?? ($address->flat_no ? $translator->translate($address->flat_no) : null),
+                        'address' => $address->address_mr ?? ($address->address ? $translator->translate($address->address) : null),
+                        'booth' => $address->booth_mr ?? ($address->booth ? $translator->translate($address->booth) : null),
+                        'village' => $address->village_mr ?? ($address->village ? $translator->translate($address->village) : null),
+                        'part_no' => $address->part_no_mr ?? ($address->part_no ? $translator->translate($address->part_no) : null),
+                        'srn' => $address->srn_mr ?? ($address->srn ? $translator->translate($address->srn) : null),
+                        'voting_centre' => $address->voting_centre_mr ?? ($address->voting_centre ? $translator->translate($address->voting_centre) : null),
+                    ],
+                ];
+            });
+            return response()->json([
+                'status' => 200,
+                'message' => 'Voter details retrieved successfully',
+                'voters' => $users,
+            ], 200);
+
+        }
+        if ($request->lang == 'hi') {
+            $users = UserAddress::where('village_hi', $request->village)
+                ->with(['voter', 'voter.voterInformation']) // Eager load voter and extra information
+                ->get()
+                ->map(function ($address) use ($translator) {
+                    return [
+                        'voter_details' => [
+                            'id' => $address->voter->id,
+                            'first_name' => $address->voter->first_name_hi ?? ($address->voter->first_name ? $translator->translate($address->voter->first_name) : null),
+                            'middle_name' => $address->voter->middle_name_hi ?? ($address->voter->middle_name ? $translator->translate($address->voter->middle_name) : null),
+                            'surname' => $address->voter->surname_hi ?? ($address->voter->surname ? $translator->translate($address->voter->surname) : null),
+                            'email' => $address->voter->email ?? null,
+                            'gender' => $address->voter->gender_hi ?? ($address->voter->gender ? $translator->translate($address->voter->gender) : null),
+                            'age' => $address->voter->age ?? null,
+                            'dob' => $address->voter->dob ?? null,
+                            'cast' => $address->voter->cast_hi ?? ($address->voter->cast ? $translator->translate($address->voter->cast) : null),
+                            'position' => $address->voter->position_hi ?? ($address->voter->position ? $translator->translate($address->voter->position) : null),
+                            'personnel' => $address->voter->personnel ?? null,
+                            'voter_id' => $address->voter->voter_id ?? null,
+                        ],
+                        'extra_information' => $address->voter->voterInformation ? [
+                            'extra_info_1' => $address->voter->voterInformation->extra_info_1_hi ?? ($address->voter->voterInformation->extra_info_1 ? $translator->translate($address->voter->voterInformation->extra_info_1) : null),
+                            'extra_info_2' => $address->voter->voterInformation->extra_info_2_hi ?? ($address->voter->voterInformation->extra_info_2 ? $translator->translate($address->voter->voterInformation->extra_info_2) : null),
+                            'extra_info_3' => $address->voter->voterInformation->extra_info_3_hi ?? ($address->voter->voterInformation->extra_info_3 ? $translator->translate($address->voter->voterInformation->extra_info_3) : null),
+                            'extra_info_4' => $address->voter->voterInformation->extra_info_4_hi ?? ($address->voter->voterInformation->extra_info_4 ? $translator->translate($address->voter->voterInformation->extra_info_4) : null),
+                            'extra_info_5' => $address->voter->voterInformation->extra_info_5_hi ?? ($address->voter->voterInformation->extra_info_5 ? $translator->translate($address->voter->voterInformation->extra_info_5) : null),
+                            'extra_check_1' => $address->voter->voterInformation->extra_check_1 ?? null,
+                            'extra_check_2' => $address->voter->voterInformation->extra_check_2 ?? null,
+
+                            // Add more fields as needed
+                        ] : null, // Include null if extra information is not available
+                        'address_details' => [
+                            'society' => $address->society_hi ?? ($address->society ? $translator->translate($address->society) : null),
+                            'house_no' => $address->house_no_hi ?? ($address->house_no ? $translator->translate($address->house_no) : null),
+                            'flat_no' => $address->flat_no_hi ?? ($address->flat_no ? $translator->translate($address->flat_no) : null),
+                            'address' => $address->address_hi ?? ($address->address ? $translator->translate($address->address) : null),
+                            'booth' => $address->booth_hi ?? ($address->booth ? $translator->translate($address->booth) : null),
+                            'village' => $address->village_hi ?? ($address->village ? $translator->translate($address->village) : null),
+                            'part_no' => $address->part_no_hi ?? ($address->part_no ? $translator->translate($address->part_no) : null),
+                            'srn' => $address->srn_hi ?? ($address->srn ? $translator->translate($address->srn) : null),
+                            'voting_centre' => $address->voting_centre_hi ?? ($address->voting_centre ? $translator->translate($address->voting_centre) : null),
+                        ],
+                    ];
+                });
+            return response()->json([
+                'status' => 200,
+                'message' => 'Voter details retrieved successfully',
+                'voters' => $users,
+            ], 200);
+        }
+
+
+
+    }
+
+    public function partNoList(Request $request)
+    {
+
+        $validator = Validator::make($request->all(), [
+            'lang' => 'required|in:en,mr,hi',
+        ]);
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()], 400);
+        }
+
+        $lang = $request->input('lang');
+        $translator = new GoogleTranslate($lang);
+        $userAddresses = UserAddress::all();
+        if($request->lang == 'en'){
+            $partNosGrouped = $userAddresses->groupBy('part_no')
+            ->map(function ($partNosGroup) use ($translator) {
+                return [
+                    'part_no' => $partNosGroup->first()->part_no ?? null,
+                    'total_voters' => $partNosGroup->count(),
+                ];
+            })->values();
+            $totalPartNos = $partNosGrouped->count();
+            return response()->json([
+                'status' => 200,
+                'message' => 'Part no list retrieved successfully in English',
+                'total_partnos' => $totalPartNos,
+                'part_nos' => $partNosGrouped,
+            ], 200);
+        }
+        if($request->lang == 'mr'){
+            $partNosGrouped = $userAddresses->groupBy('part_no_mr')
+            ->map(function ($partNosGroup) use ($translator) {
+                return [
+                    'part_no' => $partNosGroup->first()->part_no_mr ?? null,
+                    'total_voters' => $partNosGroup->count(),
+                ];
+            })->values();
+            $totalPartNos = $partNosGrouped->count();
+            return response()->json([
+                'status' => 200,
+                'message' => 'Part no list retrieved successfully in Marathi',
+                'total_partnos' => $totalPartNos,
+                'part_nos' => $partNosGrouped,
+            ], 200);
+        }
+        if($request->lang == 'hi'){
+            $partNosGrouped = $userAddresses->groupBy('part_no_hi')
+            ->map(function ($partNosGroup) use ($translator) {
+                return [
+                    'part_no' => $partNosGroup->first()->part_no_hi ?? null,
+                    'total_voters' => $partNosGroup->count(),
+                ];
+            })->values();
+            $totalPartNos = $partNosGrouped->count();
+            return response()->json([
+                'status' => 200,
+                'message' => 'Part no list retrieved successfully in Hindi',
+                'total_partnos' => $totalPartNos,
+                'part_nos' => $partNosGrouped,
+            ], 200);
+        }
+
+
+    }
+
+    public function searchPartNos(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'lang' => 'required|in:en,mr,hi',
+            'part_no' => 'required',
+        ]);
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()], 400);
+        }
+        $lang = $request->input('lang');
+        $translator = new GoogleTranslate($lang);
+        if($request->lang == 'en'){
+            $part_nos = UserAddress::
+            where('part_no', 'LIKE', '%' . $request->part_no . '%')->orderBy('part_no', 'asc')
+            ->get();
+            $part_nos = $part_nos->groupBy('part_no')
+            ->map(function ($part_no) use ($translator) {
+                return [
+                    'part_no' => $part_no->first()->part_no ? $translator->translate($part_no->first()->part_no) : null,
+                    'total_voters' => $part_no->count(),
+                ];
+            })->values();
+            return response()->json([
+                'status' => 200,
+                'message' => 'Part no list searched successfully in English',
+                'part_nos' => $part_nos,
+            ], 200);
+        }
+        if($request->lang == 'mr'){
+            $part_nos = UserAddress::
+            where('part_no_mr', 'LIKE', '%' . $request->part_no . '%')->orderBy('part_no_mr', 'asc')
+            ->get();
+            $part_nos = $part_nos->groupBy('part_no_mr')
+            ->map(function ($part_no) use ($translator) {
+                return [
+                    'part_no' => $part_no->first()->part_no_mr ?? null,
+                    'total_voters' => $part_no->count(),
+                ];
+            })->values();
+            return response()->json([
+                'status' => 200,
+                'message' => 'Part no list searched successfully in Marathi',
+                'part_nos' => $part_nos,
+            ], 200);
+        }
+        if($request->lang == 'hi'){
+            $part_nos = UserAddress::
+            where('part_no_hi', 'LIKE', '%' . $request->part_no . '%')->orderBy('part_no_hi', 'asc')
+            ->get();
+            $part_nos = $part_nos->groupBy('part_no_hi')
+            ->map(function ($part_no) use ($translator) {
+                return [
+                    'part_no' => $part_no->first()->part_no_hi ?? null,
+                    'total_voters' => $part_no->count(),
+                ];
+            })->values();
+            return response()->json([
+                'status' => 200,
+                'message' => 'Part no list searched successfully in Hindi',
+                'part_nos' => $part_nos,
+            ], 200);
+        }
+
+    }
+
+    public function voterDetailsByPartnos(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'lang' => 'required|in:en,mr,hi',
+            'part_no' => 'required',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()], 400);
+        }
+
+        $lang = $request->input('lang', 'en'); // Default to 'en' if not provided
+        $translator = new GoogleTranslate($lang);
+        if($request->lang == 'en'){
+            $users = UserAddress::where('part_no', $request->part_no)
+            ->with(['voter', 'voter.voterInformation']) // Eager load related data
+            ->get()
+            ->map(function ($address) use ($translator) {
+                return [
+                    'voter_details' => [
+                        'id' => $address->voter->id,
+                        'first_name' => $address->voter->first_name ? $translator->translate($address->voter->first_name) : null,
+                        'middle_name' => $address->voter->middle_name ? $translator->translate($address->voter->middle_name) : null,
+                        'surname' => $address->voter->surname ? $translator->translate($address->voter->surname) : null,
+                        'email' => $address->voter->email ? $translator->translate($address->voter->email) : null,
+                        'gender' => $address->voter->gender ? $translator->translate($address->voter->gender) : null,
+                        'age' => $address->voter->age ? $translator->translate($address->voter->age) : null,
+                        'dob' => $address->voter->dob ? $translator->translate($address->voter->dob) : null,
+                        'cast' => $address->voter->cast ? $translator->translate($address->voter->cast) : null,
+                        'position' => $address->voter->position ? $translator->translate($address->voter->position) : null,
+                        'personnel' => $address->voter->personnel ? $translator->translate($address->voter->personnel) : null,
+                        'voter_id' => $address->voter->voter_id ? $translator->translate($address->voter->voter_id) : null,
+                    ],
+                    'extra_information' => $address->voter->voterInformation ? [
+                        'extra_info_1' => $address->voter->voterInformation->extra_info_1 ? $translator->translate($address->voter->voterInformation->extra_info_1) : null,
+                        'extra_info_2' => $address->voter->voterInformation->extra_info_2 ? $translator->translate($address->voter->voterInformation->extra_info_2) : null,
+                        'extra_info_3' => $address->voter->voterInformation->extra_info_3 ? $translator->translate($address->voter->voterInformation->extra_info_3) : null,
+                        'extra_info_4' => $address->voter->voterInformation->extra_info_4 ? $translator->translate($address->voter->voterInformation->extra_info_4) : null,
+                        'extra_info_5' => $address->voter->voterInformation->extra_info_5 ? $translator->translate($address->voter->voterInformation->extra_info_5) : null,
+                        'extra_check_1' => $address->voter->voterInformation->extra_check_1 ?? null,
+                        'extra_check_2' => $address->voter->voterInformation->extra_check_2 ?? null,
+                        // Add more fields as needed
+                    ] : null,
+                    'address_details' => [
+                        'society' => $address->society ? $translator->translate($address->society) : null,
+                        'house_no' => $address->house_no ? $translator->translate($address->house_no) : null,
+                        'flat_no' => $address->flat_no ? $translator->translate($address->flat_no) : null,
+                        'address' => $address->address ? $translator->translate($address->address) : null,
+                        'booth' => $address->booth ? $translator->translate($address->booth) : null,
+                        'village' => $address->village ? $translator->translate($address->village) : null,
+                        'part_no' => $address->part_no ? $translator->translate($address->part_no) : null,
+                        'srn' => $address->srn ? $translator->translate($address->srn) : null,
+                        'voting_centre' => $address->voting_centre ? $translator->translate($address->voting_centre) : null,
+                    ],
+                ];
+            });
+
+            return response()->json([
+                'status' => 200,
+                'message' => 'Voter details retrieved successfully in English',
+                'voters' => $users,
+            ], 200);
+        }
+        if($request->lang == 'mr'){
+            $users = UserAddress::where('part_no_mr', $request->part_no)
+            ->with(['voter', 'voter.voterInformation']) // Eager load related data
+            ->get()
+            ->map(function ($address) use ($translator) {
+                return [
+                    'voter_details' => [
+                        'id' => $address->voter->id,
+                        'first_name' => $address->voter->first_name_mr ?? ($address->voter->first_name ? $translator->translate($address->voter->first_name) : null),
+                        'middle_name' => $address->voter->middle_name_mr ?? ($address->voter->middle_name ? $translator->translate($address->voter->middle_name) : null),
+                        'surname' => $address->voter->surname_mr ?? ($address->voter->surname ? $translator->translate($address->voter->surname) : null),
+                        'email' => $address->voter->email ?? null,
+                        'gender' => $address->voter->gender_mr ?? ($address->voter->gender ? $translator->translate($address->voter->gender) : null),
+                        'age' => $address->voter->age ??  null,
+                        'dob' => $address->voter->dob ?? null,
+                        'cast' => $address->voter->cast_mr ?? ($address->voter->cast ? $translator->translate($address->voter->cast) : null),
+                        'position' => $address->voter->position_mr ?? ($address->voter->position ? $translator->translate($address->voter->position) : null),
+                        'personnel' => $address->voter->personnel ?? null,
+                        'voter_id' => $address->voter->voter_id ?? null,
+                    ],
+                    'extra_information' => $address->voter->voterInformation ? [
+                        'extra_info_1' => $address->voter->voterInformation->extra_info_1_mr ?? ($address ->voter->voterInformation->extra_info_1 ? $translator->translate($address->voter->voterInformation->extra_info_1) : null),
+                        'extra_info_2' => $address->voter->voterInformation->extra_info_2_mr ?? ($address ->voter->voterInformation->extra_info_2 ? $translator->translate($address->voter->voterInformation->extra_info_2) : null),
+                        'extra_info_3' => $address->voter->voterInformation->extra_info_3_mr ?? ($address ->voter->voterInformation->extra_info_3 ? $translator->translate($address->voter->voterInformation->extra_info_3) : null),
+                        'extra_info_4' => $address->voter->voterInformation->extra_info_4_mr ?? ($address ->voter->voterInformation->extra_info_4 ? $translator->translate($address->voter->voterInformation->extra_info_4) : null),
+                        'extra_info_5' => $address->voter->voterInformation->extra_info_4_mr ?? ($address ->voter->voterInformation->extra_info_5 ? $translator->translate($address->voter->voterInformation->extra_info_5) : null),
+                        'extra_check_1' => $address->voter->voterInformation->extra_check_1 ?? null,
+                        'extra_check_2' => $address->voter->voterInformation->extra_check_2 ?? null,
+                        // Add more fields as needed
+                    ] : null,
+                    'address_details' => [
+                        'society' => $address->society_mr ?? ($address->society ? $translator->translate($address->society) : null),
+                        'house_no' => $address->house_no_mr ?? ($address->house_no ? $translator->translate($address->house_no) : null),
+                        'flat_no' => $address->flat_no_mr ?? ($address->flat_no ? $translator->translate($address->flat_no) : null),
+                        'address' => $address->address_mr ?? ($address->address ?  $translator->translate($address->address) : null),
+                        'booth' => $address->booth_mr ?? ($address->booth ? $translator->translate($address->booth) : null),
+                        'village' => $address->village_mr ?? ($address->village ? $translator->translate($address->village) : null),
+                        'part_no' => $address->part_no_mr ?? ($address->part_no ? $translator->translate($address->part_no) : null),
+                        'srn' => $address->srn_mr ?? ($address->srn ? $translator->translate($address->srn) : null),
+                        'voting_centre' => $address->voting_centre_mr ?? ($address->voting_centre ? $translator->translate($address->voting_centre) : null),
+                    ],
+                ];
+            });
+
+            return response()->json([
+                'status' => 200,
+                'message' => 'Voter details retrieved successfully in Marathi',
+                'voters' => $users,
+            ], 200);
+        }
+
+        if ($request->lang == 'hi') {
+            $users = UserAddress::where('part_no_hi', $request->part_no)
+                ->with(['voter', 'voter.voterInformation']) // Eager load related data
+                ->get()
+                ->map(function ($address) use ($translator) {
+                    return [
+                        'voter_details' => [
+                            'id' => $address->voter->id,
+                            'first_name' => $address->voter->first_name_hi ?? ($address->voter->first_name ? $translator->translate($address->voter->first_name) : null),
+                            'middle_name' => $address->voter->middle_name_hi ?? ($address->voter->middle_name ? $translator->translate($address->voter->middle_name) : null),
+                            'surname' => $address->voter->surname_hi ?? ($address->voter->surname ? $translator->translate($address->voter->surname) : null),
+                            'email' => $address->voter->email ?? null,
+                            'gender' => $address->voter->gender_hi ?? ($address->voter->gender ? $translator->translate($address->voter->gender) : null),
+                            'age' => $address->voter->age ?? null,
+                            'dob' => $address->voter->dob ?? null,
+                            'cast' => $address->voter->cast_hi ?? ($address->voter->cast ? $translator->translate($address->voter->cast) : null),
+                            'position' => $address->voter->position_hi ?? ($address->voter->position ? $translator->translate($address->voter->position) : null),
+                            'personnel' => $address->voter->personnel ?? null,
+                            'voter_id' => $address->voter->voter_id ?? null,
+                        ],
+                        'extra_information' => $address->voter->voterInformation ? [
+                            'extra_info_1' => $address->voter->voterInformation->extra_info_1_hi ?? ($address->voter->voterInformation->extra_info_1 ? $translator->translate($address->voter->voterInformation->extra_info_1) : null),
+                            'extra_info_2' => $address->voter->voterInformation->extra_info_2_hi ?? ($address->voter->voterInformation->extra_info_2 ? $translator->translate($address->voter->voterInformation->extra_info_2) : null),
+                            'extra_info_3' => $address->voter->voterInformation->extra_info_3_hi ?? ($address->voter->voterInformation->extra_info_3 ? $translator->translate($address->voter->voterInformation->extra_info_3) : null),
+                            'extra_info_4' => $address->voter->voterInformation->extra_info_4_hi ?? ($address->voter->voterInformation->extra_info_4 ? $translator->translate($address->voter->voterInformation->extra_info_4) : null),
+                            'extra_info_5' => $address->voter->voterInformation->extra_info_5_hi ?? ($address->voter->voterInformation->extra_info_5 ? $translator->translate($address->voter->voterInformation->extra_info_5) : null),
+                            'extra_check_1' => $address->voter->voterInformation->extra_check_1 ?? null,
+                            'extra_check_2' => $address->voter->voterInformation->extra_check_2 ?? null,
+                            // Add more fields as needed
+                        ] : null,
+                        'address_details' => [
+                            'society' => $address->society_hi ?? ($address->society ? $translator->translate($address->society) : null),
+                            'house_no' => $address->house_no_hi ?? ($address->house_no ? $translator->translate($address->house_no) : null),
+                            'flat_no' => $address->flat_no_hi ?? ($address->flat_no ? $translator->translate($address->flat_no) : null),
+                            'address' => $address->address_hi ?? ($address->address ? $translator->translate($address->address) : null),
+                            'booth' => $address->booth_hi ?? ($address->booth ? $translator->translate($address->booth) : null),
+                            'village' => $address->village_hi ?? ($address->village ? $translator->translate($address->village) : null),
+                            'part_no' => $address->part_no_hi ?? ($address->part_no ? $translator->translate($address->part_no) : null),
+                            'srn' => $address->srn_hi ?? ($address->srn ? $translator->translate($address->srn) : null),
+                            'voting_centre' => $address->voting_centre_hi ?? ($address->voting_centre ? $translator->translate($address->voting_centre) : null),
+                        ],
+                    ];
+                });
+
+            return response()->json([
+                'status' => 200,
+                'message' => 'Voter details retrieved successfully in Hindi',
+                'voters' => $users,
+            ], 200);
+        }
+
+
+    }
+    public function votingCentreList(Request $request)
+    {
+
+        $validator = Validator::make($request->all(), [
+            'lang' => 'required|in:en,mr,hi',
+        ]);
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()], 400);
+        }
+
+        $lang = $request->input('lang');
+        $translator = new GoogleTranslate($lang);
+        if($request->lang == 'en'){
+            $userAddresses = UserAddress::all();
+            $votingCentersGrouped = $userAddresses->groupBy('voting_centre')
+            ->map(function ($votingCentersGroup) use ($translator) {
+                return [
+                    'voting_centre' => $votingCentersGroup->first()->voting_centre ?? null,
+                    'total_voters' => $votingCentersGroup->count(),
+                ];
+            })->values();
+            $totalVotingCenters = $votingCentersGrouped->count();
+            return response()->json([
+                'status' => 200,
+                'message' => 'Voting center list retrieved successfully in English',
+                'total_voting_centers' => $totalVotingCenters,
+                'voting_centers' => $votingCentersGrouped,
+            ], 200);
+        }
+
+        if($request->lang == 'mr'){
+            $userAddresses = UserAddress::all();
+            $votingCentersGrouped = $userAddresses->groupBy('voting_centre_mr')
+            ->map(function ($votingCentersGroup) use ($translator) {
+                return [
+                    'voting_centre' => $votingCentersGroup->first()->voting_centre_mr ?? null,
+                    'total_voters' => $votingCentersGroup->count(),
+                ];
+            })->values();
+            $totalVotingCenters = $votingCentersGrouped->count();
+            return response()->json([
+                'status' => 200,
+                'message' => 'Voting center list retrieved successfully in Marathi',
+                'total_voting_centers' => $totalVotingCenters,
+                'voting_centers' => $votingCentersGrouped,
+            ], 200);
+        }
+
+        if($request->lang == 'hi'){
+            $userAddresses = UserAddress::all();
+            $votingCentersGrouped = $userAddresses->groupBy('voting_centre_hi')
+            ->map(function ($votingCentersGroup) use ($translator) {
+                return [
+                    'voting_centre' => $votingCentersGroup->first()->voting_centre_hi ?? null,
+                    'total_voters' => $votingCentersGroup->count(),
+                ];
+            })->values();
+            $totalVotingCenters = $votingCentersGrouped->count();
+            return response()->json([
+                'status' => 200,
+                'message' => 'Voting center list retrieved successfully in Hindi',
+                'total_voting_centers' => $totalVotingCenters,
+                'voting_centers' => $votingCentersGrouped,
+            ], 200);
+        }
+
+
+
+    }
+
+    public function searchVotingCentre(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'lang' => 'required|in:en,mr,hi',
+            'voting_centre' => 'required',
+        ]);
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()], 400);
+        }
+        $lang = $request->input('lang');
+        $translator = new GoogleTranslate($lang);
+        if($request->lang == 'en'){
+            $votingCentres = UserAddress::
+            where('voting_centre', 'LIKE', '%' . $request->voting_centre . '%')->orderBy('voting_centre', 'asc')
+            ->get();
+            $votingCentres = $votingCentres->groupBy('voting_centre')
+            ->map(function ($voting_centre) use ($translator) {
+                return [
+                    'voting_centre' => $voting_centre->first()->voting_centre ?? null,
+                    'total_voters' => $voting_centre->count(),
+                ];
+            })->values();
+            return response()->json([
+                'status' => 200,
+                'message' => 'Voting center list searched successfully in English',
+                'voting_centres' => $votingCentres,
+            ], 200);
+        }
+        if($request->lang == 'mr'){
+            $votingCentres = UserAddress::
+            where('voting_centre_mr', 'LIKE', '%' . $request->voting_centre . '%')->orderBy('voting_centre_mr', 'asc')
+            ->get();
+            $votingCentres = $votingCentres->groupBy('voting_centre_mr')
+            ->map(function ($voting_centre) use ($translator) {
+                return [
+                    'voting_centre' => $voting_centre->first()->voting_centre_mr ?? null,
+                    'total_voters' => $voting_centre->count(),
+                ];
+            })->values();
+            return response()->json([
+                'status' => 200,
+                'message' => 'Voting center list searched successfully in Marathi',
+                'voting_centres' => $votingCentres,
+            ], 200);
+        }
+        if($request->lang == 'hi'){
+            $votingCentres = UserAddress::
+            where('voting_centre_hi', 'LIKE', '%' . $request->voting_centre . '%')->orderBy('voting_centre_hi', 'asc')
+            ->get();
+            $votingCentres = $votingCentres->groupBy('voting_centre_hi')
+            ->map(function ($voting_centre) use ($translator) {
+                return [
+                    'voting_centre' => $voting_centre->first()->voting_centre_hi ?? null,
+                    'total_voters' => $voting_centre->count(),
+                ];
+            })->values();
+            return response()->json([
+                'status' => 200,
+                'message' => 'Voting center list searched successfully in Hindi',
+                'voting_centres' => $votingCentres,
+            ], 200);
+        }
+
+
+    }
+
+    public function voterDetailsByVotingCentre(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'lang' => 'required|in:en,mr,hi',
+            'voting_centre' => 'required',
+        ]);
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()], 400);
+        }
+        $lang = $request->input('lang', 'en'); // Default to 'en' if not provided
+        $translator = new GoogleTranslate($lang);
+        if($request->lang == 'en'){
+            $users = UserAddress::where('voting_centre', $request->voting_centre)
+            ->with(['voter', 'voter.voterInformation']) // Eager load voter and extra information
+            ->get()
+            ->map(function ($voter) use ($translator) {
+                return [
+                    'voter_details' => [
+                        'id' => $voter->voter->id,
+                        'first_name' => $voter->voter->first_name ? $translator->translate($voter->voter->first_name) : null,
+                        'middle_name' => $voter->voter->middle_name ? $translator->translate($voter->voter->middle_name) : null,
+                        'surname' => $voter->voter->surname ? $translator->translate($voter->voter->surname) : null,
+                        'email' => $voter->voter->email ? $translator->translate($voter->voter->email) : null,
+                        'gender' => $voter->voter->gender ? $translator->translate($voter->voter->gender) : null,
+                        'age' => $voter->voter->age ? $translator->translate($voter->voter->age) : null,
+                        'dob' => $voter->voter->dob ? $translator->translate($voter->voter->dob) : null,
+                        'cast' => $voter->voter->cast ? $translator->translate($voter->voter->cast) : null,
+                        'position' => $voter->voter->position ? $translator->translate($voter->voter->position) : null,
+                        'personnel' => $voter->voter->personnel ? $translator->translate($voter->voter->personnel) : null,
+                        'voter_id' => $voter->voter->voter_id ? $translator->translate($voter->voter->voter_id) : null,
+                    ],
+                    'extra_information' => $voter->voterInformation ? [
+                        'extra_info_1' => $voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null,
+                        'extra_info_2' => $voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null,
+                        'extra_info_3' => $voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null,
+                        'extra_info_4' => $voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null,
+                        'extra_info_5' => $voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null,
+                        'extra_check_1' => $voter->voterInformation->extra_check_1 ?? null,
+                        'extra_check_2' => $voter->voterInformation->extra_check_2 ?? null,
+                        // Add more fields as needed
+                    ] : null, // Include null if extra information is not available
+                    'address_details' => [
+                        'society' => $voter->society ? $translator->translate($voter->society) : null,
+                        'house_no' => $voter->house_no ? $translator->translate($voter->house_no) : null,
+                        'flat_no' => $voter->flat_no ? $translator->translate($voter->flat_no) : null,
+                        'address' => $voter->address ? $translator->translate($voter->address) : null,
+                        'booth' => $voter->booth ? $translator->translate($voter->booth) : null,
+                        'village' => $voter->village ? $translator->translate($voter->village) : null,
+                        'part_no' => $voter->part_no ? $translator->translate($voter->part_no) : null,
+                        'srn' => $voter->srn ? $translator->translate($voter->srn) : null,
+                        'voting_centre' => $voter->voting_centre ? $translator->translate($voter->voting_centre) : null,
+                    ],
+                ];
+            });
+            return response()->json([
+                'status' => 200,
+                'message' => 'Voter details retrieved successfully',
+                'voters' => $users,
+            ], 200);
+        }
+
+        if ($request->lang == 'mr') {
+            $users = UserAddress::where('voting_centre_mr', $request->voting_centre)
+                ->with(['voter', 'voter.voterInformation']) // Eager load voter and extra information
+                ->get()
+                ->map(function ($voter) use ($translator) {
+                    return [
+                        'voter_details' => [
+                            'id' => $voter->voter->id,
+                            'first_name' => $voter->voter->first_name_mr ?? ($voter->voter->first_name ? $translator->translate($voter->voter->first_name) : null),
+                            'middle_name' => $voter->voter->middle_name_mr ?? ($voter->voter->middle_name ? $translator->translate($voter->voter->middle_name) : null),
+                            'surname' => $voter->voter->surname_mr ?? ($voter->voter->surname ? $translator->translate($voter->voter->surname) : null),
+                            'email' => $voter->voter->email ?? null,
+                            'gender' => $voter->voter->gender_mr ?? ($voter->voter->gender ? $translator->translate($voter->voter->gender) : null),
+                            'age' => $voter->voter->age ?? null,
+                            'dob' => $voter->voter->dob ?? null,
+                            'cast' => $voter->voter->cast_mr ?? ($voter->voter->cast ? $translator->translate($voter->voter->cast) : null),
+                            'position' => $voter->voter->position_mr ?? ($voter->voter->position ? $translator->translate($voter->voter->position) : null),
+                            'personnel' => $voter->voter->personnel ?? null,
+                            'voter_id' => $voter->voter->voter_id ?? null,
+                        ],
+                        'extra_information' => $voter->voterInformation ? [
+                            'extra_info_1' => $voter->voterInformation->extra_info_1_mr ?? ($voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null),
+                            'extra_info_2' => $voter->voterInformation->extra_info_2_mr ?? ($voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null),
+                            'extra_info_3' => $voter->voterInformation->extra_info_3_mr ?? ($voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null),
+                            'extra_info_4' => $voter->voterInformation->extra_info_4_mr ?? ($voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null),
+                            'extra_info_5' => $voter->voterInformation->extra_info_5_mr ?? ($voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null),
+                            'extra_check_1' => $voter->voterInformation->extra_check_1 ?? null,
+                            'extra_check_2' => $voter->voterInformation->extra_check_2 ?? null,
+                        ] : null,
+                        'address_details' => [
+                            'society' => $voter->society_mr ?? ($voter->society ? $translator->translate($voter->society) : null),
+                            'house_no' => $voter->house_no_mr ?? ($voter->house_no ? $translator->translate($voter->house_no) : null),
+                            'flat_no' => $voter->flat_no_mr ?? ($voter->flat_no ? $translator->translate($voter->flat_no) : null),
+                            'address' => $voter->address_mr ?? ($voter->address ? $translator->translate($voter->address) : null),
+                            'booth' => $voter->booth_mr ?? ($voter->booth ? $translator->translate($voter->booth) : null),
+                            'village' => $voter->village_mr ?? ($voter->village ? $translator->translate($voter->village) : null),
+                            'part_no' => $voter->part_no_mr ?? ($voter->part_no ? $translator->translate($voter->part_no) : null),
+                            'srn' => $voter->srn_mr ?? ($voter->srn ? $translator->translate($voter->srn) : null),
+                            'voting_centre' => $voter->voting_centre_mr ?? ($voter->voting_centre ? $translator->translate($voter->voting_centre) : null),
+                        ],
+                    ];
+                });
+
+            return response()->json([
+                'status' => 200,
+                'message' => 'Voter details retrieved successfully in Marathi',
+                'voters' => $users,
+            ], 200);
+        }
+        if($request->lang == 'hi'){
+            $users = UserAddress::where('voting_centre_hi', $request->voting_centre)
+                ->with(['voter', 'voter.voterInformation']) // Eager load voter and extra information
+                ->get()
+                ->map(function ($voter) use ($translator) {
+                    return [
+                        'voter_details' => [
+                            'id' => $voter->voter->id,
+                            'first_name' => $voter->voter->first_name_hi ?? ($voter->voter->first_name ? $translator->translate($voter->voter->first_name) : null),
+                            'middle_name' => $voter->voter->middle_name_hi ?? ($voter->voter->middle_name ? $translator->translate($voter->voter->middle_name) : null),
+                            'surname' => $voter->voter->surname_hi ?? ($voter->voter->surname ? $translator->translate($voter->voter->surname) : null),
+                            'email' => $voter->voter->email_hi ?? ($voter->voter->email ? $translator->translate($voter->voter->email) : null),
+                            'gender' => $voter->voter->gender_hi ?? ($voter->voter->gender ? $translator->translate($voter->voter->gender) : null),
+                            'age' => $voter->voter->age_hi ?? ($voter->voter->age ? $translator->translate($voter->voter->age) : null),
+                            'dob' => $voter->voter->dob_hi ?? ($voter->voter->dob ? $translator->translate($voter->voter->dob) : null),
+                            'cast' => $voter->voter->cast_hi ?? ($voter->voter->cast ? $translator->translate($voter->voter->cast) : null),
+                            'position' => $voter->voter->position_hi ?? ($voter->voter->position ? $translator->translate($voter->voter->position) : null),
+                            'personnel' => $voter->voter->personnel_hi ?? ($voter->voter->personnel ? $translator->translate($voter->voter->personnel) : null),
+                            'voter_id' => $voter->voter->voter_id_hi ?? ($voter->voter->voter_id ? $translator->translate($voter->voter->voter_id) : null),
+                        ],
+                        'extra_information' => $voter->voterInformation ? [
+                            'extra_info_1' => $voter->voterInformation->extra_info_1_hi ?? ($voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null),
+                            'extra_info_2' => $voter->voterInformation->extra_info_2_hi ?? ($voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null),
+                            'extra_info_3' => $voter->voterInformation->extra_info_3_hi ?? ($voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null),
+                            'extra_info_4' => $voter->voterInformation->extra_info_4_hi ?? ($voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null),
+                            'extra_info_5' => $voter->voterInformation->extra_info_5_hi ?? ($voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null),
+                            'extra_check_1' => $voter->voterInformation->extra_check_1 ?? null,
+                            'extra_check_2' => $voter->voterInformation->extra_check_2 ?? null,
+                            // Add more fields as needed
+                        ] : null, // Include null if extra information is not available
+                        'address_details' => [
+                            'society' => $voter->society_hi ?? ($voter->society ? $translator->translate($voter->society) : null),
+                            'house_no' => $voter->house_no_hi ?? ($voter->house_no ? $translator->translate($voter->house_no) : null),
+                            'flat_no' => $voter->flat_no_hi ?? ($voter->flat_no ? $translator->translate($voter->flat_no) : null),
+                            'address' => $voter->address_hi ?? ($voter->address ? $translator->translate($voter->address) : null),
+                            'booth' => $voter->booth_hi ?? ($voter->booth ? $translator->translate($voter->booth) : null),
+                            'village' => $voter->village_hi ?? ($voter->village ? $translator->translate($voter->village) : null),
+                            'part_no' => $voter->part_no_hi ?? ($voter->part_no ? $translator->translate($voter->part_no) : null),
+                            'srn' => $voter->srn_hi ?? ($voter->srn ? $translator->translate($voter->srn) : null),
+                            'voting_centre' => $voter->voting_centre_hi ?? ($voter->voting_centre ? $translator->translate($voter->voting_centre) : null),
+                        ],
+                    ];
+                });
+            return response()->json([
+                'status' => 200,
+                'message' => 'Voter details retrieved successfully in Hindi',
+                'voters' => $users,
+            ], 200);
+        }
+
+
+    }
+
+    public function surnameList(Request $request)
+    {
+        // Validate the language parameter (optional if you need translation)
+        $validator = Validator::make($request->all(), [
+            'lang' => 'required|in:en,mr,hi', // Optional if you want to support translation
+        ]);
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()], 400);
+        }
+
+        // Optional translation setup
+        $lang = $request->input('lang', 'en'); // Default to 'en' if not provided
+        $translator = new GoogleTranslate($lang);
+
+        // Fetch voters and group by surname
+        if($request->lang == 'en'){
+            $voters = Voters::all();
+            $surnamesGrouped = $voters->groupBy('surname')->map(function ($group, $surname) use ($translator) {
+                return [
+                    'surname' => $surname ? $translator->translate($surname) : null,
+                    'voter_count' => $group->count(),
+                ];
+            });
+
+            // Calculate the total unique surnames and total voters
+                $totalUniqueSurnames = $surnamesGrouped->count();
+                $totalVoters = $voters->count();
+
+            // Return the response
+                return response()->json([
+                    'status' => 200,
+                    'message' => 'Surname summary retrieved successfullyin English',
+                    'total_unique_surnames' => $totalUniqueSurnames,
+                    'total_voters' => $totalVoters,
+                    'surnames' => $surnamesGrouped->values(), // Get values as array
+                ], 200);
+        }
+
+        if($request->lang == 'mr'){
+            $voters = Voters::all();
+            $surnamesGrouped = $voters->groupBy('surname_mr')->map(function ($group, $surname) use ($translator) {
+                return [
+                    'surname' => $surname ?? null,
+                    'voter_count' => $group->count(),
+                ];
+            });
+
+            // Calculate the total unique surnames and total voters
+                $totalUniqueSurnames = $surnamesGrouped->count();
+                $totalVoters = $voters->count();
+
+            // Return the response
+                return response()->json([
+                    'status' => 200,
+                    'message' => 'Surname summary retrieved successfullyin Marathi',
+                    'total_unique_surnames' => $totalUniqueSurnames,
+                    'total_voters' => $totalVoters,
+                    'surnames' => $surnamesGrouped->values(), // Get values as array
+                ], 200);
+        }
+
+        if($request->lang == 'hi'){
+            $voters = Voters::all();
+            $surnamesGrouped = $voters->groupBy('surname_hi')->map(function ($group, $surname) use ($translator) {
+                return [
+                    'surname' => $surname ?? null,
+                    'voter_count' => $group->count(),
+                ];
+            });
+
+            // Calculate the total unique surnames and total voters
+                $totalUniqueSurnames = $surnamesGrouped->count();
+                $totalVoters = $voters->count();
+
+            // Return the response
+                return response()->json([
+                    'status' => 200,
+                    'message' => 'Surname summary retrieved successfullyin Marathi',
+                    'total_unique_surnames' => $totalUniqueSurnames,
+                    'total_voters' => $totalVoters,
+                    'surnames' => $surnamesGrouped->values(), // Get values as array
+                ], 200);
+        }
+
+
+
+    }
+
+    public function searchSurname(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'lang' => 'required|in:en,mr,hi',
+            'surname' => 'required',
+        ]);
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()], 400);
+        }
+        $lang = $request->input('lang');
+        $translator = new GoogleTranslate($lang);
+        if($request->lang == 'en'){
+            $surnames = Voters::
+            where('surname', 'LIKE', '%' . $request->surname . '%')->orderBy('surname', 'asc')
+            ->get();
+            $surnames = $surnames->groupBy('surname')
+            ->map(function ($surname) use ($translator) {
+                return [
+                    'surname' => $surname->first()->surname ?? null,
+                    'total_voters' => $surname->count(),
+                ];
+            })->values();
+            return response()->json([
+                'status' => 200,
+                'message' => 'Surname list searched successfully in English',
+                'surnames' => $surnames,
+            ], 200);
+        }
+        if($request->lang == 'mr'){
+            $surnames = Voters::
+            where('surname_mr', 'LIKE', '%' . $request->surname . '%')->orderBy('surname_mr', 'asc')
+            ->get();
+            $surnames = $surnames->groupBy('surname_mr')
+            ->map(function ($surname) use ($translator) {
+                return [
+                    'surname' => $surname->first()->surname_mr ?? null,
+                    'total_voters' => $surname->count(),
+                ];
+            })->values();
+            return response()->json([
+                'status' => 200,
+                'message' => 'Surname list searched successfully in Marathi',
+                'surnames' => $surnames,
+            ], 200);
+        }
+        if($request->lang == 'hi'){
+            $surnames = Voters::
+            where('surname_hi', 'LIKE', '%' . $request->surname . '%')->orderBy('surname_hi', 'asc')
+            ->get();
+            $surnames = $surnames->groupBy('surname_hi')
+            ->map(function ($surname) use ($translator) {
+                return [
+                    'surname' => $surname->first()->surname_hi ?? null,
+                    'total_voters' => $surname->count(),
+                ];
+            })->values();
+            return response()->json([
+                'status' => 200,
+                'message' => 'Surname list searched successfully in hindi',
+                'surnames' => $surnames,
+            ], 200);
+        }
+
+
+
+    }
+
+    public function voterDetailsBySurname(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'lang' => 'required|in:en,mr,hi',
+            'surname' => 'required',
+        ]);
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()], 400);
+        }
+        $lang = $request->input('lang', 'en'); // Default to 'en' if not provided
+        $translator = new GoogleTranslate($lang);
+        if($request->lang == 'en'){
+            $voters = voters::where('surname', $request->surname)
+            ->with(['voterAddress', 'voterInformation']) // Eager load voter and extra information
+            ->get()
+            ->map(function ($voter) use ($translator) {
+                return [
+                    'voter_details' => [
+                        'id' => $voter->id,
+                        'first_name' => $voter->first_name ? $translator->translate($voter->first_name) : null,
+                        'middle_name' => $voter->middle_name ? $translator->translate($voter->middle_name) : null,
+                        'surname' => $voter->surname ? $translator->translate($voter->surname) : null,
+                        'email' => $voter->email ? $translator->translate($voter->email) : null,
+                        'gender' => $voter->gender ? $translator->translate($voter->email) : null,
+                        'age' => $voter->age ? $translator->translate($voter->age) : null,
+                        'dob' => $voter->dob ? $translator->translate($voter->dob) : null,
+                        'cast' => $voter->cast ? $translator->translate($voter->cast) : null,
+                        'position' => $voter->position ? $translator->translate($voter->position) : null,
+                        'personnel' => $voter->personnel ? $translator->translate($voter->personnel) : null,
+                        'voter_id' => $voter->voter_id ? $translator->translate($voter->voter_id) : null,
+                    ],
+                    'extra_information' => $voter->voterInformation ? [
+                        'extra_info_1' => $voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null,
+                        'extra_info_2' => $voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null,
+                        'extra_info_3' => $voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null,
+                        'extra_info_4' => $voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null,
+                        'extra_info_5' => $voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null,
+                        'extra_check_1' => $voter->voterInformation->extra_check_1 ?? null,
+                        'extra_check_2' => $voter->voterInformation->extra_check_2 ?? null,
+                        // Add more fields as needed
+                    ] : null, // Include null if extra information is not available
+                    'address_details' => [
+                        'society' => $voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null,
+                        'house_no' => $voter->voterAddress->house_no ? $translator->translate($voter->voterAddress->house_no) : null,
+                        'flat_no' => $voter->voterAddress->flat_no ? $translator->translate($voter->voterAddress->flat_no) : null,
+                        'address' => $voter->voterAddress->address ? $translator->translate($voter->voterAddress->address) : null,
+                        'booth' => $voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null,
+                        'village' => $voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null,
+                        'part_no' => $voter->voterAddress->part_no ? $translator->translate($voter->voterAddress->part_no) : null,
+                        'srn' => $voter->voterAddress->srn ? $translator->translate($voter->voterAddress->srn) : null,
+                        'voting_centre' => $voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null,
+                    ],
+                ];
+            });
+            return response()->json([
+                'status' => 200,
+                'message' => 'Voter details retrieved successfully',
+                'voters' => $voters,
+            ], 200);
+        }
+
+        if($request->lang == 'hi'){
+            $voters = voters::where('surname_hi', $request->surname)
+                ->with(['voterAddress', 'voterInformation']) // Eager load voter and extra information
+                ->get()
+                ->map(function ($voter) use ($translator) {
+                    return [
+                        'voter_details' => [
+                            'id' => $voter->id,
+                            'first_name' => $voter->first_name_hi ?? ($voter->first_name ? $translator->translate($voter->first_name) : null),
+                            'middle_name' => $voter->middle_name_hi ?? ($voter->middle_name ? $translator->translate($voter->middle_name) : null),
+                            'surname' => $voter->surname_hi ?? ($voter->surname ? $translator->translate($voter->surname) : null),
+                            'email' => $voter->email ?? null,
+                            'gender' => $voter->gender_hi ?? ($voter->gender ? $translator->translate($voter->gender) : null),
+                            'age' => $voter->age ?? null,
+                            'dob' => $voter->dob ?? null,
+                            'cast' => $voter->cast_hi ?? ($voter->cast ? $translator->translate($voter->cast) : null),
+                            'position' => $voter->position_hi ?? ($voter->position ? $translator->translate($voter->position) : null),
+                            'personnel' => $voter->personnel ??  null,
+                            'voter_id' => $voter->voter_id ?? null,
+                        ],
+                        'extra_information' => $voter->voterInformation ? [
+                            'extra_info_1' => $voter->voterInformation->extra_info_1_hi ?? ($voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null),
+                            'extra_info_2' => $voter->voterInformation->extra_info_2_hi ?? ($voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null),
+                            'extra_info_3' => $voter->voterInformation->extra_info_3_hi ?? ($voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null),
+                            'extra_info_4' => $voter->voterInformation->extra_info_4_hi ?? ($voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null),
+                            'extra_info_5' => $voter->voterInformation->extra_info_5_hi ?? ($voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null),
+                            'extra_check_1' => $voter->voterInformation->extra_check_1 ?? null,
+                            'extra_check_2' => $voter->voterInformation->extra_check_2 ?? null,
+                            // Add more fields as needed
+                        ] : null, // Include null if extra information is not available
+                        'address_details' => [
+                            'society' => $voter->voterAddress->society_hi ?? ($voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null),
+                            'house_no' => $voter->voterAddress->house_no_hi ?? ($voter->voterAddress->house_no ? $translator->translate($voter->voterAddress->house_no) : null),
+                            'flat_no' => $voter->voterAddress->flat_no_hi ?? ($voter->voterAddress->flat_no ? $translator->translate($voter->voterAddress->flat_no) : null),
+                            'address' => $voter->voterAddress->address_hi ?? ($voter->voterAddress->address ? $translator->translate($voter->voterAddress->address) : null),
+                            'booth' => $voter->voterAddress->booth_hi ?? ($voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null),
+                            'village' => $voter->voterAddress->village_hi ?? ($voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null),
+                            'part_no' => $voter->voterAddress->part_no_hi ?? ($voter->voterAddress->part_no? $translator->translate($voter->voterAddress->part_no) : null),
+                            'srn' => $voter->voterAddress->srn_hi ?? ($voter->voterAddress->srn ? $translator->translate($voter->voterAddress->srn) : null),
+                            'voting_centre' => $voter->voterAddress->voting_centre_hi ?? ($voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null),
+                        ],
+                    ];
+                });
+            return response()->json([
+                'status' => 200,
+                'message' => 'Voter details retrieved successfully in hindi',
+                'voters' => $voters,
+            ], 200);
+        }
+
+        if($request->lang == 'mr'){
+            $voters = voters::where('surname_mr', $request->surname)
+                ->with(['voterAddress', 'voterInformation']) // Eager load voter and extra information
+                ->get()
+                ->map(function ($voter) use ($translator) {
+                    return [
+                        'voter_details' => [
+                            'id' => $voter->id,
+                            'first_name' => $voter->first_name_mr ?? ($voter->first_name ? $translator->translate($voter->first_name) : null),
+                            'middle_name' => $voter->middle_name_mr ?? ($voter->middle_name ? $translator->translate($voter->middle_name) : null),
+                            'surname' => $voter->surname_mr ?? ($voter->surname ? $translator->translate($voter->surname) : null),
+                            'email' => $voter->email ?? null,
+                            'gender' => $voter->gender_mr ?? ($voter->gender ? $translator->translate($voter->gender) : null),
+                            'age' => $voter->age ?? null,
+                            'dob' => $voter->dob ?? null,
+                            'cast' => $voter->cast_mr ?? ($voter->cast ? $translator->translate($voter->cast) : null),
+                            'position' => $voter->position_mr ?? ($voter->position ? $translator->translate($voter->position) : null),
+                            'personnel' => $voter->personnel ??  null,
+                            'voter_id' => $voter->voter_id ?? null,
+                        ],
+                        'extra_information' => $voter->voterInformation ? [
+                            'extra_info_1' => $voter->voterInformation->extra_info_1_mr ?? ($voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null),
+                            'extra_info_2' => $voter->voterInformation->extra_info_2_mr ?? ($voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null),
+                            'extra_info_3' => $voter->voterInformation->extra_info_3_mr ?? ($voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null),
+                            'extra_info_4' => $voter->voterInformation->extra_info_4_mr ?? ($voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null),
+                            'extra_info_5' => $voter->voterInformation->extra_info_5_mr ?? ($voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null),
+                            'extra_check_1' => $voter->voterInformation->extra_check_1 ?? null,
+                            'extra_check_2' => $voter->voterInformation->extra_check_2 ?? null,
+                            // Add more fields as needed
+                        ] : null, // Include null if extra information is not available
+                        'address_details' => [
+                            'society' => $voter->voterAddress->society_mr ?? ($voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null),
+                            'house_no' => $voter->voterAddress->house_no_mr ?? ($voter->voterAddress->house_no ? $translator->translate($voter->voterAddress->house_no) : null),
+                            'flat_no' => $voter->voterAddress->flat_no_mr ?? ($voter->voterAddress->flat_no ? $translator->translate($voter->voterAddress->flat_no) : null),
+                            'address' => $voter->voterAddress->address_mr ?? ($voter->voterAddress->address ? $translator->translate($voter->voterAddress->address) : null),
+                            'booth' => $voter->voterAddress->booth_mr ?? ($voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null),
+                            'village' => $voter->voterAddress->village_mr ?? ($voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null),
+                            'part_no' => $voter->voterAddress->part_no_mr ?? ($voter->voterAddress->part_no ? $translator->translate($voter->voterAddress->part_no) : null),
+                            'srn' => $voter->voterAddress->srn_mr ?? ($voter->voterDetailsByAddress->srn ? $translator->translate($voter->voterAddress->srn) : null),
+                            'voting_centre' => $voter->voterAddress->voting_centre_mr ?? ($voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null),
+                        ],
+                    ];
+                });
+            return response()->json([
+                'status' => 200,
+                'message' => 'Voter details retrieved successfully in Marathi',
+                'voters' => $voters,
+            ], 200);
+        }
+
+
+
+    }
+
+    // public function colourCodeList(Request $request)
+    // {
+    //     // Validate the language parameter (optional if you need translation)
+    //     $validator = Validator::make($request->all(), [
+    //         'lang' => 'required|in:en,mr,hi', // Optional if you want to support translation
+    //     ]);
+
+    //     if ($validator->fails()) {
+    //         return response()->json(['error' => $validator->errors()], 400);
+    //     }
+
+    //     // Optional translation setup
+    //     $lang = $request->input('lang', 'en'); // Default to 'en' if not provided
+    //     $translator = new GoogleTranslate($lang);
+
+    //     // Predefined mapping of specific hex codes to color names
+    //     $colorNameToHex = [
+    //         'Green' => '#008000',
+    //         'Red' => '#FF0000',
+    //         'Yellow' => '#FFFF00',
+    //         'White' => '#FFFFFF',
+    //         'Chocolate' => '#D2691E',
+    //         'Orange' => '#FFA500',
+    //         'Blue' => '#0000FF',
+    //         'Pink' => '#FFC0CB',
+    //         'Violet' => '#EE82EE',
+    //     ];
+
+    //     $hexToColorName = array_flip($colorNameToHex);
+
+    //     // Fetch voters and group by colour code
+    //     $voters = Voters::all();
+
+    //     // Group by color code and include "Others" for NULL color codes
+    //     $colourCodeGrouped = $voters->groupBy(function ($voter) {
+    //         return $voter->colour_code ?: 'Others';
+    //     })->map(function ($group, $hexCode) use ($translator, $hexToColorName) {
+    //         $colorName = $hexCode === 'Others' ? 'Others' : ($hexToColorName[strtoupper($hexCode)] ?? 'Unknown'); // Handle "Others" and "Unknown"
+    //         $translatedColorName = $translator->translate($colorName); // Translate the color name if needed
+
+    //         return [
+    //             'colour_code' => $hexCode === 'Others' ? null : $hexCode, // Set null for "Others"
+    //             'color_name' => $translatedColorName,
+    //             'voter_count' => $group->count(),
+    //         ];
+    //     });
+
+    //     // Calculate the total unique color codes and total voters
+    //     $totalUniqueColourCode = $colourCodeGrouped->count();
+    //     $totalVoters = $voters->count();
+
+    //     // Return the response
+    //     return response()->json([
+    //         'status' => 200,
+    //         'message' => 'Colour code summary retrieved successfully',
+    //         'total_unique_colour_code' => $totalUniqueColourCode,
+    //         'total_voters' => $totalVoters,
+    //         'colourcodes' => $colourCodeGrouped->values(), // Get values as array
+    //     ], 200);
+    // }
+
+    public function colourCodeList(Request $request)
+    {
+        // Validate the language parameter (optional if you need translation)
+        $validator = Validator::make($request->all(), [
+            'lang' => 'required|in:en,mr,hi', // Optional if you want to support translation
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()], 400);
+        }
+
+        // Optional translation setup
+        $lang = $request->input('lang', 'en'); // Default to 'en' if not provided
+        $translator = new GoogleTranslate($lang);
+
+        // Predefined mapping of specific hex codes to color names
+        $colorNameToHex = [
+            'Green' => '#008000',
+            'Red' => '#FF0000',
+            'Yellow' => '#FFFF00',
+            'Others' => '#FFFFFF',
+            'Chocolate' => '#D2691E',
+            'Orange' => '#FFA500',
+            'Blue' => '#0000FF',
+            'Pink' => '#FFC0CB',
+            'Violet' => '#EE82EE',
+        ];
+
+        // Reverse mapping: hex code to color name
+            $hexToColorName = array_flip(array_map('strtoupper', $colorNameToHex)); // Convert keys to uppercase for case-insensitivity
+
+        // Fetch voters and group by colour code
+                $voters = Voters::all();
+                $colourCodeGrouped = $voters->groupBy('colour_code')->map(function ($group, $hexCode) use ($translator, $hexToColorName) {
+                $colorName = $hexToColorName[strtoupper($hexCode)] ?? 'Unknown'; // Convert hex to uppercase for matching
+                $translatedColorName = $translator->translate($colorName); // Translate the color name if needed
+
+            return [
+                'colour_code' => $hexCode,
+                'color_name' => $translatedColorName,
+                'voter_count' => $group->count(),
+            ];
+        });
+
+        // Filter only the specific colors
+            $filteredColourCodes = $colourCodeGrouped->filter(function ($item) {
+                return $item['color_name'] !== 'Unknown';
+            });
+
+        // Calculate the total unique color codes and total voters
+            $totalUniqueColourCode = $filteredColourCodes->count();
+            $totalVoters = $voters->count();
+
+        // Return the response
+            return response()->json([
+                'status' => 200,
+                'message' => 'Colour code summary retrieved successfully',
+                'total_unique_colour_code' => $totalUniqueColourCode,
+                'total_voters' => $totalVoters,
+                'colourcodes' => $filteredColourCodes->values(), // Get values as array
+            ], 200);
+    }
+
+    public function searchColourCode(Request $request)
+    {
+        // Validate the request parameters
+        $validator = Validator::make($request->all(), [
+            'lang' => 'required|in:en,mr,hi',
+            'colour_code' => 'required|string', // Accepting color name as input
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()], 400);
+        }
+
+        $lang = $request->input('lang');
+        $translator = new GoogleTranslate($lang);
+
+        // Predefined mapping of color names to hex codes
+        $colorNameToHex = [
+            'Green' => '#008000',
+            'Red' => '#FF0000',
+            'Yellow' => '#FFFF00',
+            'Others' => '#FFFFFF',
+            'Chocolate' => '#D2691E',
+            'Orange' => '#FFA500',
+            'Blue' => '#0000FF',
+            'Pink' => '#FFC0CB',
+            'Violet' => '#EE82EE',
+        ];
+        // Convert the provided color name to its corresponding hex code
+        $inputColorName = ucfirst(strtolower($request->input('colour_code'))); // Normalize input
+        $hexCode = $colorNameToHex[$inputColorName] ?? null;
+
+        if (!$hexCode) {
+            return response()->json([
+                'status' => 400,
+                'message' => 'Invalid color name provided',
+            ], 400);
+        }
+
+        // Search for voters with the matching hex code
+        $colourCodes = Voters::where('colour_code', 'LIKE', '%' . $hexCode . '%')
+            ->orderBy('colour_code', 'asc')
+            ->get();
+
+        // Group and format the response
+        $colourCodes = $colourCodes->groupBy('colour_code')
+            ->map(function ($group) use ($colorNameToHex, $translator) {
+                // Get the color name from the predefined mapping
+                $colorName = array_search($group->first()->colour_code, $colorNameToHex);
+
+                return [
+                    'colour_code' => $group->first()->colour_code,
+                    'color_name' => $translator->translate($colorName), // Translate the color name, not the hex code
+                    'total_voters' => $group->count(),
+                ];
+            })->values();
+
+        return response()->json([
+            'status' => 200,
+            'message' => 'Colour code list searched successfully',
+            'colourCodes' => $colourCodes,
+        ], 200);
+    }
+
+    public function voterDetailsByColourCode(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'lang' => 'required|in:en,mr,hi',
+            'colour_code' => 'required', // Input as color name
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()], 400);
+        }
+
+        $lang = $request->input('lang', 'en'); // Default to 'en' if not provided
+        $translator = new GoogleTranslate($lang);
+
+        // Define color name to hexadecimal mapping
+        $colorNameToHex = [
+            'Green' => '#008000',
+            'Red' => '#FF0000',
+            'Yellow' => '#FFFF00',
+            'Others' => '#FFFFFF',
+            'Chocolate' => '#D2691E',
+            'Orange' => '#FFA500',
+            'Blue' => '#0000FF',
+            'Pink' => '#FFC0CB',
+            'Violet' => '#EE82EE',
+        ];
+
+        // Normalize the color name input
+        $inputColorName = ucfirst(strtolower($request->input('colour_code')));
+        $hexColorCode = $colorNameToHex[$inputColorName] ?? null;
+
+        if (!$hexColorCode) {
+            return response()->json([
+                'error' => "Invalid colour code provided. Supported colors: " . implode(', ', array_keys($colorNameToHex)),
+            ], 400);
+        }
+
+        // Fetch voters based on hex color code
+        $voters = voters::where('colour_code', $hexColorCode)
+            ->with(['voterAddress', 'voterInformation']) // Eager load related data
+            ->get()
+            ->map(function ($voter) use ($translator) {
+                return [
+                    'voter_details' => [
+                        'id' => $voter->id,
+                        'first_name' => $voter->first_name ? $translator->translate($voter->first_name) : null,
+                        'middle_name' => $voter->middle_name ? $translator->translate($voter->middle_name) : null,
+                        'surname' => $voter->surname ? $translator->translate($voter->surname) : null,
+                        'email' => $voter->email ? $translator->translate($voter->email) : null,
+                        'gender' => $voter->gender ? $translator->translate($voter->gender) : null,
+                        'age' => $voter->age ? $translator->translate($voter->age) : null,
+                        'dob' => $voter->dob ? $translator->translate($voter->dob) : null,
+                        'cast' => $voter->cast ? $translator->translate($voter->cast) : null,
+                        'position' => $voter->position ? $translator->translate($voter->position) : null,
+                        'personnel' => $voter->personnel ? $translator->translate($voter->personnel) : null,
+                        'voter_id' => $voter->voter_id ? $translator->translate($voter->voter_id) : null,
+                    ],
+                    'extra_information' => $voter->voterInformation ? [
+                        'extra_info_1' => $voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null,
+                        'extra_info_2' => $voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null,
+                        'extra_info_3' => $voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null,
+                        'extra_info_4' => $voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null,
+                        'extra_info_5' => $voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null,
+                        'extra_check_1' => $voter->voterInformation->extra_check_1 ?? null,
+                        'extra_check_2' => $voter->voterInformation->extra_check_2 ?? null,
+                    ] : null,
+                    'address_details' => $voter->voterAddress ? [
+                        'society' => $voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null,
+                        'house_no' => $voter->voterAddress->house_no ? $translator->translate($voter->voterAddress->house_no) : null,
+                        'flat_no' => $voter->voterAddress->flat_no ? $translator->translate($voter->voterAddress->flat_no) : null,
+                        'address' => $voter->voterAddress->address ? $translator->translate($voter->voterAddress->address) : null,
+                        'booth' => $voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null,
+                        'village' => $voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null,
+                        'part_no' => $voter->voterAddress->part_no ? $translator->translate($voter->voterAddress->part_no) : null,
+                        'srn' => $voter->voterAddress->srn ? $translator->translate($voter->voterAddress->srn) : null,
+                        'voting_centre' => $voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null,
+                    ] : null,
+                ];
+            });
+
+        return response()->json([
+            'status' => 200,
+            'message' => 'Voter details retrieved successfully',
+            'voters' => $voters,
+        ], 200);
+    }
+
+    public function mobileNoList(Request $request)
+    {
+        // Validate the language parameter (optional if you need translation)
+        $validator = Validator::make($request->all(), [
+            'lang' => 'required|in:en,mr,hi', // Optional if you want to support translation
+        ]);
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()], 400);
+        }
+        // Optional translation setup
+        $lang = $request->input('lang', 'en'); // Default to 'en' if not provided
+        $translator = new GoogleTranslate($lang);
+        // Fetch voters and group by surname
+        $voters = Voters::all();
+        $mobileNoGrouped = $voters->groupBy('mobile_1')->map(function ($group, $mobileNo) use ($translator) {
+            return [
+                'mobile_no' => $mobileNo ? $translator->translate($mobileNo) : null,
+                'voter_count' => $group->count(),
+            ];
+        });
+
+        // Calculate the total unique surnames and total voters
+        $totalUniqueMobileNo = $mobileNoGrouped->count();
+        $totalVoters = $voters->count();
+
+        // Return the response
+        return response()->json([
+            'status' => 200,
+            'message' => 'Colour code summary retrieved successfully',
+            'total_unique_mobile_no' => $totalUniqueMobileNo,
+            'total_voters' => $totalVoters,
+            'mobile_no' => $mobileNoGrouped->values(), // Get values as array
+        ], 200);
+    }
+
+    public function searchMobileNo(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'lang' => 'required|in:en,mr,hi',
+            'mobile_1' => 'required',
+        ]);
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()], 400);
+        }
+        $lang = $request->input('lang');
+        $translator = new GoogleTranslate($lang);
+        $mobilenos = Voters::where('mobile_1', 'LIKE', '%' . $request->mobile_1 . '%')->orderBy('mobile_1', 'asc')->get();
+        $mobilenos = $mobilenos->groupBy('mobile_1')
+            ->map(function ($mobileno) use ($translator) {
+                return [
+                    'mobile_1' => $mobileno->first()->mobile_1 ? $translator->translate($mobileno->first()->mobile_1) : null,
+                    'total_voters' => $mobileno->count(),
+                ];
+            })->values();
+            return response()->json([
+                'status' => 200,
+                'message' => 'Mobile no searched successfully',
+                'mobilenos' => $mobilenos,
+            ], 200);
+    }
+
+    public function voterDetailsByMobileNo(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'lang' => 'required|in:en,mr,hi',
+            'mobile_1' => 'required',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()], 400);
+        }
+
+        $lang = $request->input('lang');
+        $translator = new GoogleTranslate($lang);
+        if($request->lang == 'en'){
+            $voters = Voters::where('mobile_1', $request->mobile_1)
+            ->with(['voterAddress', 'voterInformation']) // Include relationships
+            ->get()
+            ->map(function ($voter) use ($translator) {
+                return [
+                    'voter_details' => [
+                        'id' => $voter->id,
+                        'first_name' => $voter->first_name ? $translator->translate($voter->first_name) : null,
+                        'middle_name' => $voter->middle_name ? $translator->translate($voter->middle_name) : null,
+                        'surname' => $voter->surname ? $translator->translate($voter->surname) : null,
+                        'email' => $voter->email ? $translator->translate($voter->email) : null,
+                        'gender' => $voter->gender ? $translator->translate($voter->gender) : null,
+                        'age' => $voter->age,
+                        'dob' => $voter->dob,
+                        'cast' => $voter->cast ? $translator->translate($voter->cast) : null,
+                        'position' => $voter->position ? $translator->translate($voter->position) : null,
+                        'personnel' => $voter->personnel ? $translator->translate($voter->personnel) : null,
+                        'voter_id' => $voter->voter_id,
+                    ],
+                    'extra_information' => $voter->voterInformation ? [
+                        'extra_info_1' => $voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null,
+                        'extra_info_2' => $voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null,
+                        'extra_info_3' => $voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null,
+                        'extra_info_4' => $voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null,
+                        'extra_info_5' => $voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null,
+                    ] : null,
+                    'address_details' => $voter->voterAddress ? [
+                        'society' => $voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null,
+                        'house_no' => $voter->voterAddress->house_no ? $translator->translate($voter->voterAddress->house_no) : null,
+                        'flat_no' => $voter->voterAddress->flat_no ? $translator->translate($voter->voterAddress->flat_no) : null,
+                        'address' => $voter->voterAddress->address ? $translator->translate($voter->voterAddress->address) : null,
+                        'booth' => $voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null,
+                        'village' => $voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null,
+                        'part_no' => $voter->voterAddress->part_no ?? null,
+                        'srn' => $voter->voterAddress->srn ?? null,
+                        'voting_centre' => $voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null,
+                    ] : null, // Ensure null is returned if voterAddress doesn't exist
+                ];
+            });
+
+            return response()->json([
+                'status' => 200,
+                'message' => 'Voter details retrieved successfully',
+                'voters' => $voters,
+            ], 200);
+        }
+
+        if ($request->lang == 'mr') {
+            $voters = Voters::where('mobile_1', $request->mobile_1)
+                ->with(['voterAddress', 'voterInformation']) // Include relationships
+                ->get()
+                ->map(function ($voter) use ($translator) {
+                    return [
+                        'voter_details' => [
+                            'id' => $voter->id,
+                            'first_name' => $voter->first_name_mr ?? ($voter->first_name ? $translator->translate($voter->first_name) : null),
+                            'middle_name' => $voter->middle_name_mr ?? ($voter->middle_name ? $translator->translate($voter->middle_name) : null),
+                            'surname' => $voter->surname_mr ?? ($voter->surname ? $translator->translate($voter->surname) : null),
+                            'email' => $voter->email ??  null,
+                            'gender' => $voter->gender_mr ?? ($voter->gender ? $translator->translate($voter->gender) : null),
+                            'age' => $voter->age ?? null,
+                            'dob' => $voter->dob ?? null,
+                            'cast' => $voter->cast_mr ?? ($voter->cast ? $translator->translate($voter->cast) : null),
+                            'position' => $voter->position_mr ?? ($voter->position ? $translator->translate($voter->position) : null),
+                            'personnel' => $voter->personnel ??  null,
+                            'voter_id' => $voter->voter_id ?? null,
+                        ],
+                        'extra_information' => $voter->voterInformation ? [
+                            'extra_info_1' => $voter->voterInformation->extra_info_1_mr ?? ($voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null),
+                            'extra_info_2' => $voter->voterInformation->extra_info_2_mr ?? ($voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null),
+                            'extra_info_3' => $voter->voterInformation->extra_info_3_mr ?? ($voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null),
+                            'extra_info_4' => $voter->voterInformation->extra_info_4_mr ?? ($voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null),
+                            'extra_info_5' => $voter->voterInformation->extra_info_5_mr ?? ($voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null),
+                        ] : null,
+                        'address_details' => $voter->voterAddress ? [
+                            'society' => $voter->voterAddress->society_mr ?? ($voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null),
+                            'house_no' => $voter->voterAddress->house_no_mr ?? ($voter->voterAddress->house_no ? $translator->translate($voter->voterAddress->house_no) : null),
+                            'flat_no' => $voter->voterAddress->flat_no_mr ?? ($voter->voterAddress->flat_no ? $translator->translate($voter->voterAddress->flat_no) : null),
+                            'address' => $voter->voterAddress->address_mr ?? ($voter->voterAddress->address ? $translator->translate($voter->voterAddress->address) : null),
+                            'booth' => $voter->voterAddress->booth_mr ?? ($voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null),
+                            'village' => $voter->voterAddress->village_mr ?? ($voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null),
+                            'part_no' => $voter->voterAddress->part_no_mr ?? ($voter->voterAddress->part_no ? $translator->translate($voter->voterAddress->part_no) : null),
+                            'srn' => $voter->voterAddress->srn_mr ?? ($voter->voterAddress->srn ? $translator->translate($voter->voterAddress->srn) : null),
+                            'voting_centre' => $voter->voterAddress->voting_centre_mr ?? ($voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null),
+                        ] : null, // Ensure null is returned if voterAddress doesn't exist
+                    ];
+                });
+
+            return response()->json([
+                'status' => 200,
+                'message' => 'Voter details retrieved successfully in Marathi',
+                'voters' => $voters,
+            ], 200);
+        }
+
+        if ($request->lang == 'hi') {
+            $voters = Voters::where('mobile_1', $request->mobile_1)
+                ->with(['voterAddress', 'voterInformation']) // Include relationships
+                ->get()
+                ->map(function ($voter) use ($translator) {
+                    return [
+                        'voter_details' => [
+                            'id' => $voter->id,
+                            'first_name' => $voter->first_name_hi ?? ($voter->first_name ? $translator->translate($voter->first_name) : null),
+                            'middle_name' => $voter->middle_name_hi ?? ($voter->middle_name ? $translator->translate($voter->middle_name) : null),
+                            'surname' => $voter->surname_hi ?? ($voter->surname ? $translator->translate($voter->surname) : null),
+                            'email' => $voter->email ??  null,
+                            'gender' => $voter->gender_hi ?? ($voter->gender ? $translator->translate($voter->gender) : null),
+                            'age' => $voter->age ?? null,
+                            'dob' => $voter->dob ?? null,
+                            'cast' => $voter->cast_hi ?? ($voter->cast ? $translator->translate($voter->cast) : null),
+                            'position' => $voter->position_hi ?? ($voter->position ? $translator->translate($voter->position) : null),
+                            'personnel' => $voter->personnel ??  null,
+                            'voter_id' => $voter->voter_id ?? null,
+                        ],
+                        'extra_information' => $voter->voterInformation ? [
+                            'extra_info_1' => $voter->voterInformation->extra_info_1_hi ?? ($voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null),
+                            'extra_info_2' => $voter->voterInformation->extra_info_2_hi ?? ($voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null),
+                            'extra_info_3' => $voter->voterInformation->extra_info_3_hi ?? ($voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null),
+                            'extra_info_4' => $voter->voterInformation->extra_info_4_hi ?? ($voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null),
+                            'extra_info_5' => $voter->voterInformation->extra_info_5_hi ?? ($voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null),
+                        ] : null,
+                        'address_details' => $voter->voterAddress ? [
+                            'society' => $voter->voterAddress->society_hi ?? ($voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null),
+                            'house_no' => $voter->voterAddress->house_no_hi ?? ($voter->voterAddress->house_no ? $translator->translate($voter->voterAddress->house_no) : null),
+                            'flat_no' => $voter->voterAddress->flat_no_hi ?? ($voter->voterAddress->flat_no ? $translator->translate($voter->voterAddress->flat_no) : null),
+                            'address' => $voter->voterAddress->address_hi ?? ($voter->voterAddress->address ? $translator->translate($voter->voterAddress->address) : null),
+                            'booth' => $voter->voterAddress->booth_hi ?? ($voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null),
+                            'village' => $voter->voterAddress->village_hi ?? ($voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null),
+                            'part_no' => $voter->voterAddress->part_no_hi ?? ($voter->voterAddress->part_no ? $translator->translate($voter->voterAddress->part_no) : null),
+                            'srn' => $voter->voterAddress->srn_hi ?? ($voter->voterAddress->srn ? $translator->translate($voter->voterAddress->srn) : null),
+                            'voting_centre' => $voter->voterAddress->voting_centre_hi ?? ($voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null),
+                        ] : null, // Ensure null is returned if voterAddress doesn't exist
+                    ];
+                });
+
+            return response()->json([
+                'status' => 200,
+                'message' => 'Voter details retrieved successfully in Hindi',
+                'voters' => $voters,
+            ], 200);
+        }
+
+
+
+    }
+
+    public function voterDetailsWithoutMobileNo(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'lang' => 'required|in:en,mr,hi',
+
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()], 400);
+        }
+
+        $lang = $request->input('lang');
+        $translator = new GoogleTranslate($lang);
+        $voterCount = voters::where('mobile_1', null)->count();
+        if($request->lang == 'en'){
+            $voters = voters::where('mobile_1', null)
+            ->with(['voterAddress', 'voterInformation'])
+            ->get()
+            ->map(function ($voter) use ($translator) {
+                return [
+                    'voter_details' => [
+                        'id' => $voter->id,
+                        'first_name' => $voter->first_name ? $translator->translate($voter->first_name) : null,
+                        'middle_name' => $voter->middle_name ? $translator->translate($voter->middle_name) : null,
+                        'surname' => $voter->surname ? $translator->translate($voter->surname) : null,
+                        'email' => $voter->email ? $translator->translate($voter->email) : null,
+                        'gender' => $voter->gender ? $translator->translate($voter->gender) : null,
+                        'age' => $voter->age,
+                        'dob' => $voter->dob,
+                        'cast' => $voter->cast ? $translator->translate($voter->cast) : null,
+                        'position' => $voter->position ? $translator->translate($voter->position) : null,
+                        'personnel' => $voter->personnel ? $translator->translate($voter->personnel) : null,
+                        'voter_id' => $voter->voter_id,
+                    ],
+                    'extra_information' => $voter->voterInformation ? [
+                        'extra_info_1' => $voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null,
+                        'extra_info_2' => $voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null,
+                        'extra_info_3' => $voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null,
+                        'extra_info_4' => $voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null,
+                        'extra_info_5' => $voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null,
+                    ] : null,
+                    'address_details' => $voter->voterAddress ? [
+                        'society' => $voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null,
+                        'house_no' => $voter->voterAddress->house_no ? $translator->translate($voter->voterAddress->house_no) : null,
+                        'flat_no' => $voter->voterAddress->flat_no ? $translator->translate($voter->voterAddress->flat_no) : null,
+                        'address' => $voter->voterAddress->address ? $translator->translate($voter->voterAddress->address) : null,
+                        'booth' => $voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null,
+                        'village' => $voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null,
+                        'part_no' => $voter->voterAddress->part_no,
+                        'srn' => $voter->voterAddress->srn,
+                        'voting_centre' => $voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null,
+                    ] : null,
+                ];
+            });
+
+            return response()->json([
+                'status' => 200,
+                'message' => 'Voter details retrieved successfully',
+                'total_count' => $voterCount,
+                'voters' => $voters,
+            ], 200);
+        }
+
+        if ($request->lang == 'mr') {
+            $voters = Voters::where('mobile_1', null)
+                ->with(['voterAddress', 'voterInformation'])
+                ->get()
+                ->map(function ($voter) use ($translator) {
+                    return [
+                        'voter_details' => [
+                            'id' => $voter->id,
+                            'first_name' => $voter->first_name_mr ?? ($voter->first_name ? $translator->translate($voter->first_name) : null),
+                            'middle_name' => $voter->middle_name_mr ?? ($voter->middle_name ? $translator->translate($voter->middle_name) : null),
+                            'surname' => $voter->surname_mr ?? ($voter->surname ? $translator->translate($voter->surname) : null),
+                            'email' => $voter->email ?? null,
+                            'gender' => $voter->gender_mr ?? ($voter->gender ? $translator->translate($voter->gender) : null),
+                            'age' => $voter->age,
+                            'dob' => $voter->dob,
+                            'cast' => $voter->cast_mr ?? ($voter->cast ? $translator->translate($voter->cast) : null),
+                            'position' => $voter->position_mr ?? ($voter->position ? $translator->translate($voter->position) : null),
+                            'personnel' => $voter->personnel ?? null,
+                            'voter_id' => $voter->voter_id,
+                        ],
+                        'extra_information' => $voter->voterInformation ? [
+                            'extra_info_1' => $voter->voterInformation->extra_info_1_mr ?? ($voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null),
+                            'extra_info_2' => $voter->voterInformation->extra_info_2_mr ?? ($voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null),
+                            'extra_info_3' => $voter->voterInformation->extra_info_3_mr ?? ($voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null),
+                            'extra_info_4' => $voter->voterInformation->extra_info_4_mr ?? ($voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null),
+                            'extra_info_5' => $voter->voterInformation->extra_info_5_mr ?? ($voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null),
+                        ] : null,
+                        'address_details' => $voter->voterAddress ? [
+                            'society' => $voter->voterAddress->society_mr ?? ($voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null),
+                            'house_no' => $voter->voterAddress->house_no_mr ?? ($voter->voterAddress->house_no ? $translator->translate($voter->voterAddress->house_no) : null),
+                            'flat_no' => $voter->voterAddress->flat_no_mr ?? ($voter->voterAddress->flat_no ? $translator->translate($voter->voterAddress->flat_no) : null),
+                            'address' => $voter->voterAddress->address_mr ?? ($voter->voterAddress->address ? $translator->translate($voter->voterAddress->address) : null),
+                            'booth' => $voter->voterAddress->booth_mr ?? ($voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null),
+                            'village' => $voter->voterAddress->village_mr ?? ($voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null),
+                            'part_no' => $voter->voterAddress->part_no_mr ?? ($voter->voterAddress->part_no ? $translator->translate($voter->voterAddress->part_no) : null),
+                            'srn' => $voter->voterAddress->srn_mr ?? ($voter->voterAddress->part_no ? $translator->translate($voter->voterAddress->part_no) : null),
+                            'voting_centre' => $voter->voterAddress->voting_centre_mr ?? ($voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null),
+                        ] : null,
+                    ];
+                });
+
+            return response()->json([
+                'status' => 200,
+                'message' => 'Voter details retrieved successfully',
+                'total_count' => $voters->count(),
+                'voters' => $voters,
+            ], 200);
+        }
+
+        if ($request->lang == 'hi') {
+            $voters = Voters::where('mobile_1', null)
+                ->with(['voterAddress', 'voterInformation'])
+                ->get()
+                ->map(function ($voter) use ($translator) {
+                    return [
+                        'voter_details' => [
+                            'id' => $voter->id,
+                            'first_name' => $voter->first_name_hi ?? ($voter->first_name ? $translator->translate($voter->first_name) : null),
+                            'middle_name' => $voter->middle_name_hi ?? ($voter->middle_name ? $translator->translate($voter->middle_name) : null),
+                            'surname' => $voter->surname_hi ?? ($voter->surname ? $translator->translate($voter->surname) : null),
+                            'email' => $voter->email ?? null,
+                            'gender' => $voter->gender_hi ?? ($voter->gender ? $translator->translate($voter->gender) : null),
+                            'age' => $voter->age,
+                            'dob' => $voter->dob,
+                            'cast' => $voter->cast_hi ?? ($voter->cast ? $translator->translate($voter->cast) : null),
+                            'position' => $voter->position_hi ?? ($voter->position ? $translator->translate($voter->position) : null),
+                            'personnel' => $voter->personnel ?? null,
+                            'voter_id' => $voter->voter_id,
+                        ],
+                        'extra_information' => $voter->voterInformation ? [
+                            'extra_info_1' => $voter->voterInformation->extra_info_1_hi ?? ($voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null),
+                            'extra_info_2' => $voter->voterInformation->extra_info_2_hi ?? ($voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null),
+                            'extra_info_3' => $voter->voterInformation->extra_info_3_hi ?? ($voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null),
+                            'extra_info_4' => $voter->voterInformation->extra_info_4_hi ?? ($voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null),
+                            'extra_info_5' => $voter->voterInformation->extra_info_5_hi ?? ($voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null),
+                        ] : null,
+                        'address_details' => $voter->voterAddress ? [
+                            'society' => $voter->voterAddress->society_hi ?? ($voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null),
+                            'house_no' => $voter->voterAddress->house_no_hi ?? ($voter->voterAddress->house_no ? $translator->translate($voter->voterAddress->house_no) : null),
+                            'flat_no' => $voter->voterAddress->flat_no_hi ?? ($voter->voterAddress->flat_no ? $translator->translate($voter->voterAddress->flat_no) : null),
+                            'address' => $voter->voterAddress->address_hi ?? ($voter->voterAddress->address ? $translator->translate($voter->voterAddress->address) : null),
+                            'booth' => $voter->voterAddress->booth_hi ?? ($voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null),
+                            'village' => $voter->voterAddress->village_hi ?? ($voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null),
+                            'part_no' => $voter->voterAddress->part_no_hi ?? ($voter->voterAddress->part_no ? $translator->translate($voter->voterAddress->part_no) : null),
+                            'srn' => $voter->voterAddress->srn_hi ?? ($voter->voterAddress->part_no ? $translator->translate($voter->voterAddress->part_no) : null),
+                            'voting_centre' => $voter->voterAddress->voting_centre_hi ?? ($voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null),
+                        ] : null,
+                    ];
+                });
+
+            return response()->json([
+                'status' => 200,
+                'message' => 'Voter details retrieved successfully in hindi',
+                'total_count' => $voters->count(),
+                'voters' => $voters,
+            ], 200);
+        }
+
+
+
+    }
+
+    public function addressList(Request $request)
+    {
+
+        $validator = Validator::make($request->all(), [
+            'lang' => 'required|in:en,mr,hi',
+        ]);
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()], 400);
+        }
+
+        $lang = $request->input('lang');
+        $translator = new GoogleTranslate($lang);
+        if($request->lang == 'en'){
+            $userAddresses = UserAddress::all();
+            $addressGrouped = $userAddresses->groupBy('address')
+                ->map(function ($addressGroup) use ($translator) {
+                    return [
+                        'address' => $addressGroup->first()->address ?? null,
+                        'total_voters' => $addressGroup->count(),
+                    ];
+                })->values();
+            $totalAddress = $addressGrouped->count();
+            return response()->json([
+                'status' => 200,
+                'message' => 'Address list retrieved successfully in English',
+                'total_address' => $totalAddress,
+                'addresses' => $addressGrouped,
+            ], 200);
+        }
+
+        if($request->lang == 'mr'){
+            $userAddresses = UserAddress::all();
+            $addressGrouped = $userAddresses->groupBy('address_mr')
+                ->map(function ($addressGroup) use ($translator) {
+                    return [
+                        'address' => $addressGroup->first()->address_mr ?? null,
+                        'total_voters' => $addressGroup->count(),
+                    ];
+                })->values();
+            $totalAddress = $addressGrouped->count();
+            return response()->json([
+                'status' => 200,
+                'message' => 'Address list retrieved successfully in marathi',
+                'total_address' => $totalAddress,
+                'addresses' => $addressGrouped,
+            ], 200);
+        }
+
+        if($request->lang == 'hi'){
+            $userAddresses = UserAddress::all();
+            $addressGrouped = $userAddresses->groupBy('address_hi')
+                ->map(function ($addressGroup) use ($translator) {
+                    return [
+                        'address' => $addressGroup->first()->address_hi ?? null,
+                        'total_voters' => $addressGroup->count(),
+                    ];
+                })->values();
+            $totalAddress = $addressGrouped->count();
+            return response()->json([
+                'status' => 200,
+                'message' => 'Address list retrieved successfully in hindi',
+                'total_address' => $totalAddress,
+                'addresses' => $addressGrouped,
+            ], 200);
+        }
+
+
+    }
+
+    public function searchAddress(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'lang' => 'required|in:en,mr,hi',
+            'address' => 'required',
+        ]);
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()], 400);
+        }
+        $lang = $request->input('lang');
+        $translator = new GoogleTranslate($lang);
+        if($request->lang == 'en'){
+            $addresses = UserAddress::
+            where('address', 'LIKE', '%' . $request->address . '%')->orderBy('address', 'asc')
+            ->get();
+            $addresses = $addresses->groupBy('address')
+            ->map(function ($address) use ($translator) {
+                return [
+                    'address' => $address->first()->address ?? null,
+                    'total_voters' => $address->count(),
+                ];
+            })->values();
+            return response()->json([
+            'status' => 200,
+            'message' => 'Address list searched successfully',
+            'addresses' => $addresses,
+            ], 200);
+        }
+
+        if($request->lang == 'mr'){
+            $addresses = UserAddress::
+            where('address_mr', 'LIKE', '%' . $request->address . '%')->orderBy('address_mr', 'asc')
+            ->get();
+            $addresses = $addresses->groupBy('address_mr')
+            ->map(function ($address) use ($translator) {
+                return [
+                    'address' => $address->first()->address_mr ?? null,
+                    'total_voters' => $address->count(),
+                ];
+            })->values();
+            return response()->json([
+            'status' => 200,
+            'message' => 'Address list searched successfully',
+            'addresses' => $addresses,
+            ], 200);
+        }
+
+        if($request->lang == 'hi'){
+            $addresses = UserAddress::
+            where('address_hi', 'LIKE', '%' . $request->address . '%')->orderBy('address_hi', 'asc')
+            ->get();
+            $addresses = $addresses->groupBy('address_hi')
+            ->map(function ($address) use ($translator) {
+                return [
+                    'address' => $address->first()->address_hi ?? null,
+                    'total_voters' => $address->count(),
+                ];
+            })->values();
+            return response()->json([
+            'status' => 200,
+            'message' => 'Address list searched successfully in Hindi',
+            'addresses' => $addresses,
+            ], 200);
+        }
+
+    }
+
+    public function voterDetailsByAddress(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'lang' => 'required|in:en,mr,hi',
+            'address' => 'required',
+        ]);
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()], 400);
+        }
+        $lang = $request->input('lang');
+        $translator = new GoogleTranslate($lang);
+        if($request->lang == 'en'){
+            $users = UserAddress::where('address', $request->address)
+            ->with(['voter', 'voter.voterInformation']) // Eager load voter and extra information
+            ->get()
+            ->map(function ($address) use ($translator) {
+                return [
+                    'voter_details' => [
+                        'id' => $address->voter->id,
+                        'first_name' => $address->voter->first_name ? $translator->translate($address->voter->first_name) : null,
+                        'middle_name' => $address->voter->middle_name ? $translator->translate($address->voter->middle_name) : null,
+                        'surname' => $address->voter->surname ? $translator->translate($address->voter->surname) : null,
+                        'email' => $address->voter->email ? $translator->translate($address->voter->email) : null,
+                        'gender' => $address->voter->gender ? $translator->translate($address->voter->gender) : null,
+                        'age' => $address->voter->age ? $translator->translate($address->voter->age) : null,
+                        'dob' => $address->voter->dob ? $translator->translate($address->voter->dob) : null,
+                        'cast' => $address->voter->cast ? $translator->translate($address->voter->cast) : null,
+                        'position' => $address->voter->position ? $translator->translate($address->voter->position) : null,
+                        'personnel' => $address->voter->personnel ? $translator->translate($address->voter->personnel) : null,
+                        'voter_id' => $address->voter->voter_id ? $translator->translate($address->voter->voter_id) : null,
+                    ],
+                    'extra_information' => $address->voter->voterInformation ? [
+                        'any_extra_field_1' => $address->voter->voterInformation->any_extra_field_1 ? $translator->translate($address->voter->voterInformation->any_extra_field_1) : null,
+                        'any_extra_field_2' => $address->voter->voterInformation->any_extra_field_2 ? $translator->translate($address->voter->voterInformation->any_extra_field_2) : null,
+                        // Add more fields as needed
+                    ] : null, // Include null if extra information is not available
+                    'address_details' => [
+                        'society' => $address->society ? $translator->translate($address->society) : null,
+                        'house_no' => $address->house_no ? $translator->translate($address->house_no) : null,
+                        'flat_no' => $address->flat_no ? $translator->translate($address->flat_no) : null,
+                        'address' => $address->address ? $translator->translate($address->address) : null,
+                        'booth' => $address->booth ? $translator->translate($address->booth) : null,
+                        'village' => $address->village ? $translator->translate($address->village) : null,
+                        'part_no' => $address->part_no ? $translator->translate($address->part_no) : null,
+                        'srn' => $address->srn ? $translator->translate($address->srn) : null,
+                        'voting_centre' => $address->voting_centre ? $translator->translate($address->voting_centre) : null,
+                    ],
+                ];
+            });
+            return response()->json([
+                'status' => 200,
+                'message' => 'Voter details retrieved successfully',
+                'voters' => $users,
+            ], 200);
+
+        }
+
+        if ($request->lang == 'mr') {
+            $users = UserAddress::where('address_mr', $request->address)
+                ->with(['voter', 'voter.voterInformation']) // Eager load voter and extra information
+                ->get()
+                ->map(function ($address) use ($translator) {
+                    return [
+                        'voter_details' => [
+                            'id' => $address->voter->id,
+                            'first_name' => $address->voter->first_name_mr ?? ($address->voter->first_name ? $translator->translate($address->voter->first_name) : null),
+                            'middle_name' => $address->voter->middle_name_mr ?? ($address->voter->middle_name ? $translator->translate($address->voter->middle_name) : null),
+                            'surname' => $address->voter->surname_mr ?? ($address->voter->surname ? $translator->translate($address->voter->surname) : null),
+                            'email' => $address->voter->email_mr ?? ($address->voter->email ? $translator->translate($address->voter->email) : null),
+                            'gender' => $address->voter->gender_mr ?? ($address->voter->gender ? $translator->translate($address->voter->gender) : null),
+                            'age' => $address->voter->age_mr ?? ($address->voter->age ? $translator->translate($address->voter->age) : null),
+                            'dob' => $address->voter->dob_mr ?? ($address->voter->dob ? $translator->translate($address->voter->dob) : null),
+                            'cast' => $address->voter->cast_mr ?? ($address->voter->cast ? $translator->translate($address->voter->cast) : null),
+                            'position' => $address->voter->position_mr ?? ($address->voter->position ? $translator->translate($address->voter->position) : null),
+                            'personnel' => $address->voter->personnel ?? null,
+                            'voter_id' => $address->voter->voter_id ?? null,
+                        ],
+                        'extra_information' => $address->voter->voterInformation ? [
+                            'extra_information' => $address->voterInformation ? [
+                                'extra_info_1' => $address->voterInformation->extra_info_1_mr ?? ($address->voterInformation->extra_info_1 ? $translator->translate($address->voterInformation->extra_info_1) : null),
+                                'extra_info_2' => $address->voterInformation->extra_info_2_mr ?? ($address->voterInformation->extra_info_2 ? $translator->translate($address->voterInformation->extra_info_2) : null),
+                                'extra_info_3' => $address->voterInformation->extra_info_3_mr ?? ($address->voterInformation->extra_info_3 ? $translator->translate($address->voterInformation->extra_info_3) : null),
+                                'extra_info_4' => $address->voterInformation->extra_info_4_mr ?? ($address->voterInformation->extra_info_4 ? $translator->translate($address->voterInformation->extra_info_4) : null),
+                                'extra_info_5' => $address->voterInformation->extra_info_5_mr ?? ($address->voterInformation->extra_info_5 ? $translator->translate($address->voterInformation->extra_info_5) : null),
+                            ] : null,
+                        ] : null,
+                        'address_details' => [
+                            'society' => $address->society_mr ?? ($address->society ? $translator->translate($address->society) : null),
+                            'house_no' => $address->house_no_mr ?? ($address->house_no ? $translator->translate($address->house_no) : null),
+                            'flat_no' => $address->flat_no_mr ?? ($address->flat_no ? $translator->translate($address->flat_no) : null),
+                            'address' => $address->address_mr ?? ($address->address ? $translator->translate($address->address) : null),
+                            'booth' => $address->booth_mr ?? ($address->booth ? $translator->translate($address->booth) : null),
+                            'village' => $address->village_mr ?? ($address->village ? $translator->translate($address->village) : null),
+                            'part_no' => $address->part_no_mr ?? ($address->part_no ? $translator->translate($address->part_no) : null),
+                            'srn' => $address->srn_mr ?? ($address->srn ? $translator->translate($address->srn) : null),
+                            'voting_centre' => $address->voting_centre_mr ?? ($address->voting_centre ? $translator->translate($address->voting_centre) : null),
+                        ],
+                    ];
+                });
+
+            return response()->json([
+                'status' => 200,
+                'message' => 'Voter details retrieved successfully',
+                'voters' => $users,
+            ], 200);
+        }
+
+        if ($request->lang == 'hi') {
+            $users = UserAddress::where('address_hi', $request->address)
+                ->with(['voter', 'voter.voterInformation']) // Eager load voter and extra information
+                ->get()
+                ->map(function ($address) use ($translator) {
+                    return [
+                        'voter_details' => [
+                            'id' => $address->voter->id,
+                            'first_name' => $address->voter->first_name_hi ?? ($address->voter->first_name ? $translator->translate($address->voter->first_name) : null),
+                            'middle_name' => $address->voter->middle_name_hi ?? ($address->voter->middle_name ? $translator->translate($address->voter->middle_name) : null),
+                            'surname' => $address->voter->surname_hi ?? ($address->voter->surname ? $translator->translate($address->voter->surname) : null),
+                            'email' => $address->voter->email_hi ?? ($address->voter->email ? $translator->translate($address->voter->email) : null),
+                            'gender' => $address->voter->gender_hi ?? ($address->voter->gender ? $translator->translate($address->voter->gender) : null),
+                            'age' => $address->voter->age_hi ?? ($address->voter->age ? $translator->translate($address->voter->age) : null),
+                            'dob' => $address->voter->dob_hi ?? ($address->voter->dob ? $translator->translate($address->voter->dob) : null),
+                            'cast' => $address->voter->cast_hi ?? ($address->voter->cast ? $translator->translate($address->voter->cast) : null),
+                            'position' => $address->voter->position_hi ?? ($address->voter->position ? $translator->translate($address->voter->position) : null),
+                            'personnel' => $address->voter->personnel ?? null,
+                            'voter_id' => $address->voter->voter_id ?? null,
+                        ],
+                        'extra_information' => $address->voter->voterInformation ? [
+                            'extra_information' => $address->voterInformation ? [
+                                'extra_info_1' => $address->voterInformation->extra_info_1_hi ?? ($address->voterInformation->extra_info_1 ? $translator->translate($address->voterInformation->extra_info_1) : null),
+                                'extra_info_2' => $address->voterInformation->extra_info_2_hi ?? ($address->voterInformation->extra_info_2 ? $translator->translate($address->voterInformation->extra_info_2) : null),
+                                'extra_info_3' => $address->voterInformation->extra_info_3_hi ?? ($address->voterInformation->extra_info_3 ? $translator->translate($address->voterInformation->extra_info_3) : null),
+                                'extra_info_4' => $address->voterInformation->extra_info_4_hi ?? ($address->voterInformation->extra_info_4 ? $translator->translate($address->voterInformation->extra_info_4) : null),
+                                'extra_info_5' => $address->voterInformation->extra_info_5_hi ?? ($address->voterInformation->extra_info_5 ? $translator->translate($address->voterInformation->extra_info_5) : null),
+                            ] : null,
+                        ] : null,
+                        'address_details' => [
+                            'society' => $address->society_hi ?? ($address->society ? $translator->translate($address->society) : null),
+                            'house_no' => $address->house_no_hi ?? ($address->house_no ? $translator->translate($address->house_no) : null),
+                            'flat_no' => $address->flat_no_hi ?? ($address->flat_no ? $translator->translate($address->flat_no) : null),
+                            'address' => $address->address_hi ?? ($address->address ? $translator->translate($address->address) : null),
+                            'booth' => $address->booth_hi ?? ($address->booth ? $translator->translate($address->booth) : null),
+                            'village' => $address->village_hi ?? ($address->village ? $translator->translate($address->village) : null),
+                            'part_no' => $address->part_no_hi ?? ($address->part_no ? $translator->translate($address->part_no) : null),
+                            'srn' => $address->srn_hi ?? ($address->srn ? $translator->translate($address->srn) : null),
+                            'voting_centre' => $address->voting_centre_hi ?? ($address->voting_centre ? $translator->translate($address->voting_centre) : null),
+                        ],
+                    ];
+                });
+
+            return response()->json([
+                'status' => 200,
+                'message' => 'Voter details retrieved successfully',
+                'voters' => $users,
+            ], 200);
+        }
+
+    }
+
+    public function societyList(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'lang' => 'required|in:en,mr,hi',
+        ]);
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()], 400);
+        }
+
+        $lang = $request->input('lang');
+        $translator = new GoogleTranslate($lang);
+        $userAddresses = UserAddress::all();
+        if($request->lang == 'en'){
+            $societyGrouped = $userAddresses->groupBy('society')
+            ->map(function ($societyGroup) use ($translator) {
+                return [
+                    'society' => $societyGroup->first()->society ??  null,
+                    'total_voters' => $societyGroup->count(),
+                ];
+            })->values();
+            $totalAddress = $societyGrouped->count();
+            return response()->json([
+                'status' => 200,
+                'message' => 'Society list retrieved successfully',
+                'total_address' => $totalAddress,
+                'addresses' => $societyGrouped,
+            ], 200);
+        }
+
+        if($request->lang == 'mr'){
+            $societyGrouped = $userAddresses->groupBy('society_mr')
+            ->map(function ($societyGroup) use ($translator) {
+                return [
+                    'society' => $societyGroup->first()->society_mr ?? null,
+                    'total_voters' => $societyGroup->count(),
+                ];
+            })->values();
+            $totalAddress = $societyGrouped->count();
+            return response()->json([
+                'status' => 200,
+                'message' => 'Society list retrieved successfully in Marathi',
+                'total_address' => $totalAddress,
+                'addresses' => $societyGrouped,
+            ], 200);
+        }
+
+        if($request->lang == 'hi'){
+            $societyGrouped = $userAddresses->groupBy('society_hi')
+            ->map(function ($societyGroup) use ($translator) {
+                return [
+                    'society' => $societyGroup->first()->society_hi ?? null,
+                    'total_voters' => $societyGroup->count(),
+                ];
+            })->values();
+            $totalAddress = $societyGrouped->count();
+            return response()->json([
+                'status' => 200,
+                'message' => 'Society list retrieved successfully in Hindi',
+                'total_address' => $totalAddress,
+                'addresses' => $societyGrouped,
+            ], 200);
+        }
+
+
+    }
+
+    public function searchSociety(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'lang' => 'required|in:en,mr,hi',
+            'society' => 'required',
+        ]);
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()], 400);
+        }
+        $lang = $request->input('lang');
+        $translator = new GoogleTranslate($lang);
+        if($request->lang == 'en'){
+            $societies = UserAddress::
+            where('society', 'LIKE', '%' . $request->society . '%')->orderBy('society', 'asc')
+            ->get();
+            $societies = $societies->groupBy('society')
+            ->map(function ($society) use ($translator) {
+                return [
+                    'society' => $society->first()->society ? $translator->translate($society->first()->society) : null,
+                    'total_voters' => $society->count(),
+                ];
+            })->values();
+            return response()->json([
+                'status' => 200,
+                'message' => 'Society list searched successfully in English',
+                'societies' => $societies,
+            ], 200);
+        }
+
+        if($request->lang == 'mr'){
+            $societies = UserAddress::
+            where('society', 'LIKE', '%' . $request->society_mr . '%')->orderBy('society_mr', 'asc')
+            ->get();
+            $societies = $societies->groupBy('society_mr')
+            ->map(function ($society) use ($translator) {
+                return [
+                    'society' => $society->first()->society_mr ?? null,
+                    'total_voters' => $society->count(),
+                ];
+            })->values();
+            return response()->json([
+                'status' => 200,
+                'message' => 'Society list searched successfully in Marathi',
+                'societies' => $societies,
+            ], 200);
+        }
+
+        if($request->lang == 'hi'){
+            $societies = UserAddress::
+            where('society', 'LIKE', '%' . $request->society_hi . '%')->orderBy('society_hi', 'asc')
+            ->get();
+            $societies = $societies->groupBy('society_hi')
+            ->map(function ($society) use ($translator) {
+                return [
+                    'society' => $society->first()->society_hi ?? null,
+                    'total_voters' => $society->count(),
+                ];
+            })->values();
+            return response()->json([
+                'status' => 200,
+                'message' => 'Society list searched successfully in Hindi',
+                'societies' => $societies,
+            ], 200);
+        }
+
+
+    }
+
+    public function voterDetailsBySociety(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'lang' => 'required|in:en,mr,hi',
+            'society' => 'required',
+        ]);
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()], 400);
+        }
+        $lang = $request->input('lang');
+        $translator = new GoogleTranslate($lang);
+        if($request->lang == 'en'){
+            $users = UserAddress::where('society', $request->society)
+            ->with(['voter', 'voter.voterInformation']) // Eager load voter and extra information
+            ->get()
+            ->map(function ($society) use ($translator) {
+                return [
+                    'voter_details' => [
+                        'id' => $society->voter->id,
+                        'first_name' => $society->voter->first_name ? $translator->translate($society->voter->first_name) : null,
+                        'middle_name' => $society->voter->middle_name ? $translator->translate($society->voter->middle_name) : null,
+                        'surname' => $society->voter->surname ? $translator->translate($society->voter->surname) : null,
+                        'email' => $society->voter->email ? $translator->translate($society->voter->email) : null,
+                        'gender' => $society->voter->gender ? $translator->translate($society->voter->gender) : null,
+                        'age' => $society->voter->age ? $translator->translate($society->voter->age) : null,
+                        'dob' => $society->voter->dob ? $translator->translate($society->voter->dob) : null,
+                        'cast' => $society->voter->cast ? $translator->translate($society->voter->cast) : null,
+                        'position' => $society->voter->position ? $translator->translate($society->voter->position) : null,
+                        'personnel' => $society->voter->personnel ? $translator->translate($society->voter->personnel) : null,
+                        'voter_id' => $society->voter->voter_id ? $translator->translate($society->voter->voter_id) : null,
+                    ],
+                    'extra_information' => $society->voter->voterInformation ? [
+
+                        'extra_info_1' => $society->voter->voterInformation->extra_info_1 ? $translator->translate($society->voter->voterInformation->extra_info_1) : null,
+                        'extra_info_2' => $society->voter->voterInformation->extra_info_2 ? $translator->translate($society->voter->voterInformation->extra_info_2) : null,
+                        'extra_info_3' => $society->voter->voterInformation->extra_info_3 ? $translator->translate($society->voter->voterInformation->extra_info_3) : null,
+                        'extra_info_4' => $society->voter->voterInformation->extra_info_4 ? $translator->translate($society->voter->voterInformation->extra_info_4) : null,
+                        'extra_info_5' => $society->voter->voterInformation->extra_info_5 ? $translator->translate($society->voter->voterInformation->extra_info_5) : null,
+                        'extra_check_1' => $society->voter->voterInformation->extra_check_1 ?? null,
+                        'extra_check_2' => $society->voter->voterInformation->extra_check_2 ?? null,
+                    ] : null, // Include null if extra information is not available
+                    'address_details' => [
+                        'society' => $society->society ? $translator->translate($society->society) : null,
+                        'house_no' => $society->house_no ? $translator->translate($society->house_no) : null,
+                        'flat_no' => $society->flat_no ? $translator->translate($society->flat_no) : null,
+                        'address' => $society->address ? $translator->translate($society->address) : null,
+                        'booth' => $society->booth ? $translator->translate($society->booth) : null,
+                        'village' => $society->village ? $translator->translate($society->village) : null,
+                        'part_no' => $society->part_no ? $translator->translate($society->part_no) : null,
+                        'srn' => $society->srn ? $translator->translate($society->srn) : null,
+                        'voting_centre' => $society->voting_centre ? $translator->translate($society->voting_centre) : null,
+                    ],
+                ];
+            });
+            return response()->json([
+                'status' => 200,
+                'message' => 'Voter details retrieved successfully',
+                'voters' => $users,
+            ], 200);
+        }
+
+        if ($request->lang == 'mr') {
+            $users = UserAddress::where('society_mr', $request->society)
+                ->with(['voter', 'voter.voterInformation']) // Eager load voter and extra information
+                ->get()
+                ->map(function ($society) use ($translator) {
+                    return [
+                        'voter_details' => [
+                            'id' => $society->voter->id,
+                            'first_name' => $society->voter->first_name_mr ?? ($society->voter->first_name ? $translator->translate($society->voter->first_name) : null),
+                            'middle_name' => $society->voter->middle_name_mr ?? ($society->voter->middle_name ? $translator->translate($society->voter->middle_name) : null),
+                            'surname' => $society->voter->surname_mr ?? ($society->voter->surname ? $translator->translate($society->voter->surname) : null),
+                            'email' => $society->voter->email_mr ?? ($society->voter->email ? $translator->translate($society->voter->email) : null),
+                            'gender' => $society->voter->gender_mr ?? ($society->voter->gender ? $translator->translate($society->voter->gender) : null),
+                            'age' => $society->voter->age_mr ?? ($society->voter->age ? $translator->translate($society->voter->age) : null),
+                            'dob' => $society->voter->dob_mr ?? ($society->voter->dob ? $translator->translate($society->voter->dob) : null),
+                            'cast' => $society->voter->cast_mr ?? ($society->voter->cast ? $translator->translate($society->voter->cast) : null),
+                            'position' => $society->voter->position_mr ?? ($society->voter->position ? $translator->translate($society->voter->position) : null),
+                            'personnel' => $society->voter->personnel ?? null,
+                            'voter_id' => $society->voter->voter_id ?? null,
+                        ],
+                        'extra_information' => $society->voter->voterInformation ? [
+                            'extra_info_1' => $society->voter->voterInformation->extra_info_1_mr ?? ($society->voter->voterInformation->extra_info_1 ? $translator->translate($society->voter->voterInformation->extra_info_1) : null),
+                            'extra_info_2' => $society->voter->voterInformation->extra_info_2_mr ?? ($society->voter->voterInformation->extra_info_2 ? $translator->translate($society->voter->voterInformation->extra_info_2) : null),
+                            'extra_info_3' => $society->voter->voterInformation->extra_info_3_mr ?? ($society->voter->voterInformation->extra_info_3 ? $translator->translate($society->voter->voterInformation->extra_info_3) : null),
+                            'extra_info_4' => $society->voter->voterInformation->extra_info_4_mr ?? ($society->voter->voterInformation->extra_info_4 ? $translator->translate($society->voter->voterInformation->extra_info_4) : null),
+                            'extra_info_5' => $society->voter->voterInformation->extra_info_5_mr ?? ($society->voter->voterInformation->extra_info_5 ? $translator->translate($society->voter->voterInformation->extra_info_5) : null),
+                            'extra_check_1' => $society->voter->voterInformation->extra_check_1 ?? null,
+                            'extra_check_2' => $society->voter->voterInformation->extra_check_2 ?? null,
+                        ] : null, // Include null if extra information is not available
+                        'address_details' => [
+                            'society' => $society->society_mr ?? ($society->society ? $translator->translate($society->society) : null),
+                            'house_no' => $society->house_no_mr ?? ($society->house_no ? $translator->translate($society->house_no) : null),
+                            'flat_no' => $society->flat_no_mr ?? ($society->flat_no ? $translator->translate($society->flat_no) : null),
+                            'address' => $society->address_mr ?? ($society->address ? $translator->translate($society->address) : null),
+                            'booth' => $society->booth_mr ?? ($society->booth ? $translator->translate($society->booth) : null),
+                            'village' => $society->village_mr ?? ($society->village ? $translator->translate($society->village) : null),
+                            'part_no' => $society->part_no_mr ?? ($society->part_no ? $translator->translate($society->part_no) : null),
+                            'srn' => $society->srn_mr ?? ($society->srn ? $translator->translate($society->srn) : null),
+                            'voting_centre' => $society->voting_centre_mr ?? ($society->voting_centre ? $translator->translate($society->voting_centre) : null),
+                        ],
+                    ];
+                });
+
+            return response()->json([
+                'status' => 200,
+                'message' => 'Voter details retrieved successfully in marathi',
+                'voters' => $users,
+            ], 200);
+        }
+
+        if ($request->lang == 'hi') {
+            $users = UserAddress::where('society_hi', $request->society)
+                ->with(['voter', 'voter.voterInformation']) // Eager load voter and extra information
+                ->get()
+                ->map(function ($society) use ($translator) {
+                    return [
+                        'voter_details' => [
+                            'id' => $society->voter->id,
+                            'first_name' => $society->voter->first_name_hi ?? ($society->voter->first_name ? $translator->translate($society->voter->first_name) : null),
+                            'middle_name' => $society->voter->middle_name_hi ?? ($society->voter->middle_name ? $translator->translate($society->voter->middle_name) : null),
+                            'surname' => $society->voter->surname_hi ?? ($society->voter->surname ? $translator->translate($society->voter->surname) : null),
+                            'email' => $society->voter->email_hi ?? ($society->voter->email ? $translator->translate($society->voter->email) : null),
+                            'gender' => $society->voter->gender_hi ?? ($society->voter->gender ? $translator->translate($society->voter->gender) : null),
+                            'age' => $society->voter->age_hi ?? ($society->voter->age ? $translator->translate($society->voter->age) : null),
+                            'dob' => $society->voter->dob_hi ?? ($society->voter->dob ? $translator->translate($society->voter->dob) : null),
+                            'cast' => $society->voter->cast_hi ?? ($society->voter->cast ? $translator->translate($society->voter->cast) : null),
+                            'position' => $society->voter->position_hi ?? ($society->voter->position ? $translator->translate($society->voter->position) : null),
+                            'personnel' => $society->voter->personnel ?? null,
+                            'voter_id' => $society->voter->voter_id ?? null,
+                        ],
+                        'extra_information' => $society->voter->voterInformation ? [
+                            'extra_info_1' => $society->voter->voterInformation->extra_info_1_hi ?? ($society->voter->voterInformation->extra_info_1 ? $translator->translate($society->voter->voterInformation->extra_info_1) : null),
+                            'extra_info_2' => $society->voter->voterInformation->extra_info_2_hi ?? ($society->voter->voterInformation->extra_info_2 ? $translator->translate($society->voter->voterInformation->extra_info_2) : null),
+                            'extra_info_3' => $society->voter->voterInformation->extra_info_3_hi ?? ($society->voter->voterInformation->extra_info_3 ? $translator->translate($society->voter->voterInformation->extra_info_3) : null),
+                            'extra_info_4' => $society->voter->voterInformation->extra_info_4_hi ?? ($society->voter->voterInformation->extra_info_4 ? $translator->translate($society->voter->voterInformation->extra_info_4) : null),
+                            'extra_info_5' => $society->voter->voterInformation->extra_info_5_hi ?? ($society->voter->voterInformation->extra_info_5 ? $translator->translate($society->voter->voterInformation->extra_info_5) : null),
+                            'extra_check_1' => $society->voter->voterInformation->extra_check_1 ?? null,
+                            'extra_check_2' => $society->voter->voterInformation->extra_check_2 ?? null,
+                        ] : null, // Include null if extra information is not available
+                        'address_details' => [
+                            'society' => $society->society_hi ?? ($society->society ? $translator->translate($society->society) : null),
+                            'house_no' => $society->house_no_hi ?? ($society->house_no ? $translator->translate($society->house_no) : null),
+                            'flat_no' => $society->flat_no_hi ?? ($society->flat_no ? $translator->translate($society->flat_no) : null),
+                            'address' => $society->address_hi ?? ($society->address ? $translator->translate($society->address) : null),
+                            'booth' => $society->booth_hi ?? ($society->booth ? $translator->translate($society->booth) : null),
+                            'village' => $society->village_hi ?? ($society->village ? $translator->translate($society->village) : null),
+                            'part_no' => $society->part_no_hi ?? ($society->part_no ? $translator->translate($society->part_no) : null),
+                            'srn' => $society->srn_hi ?? ($society->srn ? $translator->translate($society->srn) : null),
+                            'voting_centre' => $society->voting_centre_hi ?? ($society->voting_centre ? $translator->translate($society->voting_centre) : null),
+                        ],
+                    ];
+                });
+
+            return response()->json([
+                'status' => 200,
+                'message' => 'Voter details retrieved successfully in Hindi',
+                'voters' => $users,
+            ], 200);
+        }
+
+    }
+    public function genderList(Request $request)
+    {
+        // Validate the language parameter (optional if you need translation)
+        $validator = Validator::make($request->all(), [
+            'lang' => 'required|in:en,mr,hi', // Optional if you want to support translation
+        ]);
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()], 400);
+        }
+        // Optional translation setup
+        $lang = $request->input('lang', 'en'); // Default to 'en' if not provided
+        $translator = new GoogleTranslate($lang);
+        // Fetch voters and group by surname
+        if($request->lang == 'en'){
+            $voters = Voters::all();
+            $genderGrouped = $voters->groupBy('gender')->map(function ($group, $genderGroup) use ($translator) {
+                return [
+                    'gender' => $genderGroup ? $translator->translate($genderGroup) : null,
+                    'voter_count' => $group->count(),
+                ];
+            });
+
+            // Calculate the total unique surnames and total voters
+            $totalUniqueGender = $genderGrouped->count();
+            $totalVoters = $voters->count();
+
+            // Return the response
+            return response()->json([
+                'status' => 200,
+                'message' => 'Gender retrieved successfully in English',
+                'total_unique_gender' => $totalUniqueGender,
+                'total_voters' => $totalVoters,
+                'gender' => $genderGrouped->values(), // Get values as array
+            ], 200);
+        }
+
+        if($request->lang == 'hi'){
+            $voters = Voters::all();
+            $genderGrouped = $voters->groupBy('gender_hi')->map(function ($group, $genderGroup) use ($translator) {
+                return [
+                    'gender' => $genderGroup ? $translator->translate($genderGroup) : null,
+                    'voter_count' => $group->count(),
+                ];
+            });
+
+            // Calculate the total unique surnames and total voters
+            $totalUniqueGender = $genderGrouped->count();
+            $totalVoters = $voters->count();
+
+            // Return the response
+            return response()->json([
+                'status' => 200,
+                'message' => 'Gender retrieved successfully in hindi',
+                'total_unique_gender' => $totalUniqueGender,
+                'total_voters' => $totalVoters,
+                'gender' => $genderGrouped->values(), // Get values as array
+            ], 200);
+        }
+
+        if($request->lang == 'mr'){
+            $voters = Voters::all();
+            $genderGrouped = $voters->groupBy('gender_mr')->map(function ($group, $genderGroup) use ($translator) {
+                return [
+                    'gender' => $genderGroup ? $translator->translate($genderGroup) : null,
+                    'voter_count' => $group->count(),
+                ];
+            });
+
+            // Calculate the total unique surnames and total voters
+            $totalUniqueGender = $genderGrouped->count();
+            $totalVoters = $voters->count();
+
+            // Return the response
+            return response()->json([
+                'status' => 200,
+                'message' => 'Gender retrieved successfully in marathi',
+                'total_unique_gender' => $totalUniqueGender,
+                'total_voters' => $totalVoters,
+                'gender' => $genderGrouped->values(), // Get values as array
+            ], 200);
+        }
+
+    }
+
+    public function searchGender(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'lang' => 'required|in:en,mr,hi',
+            'gender' => 'required',
+        ]);
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()], 400);
+        }
+        $lang = $request->input('lang');
+        $translator = new GoogleTranslate($lang);
+        if($request->lang == 'en'){
+            $genders = Voters::where('gender', $request->gender)->get();
+            $genders = $genders->groupBy('gender')
+                ->map(function ($genders) use ($translator) {
+                    return [
+                        'gender' => $genders->first()->gender ?? null,
+                        'total_voters' => $genders->count(),
+                    ];
+                })->values();
+                return response()->json([
+                    'status' => 200,
+                    'message' => 'Genders searched successfully in English',
+                    'genders' => $genders,
+                ], 200);
+        }
+
+        if($request->lang == 'mr'){
+            $genders = Voters::where('gender_mr', $request->gender)->get();
+            $genders = $genders->groupBy('gender_mr')
+                ->map(function ($genders) use ($translator) {
+                    return [
+                        'gender' => $genders->first()->gender_mr ?? null,
+                        'total_voters' => $genders->count(),
+                    ];
+                })->values();
+                return response()->json([
+                    'status' => 200,
+                    'message' => 'Genders searched successfully in Marathi',
+                    'genders' => $genders,
+                ], 200);
+        }
+
+        if($request->lang == 'hi'){
+            $genders = Voters::where('gender_hi', $request->gender)->get();
+            $genders = $genders->groupBy('gender_hi')
+                ->map(function ($genders) use ($translator) {
+                    return [
+                        'gender' => $genders->first()->gender_hi ?? null,
+                        'total_voters' => $genders->count(),
+                    ];
+                })->values();
+                return response()->json([
+                    'status' => 200,
+                    'message' => 'Genders searched successfully in hindi',
+                    'genders' => $genders,
+                ], 200);
+        }
+
+    }
+
+    public function voterDetailsByGender(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'lang' => 'required|in:en,mr,hi',
+            'gender' => 'required',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()], 400);
+        }
+
+        $lang = $request->input('lang');
+        $translator = new GoogleTranslate($lang);
+        if($request->lang =='en'){
+            $voters = voters::where('gender', $request->gender)
+            ->with(['voterAddress', 'voterInformation'])
+            ->get()
+            ->map(function ($voter) use ($translator) {
+                return [
+                    'voter_details' => [
+                        'id' => $voter->id,
+                        'first_name' => $voter->first_name ? $translator->translate($voter->first_name) : null,
+                        'middle_name' => $voter->middle_name ? $translator->translate($voter->middle_name) : null,
+                        'surname' => $voter->surname ? $translator->translate($voter->surname) : null,
+                        'email' => $voter->email ? $translator->translate($voter->email) : null,
+                        'gender' => $voter->gender ? $translator->translate($voter->gender) : null,
+                        'age' => $voter->age,
+                        'dob' => $voter->dob,
+                        'cast' => $voter->cast ? $translator->translate($voter->cast) : null,
+                        'position' => $voter->position ? $translator->translate($voter->position) : null,
+                        'personnel' => $voter->personnel ? $translator->translate($voter->personnel) : null,
+                        'voter_id' => $voter->voter_id,
+                    ],
+                    'extra_information' => $voter->voterInformation ? [
+                        'extra_info_1' => $voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null,
+                        'extra_info_2' => $voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null,
+                        'extra_info_3' => $voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null,
+                        'extra_info_4' => $voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null,
+                        'extra_info_5' => $voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null,
+                    ] : null,
+                    'address_details' => $voter->voterAddress ? [
+                        'society' => $voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null,
+                        'house_no' => $voter->voterAddress->house_no ? $translator->translate($voter->voterAddress->house_no) : null,
+                        'flat_no' => $voter->voterAddress->flat_no ? $translator->translate($voter->voterAddress->flat_no) : null,
+                        'address' => $voter->voterAddress->address ? $translator->translate($voter->voterAddress->address) : null,
+                        'booth' => $voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null,
+                        'village' => $voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null,
+                        'part_no' => $voter->voterAddress->part_no,
+                        'srn' => $voter->voterAddress->srn,
+                        'voting_centre' => $voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null,
+                    ] : null,
+                ];
+            });
+
+            return response()->json([
+                'status' => 200,
+                'message' => 'Voter details retrieved successfully',
+                'voters' => $voters,
+            ], 200);
+        }
+
+        if ($request->lang == 'mr') {
+            $voters = voters::where('gender_mr', $request->gender)
+                ->with(['voterAddress', 'voterInformation'])
+                ->get()
+                ->map(function ($voter) use ($translator) {
+                    return [
+                        'voter_details' => [
+                            'id' => $voter->id,
+                            'first_name' => $voter->first_name_mr ?? ($voter->first_name ? $translator->translate($voter->first_name) : null),
+                            'middle_name' => $voter->middle_name_mr ?? ($voter->middle_name ? $translator->translate($voter->middle_name) : null),
+                            'surname' => $voter->surname_mr ?? ($voter->surname ? $translator->translate($voter->surname) : null),
+                            'email' => $voter->email_mr ?? ($voter->email ? $translator->translate($voter->email) : null),
+                            'gender' => $voter->gender_mr ?? ($voter->gender ? $translator->translate($voter->gender) : null),
+                            'age' => $voter->age_mr ?? ($voter->age ? $translator->translate($voter->age) : null),
+                            'dob' => $voter->dob_mr ?? ($voter->dob ? $translator->translate($voter->dob) : null),
+                            'cast' => $voter->cast_mr ?? ($voter->cast ? $translator->translate($voter->cast) : null),
+                            'position' => $voter->position_mr ?? ($voter->position ? $translator->translate($voter->position) : null),
+                            'personnel' => $voter->personnel ?? null,
+                            'voter_id' => $voter->voter_id,
+                        ],
+                        'extra_information' => $voter->voterInformation ? [
+                            'extra_info_1' => $voter->voterInformation->extra_info_1_mr ?? ($voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null),
+                            'extra_info_2' => $voter->voterInformation->extra_info_2_mr ?? ($voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null),
+                            'extra_info_3' => $voter->voterInformation->extra_info_3_mr ?? ($voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null),
+                            'extra_info_4' => $voter->voterInformation->extra_info_4_mr ?? ($voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null),
+                            'extra_info_5' => $voter->voterInformation->extra_info_5_mr ?? ($voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null),
+                        ] : null,
+                        'address_details' => $voter->voterAddress ? [
+                            'society' => $voter->voterAddress->society_mr ?? ($voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null),
+                            'house_no' => $voter->voterAddress->house_no_mr ?? ($voter->voterAddress->house_no ? $translator->translate($voter->voterAddress->house_no) : null),
+                            'flat_no' => $voter->voterAddress->flat_no_mr ?? ($voter->voterAddress->flat_no ? $translator->translate($voter->voterAddress->flat_no) : null),
+                            'address' => $voter->voterAddress->address_mr ?? ($voter->voterAddress->address ? $translator->translate($voter->voterAddress->address) : null),
+                            'booth' => $voter->voterAddress->booth_mr ?? ($voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null),
+                            'village' => $voter->voterAddress->village_mr ?? ($voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null),
+                            'part_no' => $voter->voterAddress->part_no,
+                            'srn' => $voter->voterAddress->srn,
+                            'voting_centre' => $voter->voterAddress->voting_centre_mr ?? ($voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null),
+                        ] : null,
+                    ];
+                });
+
+            return response()->json([
+                'status' => 200,
+                'message' => 'Voter details retrieved successfully in Marathi',
+                'voters' => $voters,
+            ], 200);
+        }
+
+
+        if ($request->lang == 'hi') {
+            $voters = voters::where('gender_hi', $request->gender)
+                ->with(['voterAddress', 'voterInformation'])
+                ->get()
+                ->map(function ($voter) use ($translator) {
+                    return [
+                        'voter_details' => [
+                            'id' => $voter->id,
+                            'first_name' => $voter->first_name_hi ?? ($voter->first_name ? $translator->translate($voter->first_name) : null),
+                            'middle_name' => $voter->middle_name_hi ?? ($voter->middle_name ? $translator->translate($voter->middle_name) : null),
+                            'surname' => $voter->surname_hi ?? ($voter->surname ? $translator->translate($voter->surname) : null),
+                            'email' => $voter->email_hi ?? ($voter->email ? $translator->translate($voter->email) : null),
+                            'gender' => $voter->gender_hi ?? ($voter->gender ? $translator->translate($voter->gender) : null),
+                            'age' => $voter->age_hi ?? ($voter->age ? $translator->translate($voter->age) : null),
+                            'dob' => $voter->dob_hi ?? ($voter->dob ? $translator->translate($voter->dob) : null),
+                            'cast' => $voter->cast_hi ?? ($voter->cast ? $translator->translate($voter->cast) : null),
+                            'position' => $voter->position_hi ?? ($voter->position ? $translator->translate($voter->position) : null),
+                            'personnel' => $voter->personnel ?? null,
+                            'voter_id' => $voter->voter_id,
+                        ],
+                        'extra_information' => $voter->voterInformation ? [
+                            'extra_info_1' => $voter->voterInformation->extra_info_1_hi ?? ($voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null),
+                            'extra_info_2' => $voter->voterInformation->extra_info_2_hi ?? ($voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null),
+                            'extra_info_3' => $voter->voterInformation->extra_info_3_hi ?? ($voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null),
+                            'extra_info_4' => $voter->voterInformation->extra_info_4_hi ?? ($voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null),
+                            'extra_info_5' => $voter->voterInformation->extra_info_5_hi ?? ($voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null),
+                        ] : null,
+                        'address_details' => $voter->voterAddress ? [
+                            'society' => $voter->voterAddress->society_hi ?? ($voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null),
+                            'house_no' => $voter->voterAddress->house_no_hi ?? ($voter->voterAddress->house_no ? $translator->translate($voter->voterAddress->house_no) : null),
+                            'flat_no' => $voter->voterAddress->flat_no_hi ?? ($voter->voterAddress->flat_no ? $translator->translate($voter->voterAddress->flat_no) : null),
+                            'address' => $voter->voterAddress->address_hi ?? ($voter->voterAddress->address ? $translator->translate($voter->voterAddress->address) : null),
+                            'booth' => $voter->voterAddress->booth_hi ?? ($voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null),
+                            'village' => $voter->voterAddress->village_hi ?? ($voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null),
+                            'part_no' => $voter->voterAddress->part_no,
+                            'srn' => $voter->voterAddress->srn,
+                            'voting_centre' => $voter->voterAddress->voting_centre_hi ?? ($voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null),
+                        ] : null,
+                    ];
+                });
+
+            return response()->json([
+                'status' => 200,
+                'message' => 'Voter details retrieved successfully in Hindi',
+                'voters' => $voters,
+            ], 200);
+        }
+
+
+
+    }
+
+    public function searchByAgeGroup(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'lang' => 'required|in:en,mr,hi',
+            'from_age' => 'required|integer|min:0',
+            'to_age' => 'required|integer|min:0|gte:from_age',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()], 400);
+        }
+
+        $lang = $request->input('lang');
+        $translator = new GoogleTranslate($lang);
+        if($request->lang == 'en'){
+             // Fetch voters within the age range
+            $voters = Voters::whereBetween('age', [$request->from_age, $request->to_age])
+            ->with(['voterAddress', 'voterInformation']) // Eager load relationships
+            ->get()
+            ->map(function ($voter) use ($translator) {
+                return [
+                    'voter_details' => [
+                        'id' => $voter->id,
+                        'first_name' => $voter->first_name ? $translator->translate($voter->first_name) : null,
+                        'middle_name' => $voter->middle_name ? $translator->translate($voter->middle_name) : null,
+                        'surname' => $voter->surname ? $translator->translate($voter->surname) : null,
+                        'email' => $voter->email ? $translator->translate($voter->email) : null,
+                        'gender' => $voter->gender ? $translator->translate($voter->gender) : null,
+                        'age' => $voter->age,
+                        'dob' => $voter->dob,
+                        'cast' => $voter->cast ? $translator->translate($voter->cast) : null,
+                        'position' => $voter->position ? $translator->translate($voter->position) : null,
+                        'personnel' => $voter->personnel ? $translator->translate($voter->personnel) : null,
+                        'voter_id' => $voter->voter_id,
+                    ],
+                    'extra_information' => $voter->voterInformation ? [
+                        'extra_info_1' => $voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null,
+                        'extra_info_2' => $voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null,
+                        'extra_info_3' => $voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null,
+                        'extra_info_4' => $voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null,
+                        'extra_info_5' => $voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null,
+                        'extra_check_1' => $voter->voterInformation->extra_check_1 ?? null,
+                        'extra_check_2' => $voter->voterInformation->extra_check_2 ?? null,
+                    ] : null,
+                    'address_details' => $voter->voterAddress ? [
+                        'society' => $voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null,
+                        'house_no' => $voter->voterAddress->house_no ? $translator->translate($voter->voterAddress->house_no) : null,
+                        'flat_no' => $voter->voterAddress->flat_no ? $translator->translate($voter->voterAddress->flat_no) : null,
+                        'address' => $voter->voterAddress->address ? $translator->translate($voter->voterAddress->address) : null,
+                        'booth' => $voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null,
+                        'village' => $voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null,
+                        'part_no' => $voter->voterAddress->part_no,
+                        'srn' => $voter->voterAddress->srn,
+                        'voting_centre' => $voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null,
+                    ] : null,
+                ];
+            });
+
+            // Count the total number of voters in the specified age range
+            $totalVoters = $voters->count();
+
+            return response()->json([
+                'status' => 200,
+                'message' => 'Voters retrieved successfully in English',
+                'total_voters' => $totalVoters,
+                'voters' => $voters,
+            ], 200);
+        }
+
+        if($request->lang == 'mr'){
+            // Fetch voters within the age range
+            $voters = Voters::whereBetween('age', [$request->from_age, $request->to_age])
+            ->with(['voterAddress', 'voterInformation']) // Eager load relationships
+            ->get()
+            ->map(function ($voter) use ($translator) {
+                return [
+                    'voter_details' => [
+                        'id' => $voter->id,
+                        'first_name' => $voter->first_name_mr ?? ($voter->first_name ? $translator->translate($voter->first_name) : null),
+                        'middle_name' => $voter->middle_name_mr ?? ($voter->middle_name ? $translator->translate($voter->middle_name) : null),
+                        'surname' => $voter->surname_mr ?? ($voter->surname ? $translator->translate($voter->surname) : null),
+                        'email' => $voter->email_mr ?? ($voter->email ? $translator->translate($voter->email) : null),
+                        'gender' => $voter->gender_mr ?? ($voter->gender ? $translator->translate($voter->gender) : null),
+                        'age' => $voter->age,
+                        'dob' => $voter->dob,
+                        'cast' => $voter->cast_mr ?? ($voter->cast ? $translator->translate($voter->cast) : null),
+                        'position' => $voter->position_mr ?? ($voter->position ? $translator->translate($voter->position) : null),
+                        'personnel' => $voter->personnel_mr ?? ($voter->personnel ? $translator->translate($voter->personnel) : null),
+                        'voter_id' => $voter->voter_id,
+                    ],
+                    'extra_information' => $voter->voterInformation ? [
+                        'extra_info_1' => $voter->voterInformation->extra_info_1_mr ?? ($voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null),
+                        'extra_info_2' => $voter->voterInformation->extra_info_2_mr ?? ($voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null),
+                        'extra_info_3' => $voter->voterInformation->extra_info_3_mr ?? ($voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null),
+                        'extra_info_4' => $voter->voterInformation->extra_info_4_mr ?? ($voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null),
+                        'extra_info_5' => $voter->voterInformation->extra_info_5_mr ?? ($voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null),
+                        'extra_check_1' => $voter->voterInformation->extra_check_1 ?? null,
+                        'extra_check_2' => $voter->voterInformation->extra_check_2 ?? null,
+                    ] : null,
+                    'address_details' => $voter->voterAddress ? [
+                        'society' => $voter->voterAddress->society_mr ?? ($voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null),
+                        'house_no' => $voter->voterAddress->house_no_mr ?? ($voter->voterAddress->house_no ? $translator->translate($voter->voterAddress->house_no) : null),
+                        'flat_no' => $voter->voterAddress->flat_no_mr ?? ($voter->voterAddress->flat_no ? $translator->translate($voter->voterAddress->flat_no) : null),
+                        'address' => $voter->voterAddress->address_mr ?? ($voter->voterAddress->address ? $translator->translate($voter->voterAddress->address) : null),
+                        'booth' => $voter->voterAddress->booth_mr ?? ($voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null),
+                        'village' => $voter->voterAddress->village_mr ?? ($voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null),
+                        'part_no' => $voter->voterAddress->part_no,
+                        'srn' => $voter->voterAddress->srn,
+                        'voting_centre' => $voter->voterAddress->voting_centre_mr ?? ($voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null),
+                    ] : null,
+                ];
+            });
+
+            // Count the total number of voters in the specified age range
+            $totalVoters = $voters->count();
+
+            return response()->json([
+                'status' => 200,
+                'message' => 'Voters retrieved successfully in Marathi',
+                'total_voters' => $totalVoters,
+                'voters' => $voters,
+            ], 200);
+        }
+
+        if($request->lang == 'hi'){
+            // Fetch voters within the age range
+            $voters = Voters::whereBetween('age', [$request->from_age, $request->to_age])
+            ->with(['voterAddress', 'voterInformation']) // Eager load relationships
+            ->get()
+            ->map(function ($voter) use ($translator) {
+                return [
+                    'voter_details' => [
+                        'id' => $voter->id,
+                        'first_name' => $voter->first_name_hi ?? ($voter->first_name ? $translator->translate($voter->first_name) : null),
+                        'middle_name' => $voter->middle_name_hi ?? ($voter->middle_name ? $translator->translate($voter->middle_name) : null),
+                        'surname' => $voter->surname_hi ?? ($voter->surname ? $translator->translate($voter->surname) : null),
+                        'email' => $voter->email_hi ?? ($voter->email ? $translator->translate($voter->email) : null),
+                        'gender' => $voter->gender_hi ?? ($voter->gender ? $translator->translate($voter->gender) : null),
+                        'age' => $voter->age,
+                        'dob' => $voter->dob,
+                        'cast' => $voter->cast_hi ?? ($voter->cast ? $translator->translate($voter->cast) : null),
+                        'position' => $voter->position_hi ?? ($voter->position ? $translator->translate($voter->position) : null),
+                        'personnel' => $voter->personnel_hi ?? ($voter->personnel ? $translator->translate($voter->personnel) : null),
+                        'voter_id' => $voter->voter_id,
+                    ],
+                    'extra_information' => $voter->voterInformation ? [
+                        'extra_info_1' => $voter->voterInformation->extra_info_1_hi ?? ($voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null),
+                        'extra_info_2' => $voter->voterInformation->extra_info_2_hi ?? ($voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null),
+                        'extra_info_3' => $voter->voterInformation->extra_info_3_hi ?? ($voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null),
+                        'extra_info_4' => $voter->voterInformation->extra_info_4_hi ?? ($voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null),
+                        'extra_info_5' => $voter->voterInformation->extra_info_5_hi ?? ($voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null),
+                        'extra_check_1' => $voter->voterInformation->extra_check_1 ?? null,
+                        'extra_check_2' => $voter->voterInformation->extra_check_2 ?? null,
+                    ] : null,
+                    'address_details' => $voter->voterAddress ? [
+                        'society' => $voter->voterAddress->society_hi ?? ($voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null),
+                        'house_no' => $voter->voterAddress->house_no_hi ?? ($voter->voterAddress->house_no ? $translator->translate($voter->voterAddress->house_no) : null),
+                        'flat_no' => $voter->voterAddress->flat_no_hi ?? ($voter->voterAddress->flat_no ? $translator->translate($voter->voterAddress->flat_no) : null),
+                        'address' => $voter->voterAddress->address_hi ?? ($voter->voterAddress->address ? $translator->translate($voter->voterAddress->address) : null),
+                        'booth' => $voter->voterAddress->booth_hi ?? ($voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null),
+                        'village' => $voter->voterAddress->village_hi ?? ($voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null),
+                        'part_no' => $voter->voterAddress->part_no,
+                        'srn' => $voter->voterAddress->srn,
+                        'voting_centre' => $voter->voterAddress->voting_centre_hi ?? ($voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null),
+                    ] : null,
+                ];
+            });
+
+            // Count the total number of voters in the specified age range
+            $totalVoters = $voters->count();
+
+            return response()->json([
+                'status' => 200,
+                'message' => 'Voters retrieved successfully in Hindi',
+                'total_voters' => $totalVoters,
+                'voters' => $voters,
+            ], 200);
+        }
+
+
+    }
+
+    public function castList(Request $request)
+    {
+        // Validate the language parameter (optional if you need translation)
+        $validator = Validator::make($request->all(), [
+            'lang' => 'required|in:en,mr,hi', // Optional if you want to support translation
+        ]);
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()], 400);
+        }
+        // Optional translation setup
+        $lang = $request->input('lang', 'en'); // Default to 'en' if not provided
+        $translator = new GoogleTranslate($lang);
+        // Fetch voters and group by caste
+        if($request->lang == 'en'){
+            $voters = Voters::all();
+            $castGrouped = $voters->groupBy('cast')->map(function ($group, $castGroup) use ($translator) {
+                return [
+                    'caste' => $castGroup ? $translator->translate($castGroup) : null,
+                    'voter_count' => $group->count(),
+                ];
+            });
+
+            // Calculate the total unique cast and total voters
+            $totalUniqueCast = $castGrouped->count();
+            $totalVoters = $voters->count();
+
+            // Return the response
+            return response()->json([
+                'status' => 200,
+                'message' => 'Caste retrieved successfully',
+                'total_unique_caste' => $totalUniqueCast,
+                'total_voters' => $totalVoters,
+                'caste' => $castGrouped->values(), // Get values as array
+            ], 200);
+        }
+
+        if($request->lang == 'mr'){
+            $voters = Voters::all();
+            $castGrouped = $voters->groupBy('cast_mr')->map(function ($group, $castGroup) use ($translator) {
+                return [
+                    'caste' => $castGroup ?? null,
+                    'voter_count' => $group->count(),
+                ];
+            });
+
+            // Calculate the total unique cast and total voters
+            $totalUniqueCast = $castGrouped->count();
+            $totalVoters = $voters->count();
+
+            // Return the response
+            return response()->json([
+                'status' => 200,
+                'message' => 'Caste retrieved successfully in marathi',
+                'total_unique_caste' => $totalUniqueCast,
+                'total_voters' => $totalVoters,
+                'caste' => $castGrouped->values(), // Get values as array
+            ], 200);
+        }
+
+        if($request->lang == 'hi'){
+            $voters = Voters::all();
+            $castGrouped = $voters->groupBy('cast_hi')->map(function ($group, $castGroup) use ($translator) {
+                return [
+                    'caste' => $castGroup ?? null,
+                    'voter_count' => $group->count(),
+                ];
+            });
+
+            // Calculate the total unique cast and total voters
+            $totalUniqueCast = $castGrouped->count();
+            $totalVoters = $voters->count();
+
+            // Return the response
+            return response()->json([
+                'status' => 200,
+                'message' => 'Caste retrieved successfully in hindi',
+                'total_unique_caste' => $totalUniqueCast,
+                'total_voters' => $totalVoters,
+                'caste' => $castGrouped->values(), // Get values as array
+            ], 200);
+        }
+
+    }
+
+    public function searchCaste(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'lang' => 'required|in:en,mr,hi',
+            'caste' => 'required',
+        ]);
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()], 400);
+        }
+        $lang = $request->input('lang');
+        $translator = new GoogleTranslate($lang);
+        if($request->lang == 'en'){
+            $voters = Voters::where('cast', $request->caste)->get();
+            $voters = $voters->groupBy('cast')
+                ->map(function ($voters) use ($translator) {
+                    return [
+                        'castes' => $voters->first()->cast ?? null,
+                        'total_voters' => $voters->count(),
+                    ];
+                })->values();
+            return response()->json([
+                'status' => 200,
+                'message' => 'Caste searched successfully in English',
+                'voters' => $voters,
+            ], 200);
+        }
+
+        if($request->lang == 'mr'){
+            $voters = Voters::where('cast_mr', $request->caste)->get();
+            $voters = $voters->groupBy('cast_mr')
+                ->map(function ($voters) use ($translator) {
+                    return [
+                        'castes' => $voters->first()->cast_mr ?? null,
+                        'total_voters' => $voters->count(),
+                    ];
+                })->values();
+            return response()->json([
+                'status' => 200,
+                'message' => 'Caste searched successfully in Marathi',
+                'voters' => $voters,
+            ], 200);
+        }
+
+        if($request->lang == 'hi'){
+            $voters = Voters::where('cast_hi', $request->caste)->get();
+            $voters = $voters->groupBy('cast_hi')
+                ->map(function ($voters) use ($translator) {
+                    return [
+                        'castes' => $voters->first()->cast_hi ?? null,
+                        'total_voters' => $voters->count(),
+                    ];
+                })->values();
+            return response()->json([
+                'status' => 200,
+                'message' => 'Caste searched successfully in hindi',
+                'voters' => $voters,
+            ], 200);
+        }
+
+    }
+
+    public function voterDetailsByCaste(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'lang' => 'required|in:en,mr,hi',
+            'caste' => 'required',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()], 400);
+        }
+
+        $lang = $request->input('lang');
+        $translator = new GoogleTranslate($lang);
+        if($request->lang == 'en'){
+            $voters = voters::where('cast', $request->caste)
+            ->with(['voterAddress', 'voterInformation'])
+            ->get()
+            ->map(function ($voter) use ($translator) {
+                return [
+                    'voter_details' => [
+                        'id' => $voter->id,
+                        'first_name' => $voter->first_name ? $translator->translate($voter->first_name) : null,
+                        'middle_name' => $voter->middle_name ? $translator->translate($voter->middle_name) : null,
+                        'surname' => $voter->surname ? $translator->translate($voter->surname) : null,
+                        'email' => $voter->email ? $translator->translate($voter->email) : null,
+                        'gender' => $voter->gender ? $translator->translate($voter->gender) : null,
+                        'age' => $voter->age,
+                        'dob' => $voter->dob,
+                        'cast' => $voter->cast ? $translator->translate($voter->cast) : null,
+                        'position' => $voter->position ? $translator->translate($voter->position) : null,
+                        'personnel' => $voter->personnel ? $translator->translate($voter->personnel) : null,
+                        'voter_id' => $voter->voter_id,
+                    ],
+                    'extra_information' => $voter->voterInformation ? [
+                        'extra_info_1' => $voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null,
+                        'extra_info_2' => $voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null,
+                        'extra_info_3' => $voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null,
+                        'extra_info_4' => $voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null,
+                        'extra_info_5' => $voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null,
+                    ] : null,
+                    'address_details' => $voter->voterAddress ? [
+                        'society' => $voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null,
+                        'house_no' => $voter->voterAddress->house_no ? $translator->translate($voter->voterAddress->house_no) : null,
+                        'flat_no' => $voter->voterAddress->flat_no ? $translator->translate($voter->voterAddress->flat_no) : null,
+                        'address' => $voter->voterAddress->address ? $translator->translate($voter->voterAddress->address) : null,
+                        'booth' => $voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null,
+                        'village' => $voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null,
+                        'part_no' => $voter->voterAddress->part_no,
+                        'srn' => $voter->voterAddress->srn,
+                        'voting_centre' => $voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null,
+                    ] : null,
+                ];
+            });
+
+            return response()->json([
+                'status' => 200,
+                'message' => 'Voter details retrieved successfully',
+                'voters' => $voters,
+            ], 200);
+        }
+
+        if ($request->lang == 'mr') {
+            $voters = voters::where('cast_mr', $request->caste)
+                ->with(['voterAddress', 'voterInformation'])
+                ->get()
+                ->map(function ($voter) use ($translator) {
+                    return [
+                        'voter_details' => [
+                            'id' => $voter->id,
+                            'first_name' => $voter->first_name_mr ?? ($voter->first_name ? $translator->translate($voter->first_name) : null),
+                            'middle_name' => $voter->middle_name_mr ?? ($voter->middle_name ? $translator->translate($voter->middle_name) : null),
+                            'surname' => $voter->surname_mr ?? ($voter->surname ? $translator->translate($voter->surname) : null),
+                            'email' => $voter->email ?? null,
+                            'gender' => $voter->gender_mr ?? ($voter->gender ? $translator->translate($voter->gender) : null),
+                            'age' => $voter->age,
+                            'dob' => $voter->dob,
+                            'cast' => $voter->cast_mr ?? ($voter->cast ? $translator->translate($voter->cast) : null),
+                            'position' => $voter->position_mr ?? ($voter->position ? $translator->translate($voter->position) : null),
+                            'personnel' => $voter->personnel ?? null,
+                            'voter_id' => $voter->voter_id,
+                        ],
+                        'extra_information' => $voter->voterInformation ? [
+                            'extra_info_1' => $voter->voterInformation->extra_info_1_mr ?? ($voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null),
+                            'extra_info_2' => $voter->voterInformation->extra_info_2_mr ?? ($voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null),
+                            'extra_info_3' => $voter->voterInformation->extra_info_3_mr ?? ($voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null),
+                            'extra_info_4' => $voter->voterInformation->extra_info_4_mr ?? ($voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null),
+                            'extra_info_5' => $voter->voterInformation->extra_info_5_mr ?? ($voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null),
+                        ] : null,
+                        'address_details' => $voter->voterAddress ? [
+                            'society' => $voter->voterAddress->society_mr ?? ($voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null),
+                            'house_no' => $voter->voterAddress->house_no_mr ?? ($voter->voterAddress->house_no ? $translator->translate($voter->voterAddress->house_no) : null),
+                            'flat_no' => $voter->voterAddress->flat_no_mr ?? ($voter->voterAddress->flat_no ? $translator->translate($voter->voterAddress->flat_no) : null),
+                            'address' => $voter->voterAddress->address_mr ?? ($voter->voterAddress->address ? $translator->translate($voter->voterAddress->address) : null),
+                            'booth' => $voter->voterAddress->booth_mr ?? ($voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null),
+                            'village' => $voter->voterAddress->village_mr ?? ($voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null),
+                            'part_no' => $voter->voterAddress->part_no,
+                            'srn' => $voter->voterAddress->srn,
+                            'voting_centre' => $voter->voterAddress->voting_centre_mr ?? ($voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null),
+                        ] : null,
+                    ];
+                });
+
+            return response()->json([
+                'status' => 200,
+                'message' => 'Voter details retrieved successfully in Marathi',
+                'voters' => $voters,
+            ], 200);
+        }
+
+        if ($request->lang == 'hi') {
+            $voters = voters::where('cast_hi', $request->caste)
+                ->with(['voterAddress', 'voterInformation'])
+                ->get()
+                ->map(function ($voter) use ($translator) {
+                    return [
+                        'voter_details' => [
+                            'id' => $voter->id,
+                            'first_name' => $voter->first_name_hi ?? ($voter->first_name ? $translator->translate($voter->first_name) : null),
+                            'middle_name' => $voter->middle_name_hi ?? ($voter->middle_name ? $translator->translate($voter->middle_name) : null),
+                            'surname' => $voter->surname_hi ?? ($voter->surname ? $translator->translate($voter->surname) : null),
+                            'email' => $voter->email ?? null,
+                            'gender' => $voter->gender_hi ?? ($voter->gender ? $translator->translate($voter->gender) : null),
+                            'age' => $voter->age,
+                            'dob' => $voter->dob,
+                            'cast' => $voter->cast_hi ?? ($voter->cast ? $translator->translate($voter->cast) : null),
+                            'position' => $voter->position_hi ?? ($voter->position ? $translator->translate($voter->position) : null),
+                            'personnel' => $voter->personnel ?? null,
+                            'voter_id' => $voter->voter_id,
+                        ],
+                        'extra_information' => $voter->voterInformation ? [
+                            'extra_info_1' => $voter->voterInformation->extra_info_1_hi ?? ($voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null),
+                            'extra_info_2' => $voter->voterInformation->extra_info_2_hi ?? ($voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null),
+                            'extra_info_3' => $voter->voterInformation->extra_info_3_hi ?? ($voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null),
+                            'extra_info_4' => $voter->voterInformation->extra_info_4_hi ?? ($voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null),
+                            'extra_info_5' => $voter->voterInformation->extra_info_5_hi ?? ($voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null),
+                        ] : null,
+                        'address_details' => $voter->voterAddress ? [
+                            'society' => $voter->voterAddress->society_hi ?? ($voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null),
+                            'house_no' => $voter->voterAddress->house_no_hi ?? ($voter->voterAddress->house_no ? $translator->translate($voter->voterAddress->house_no) : null),
+                            'flat_no' => $voter->voterAddress->flat_no_hi ?? ($voter->voterAddress->flat_no ? $translator->translate($voter->voterAddress->flat_no) : null),
+                            'address' => $voter->voterAddress->address_hi ?? ($voter->voterAddress->address ? $translator->translate($voter->voterAddress->address) : null),
+                            'booth' => $voter->voterAddress->booth_hi ?? ($voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null),
+                            'village' => $voter->voterAddress->village_hi ?? ($voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null),
+                            'part_no' => $voter->voterAddress->part_no,
+                            'srn' => $voter->voterAddress->srn,
+                            'voting_centre' => $voter->voterAddress->voting_centre_hi ?? ($voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null),
+                        ] : null,
+                    ];
+                });
+
+            return response()->json([
+                'status' => 200,
+                'message' => 'Voter details retrieved successfully in Hindi',
+                'voters' => $voters,
+            ], 200);
+        }
+
+
+
+
+    }
+
+    public function positionList(Request $request)
+    {
+        // Validate the language parameter (optional if you need translation)
+        $validator = Validator::make($request->all(), [
+            'lang' => 'required|in:en,mr,hi', // Optional if you want to support translation
+        ]);
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()], 400);
+        }
+        // Optional translation setup
+        $lang = $request->input('lang', 'en'); // Default to 'en' if not provided
+        $translator = new GoogleTranslate($lang);
+        // Fetch voters and group by caste
+        $voters = Voters::all();
+        if($request->lang == 'en'){
+            $positionGrouped = $voters->groupBy('position')->map(function ($group, $positionGroup) use ($translator) {
+                return [
+                    'position' => $positionGroup ? $translator->translate($positionGroup) : null,
+                    'voter_count' => $group->count(),
+                ];
+            });
+
+            // Calculate the total unique cast and total voters
+            $totalUniquePosition = $positionGrouped->count();
+            $totalVoters = $voters->count();
+
+            // Return the response
+            return response()->json([
+                'status' => 200,
+                'message' => 'Position retrieved successfully',
+                'total_unique_position' => $totalUniquePosition,
+                'total_voters' => $totalVoters,
+                'position' => $positionGrouped->values(), // Get values as array
+            ], 200);
+        }
+
+        if($request->lang == 'mr'){
+            $positionGrouped = $voters->groupBy('position_mr')->map(function ($group, $positionGroup) use ($translator) {
+                return [
+                    'position' => $positionGroup ? $translator->translate($positionGroup) : null,
+                    'voter_count' => $group->count(),
+                ];
+            });
+
+            // Calculate the total unique cast and total voters
+            $totalUniquePosition = $positionGrouped->count();
+            $totalVoters = $voters->count();
+
+            // Return the response
+            return response()->json([
+                'status' => 200,
+                'message' => 'Position retrieved successfully in Marathi',
+                'total_unique_position' => $totalUniquePosition,
+                'total_voters' => $totalVoters,
+                'caste' => $positionGrouped->values(), // Get values as array
+            ], 200);
+        }
+        if($request->lang == 'hi'){
+            $positionGrouped = $voters->groupBy('position_hi')->map(function ($group, $positionGroup) use ($translator) {
+                return [
+                    'position' => $positionGroup ? $translator->translate($positionGroup) : null,
+                    'voter_count' => $group->count(),
+                ];
+            });
+
+            // Calculate the total unique cast and total voters
+            $totalUniquePosition = $positionGrouped->count();
+            $totalVoters = $voters->count();
+
+            // Return the response
+            return response()->json([
+                'status' => 200,
+                'message' => 'Position retrieved successfully in hindi',
+                'total_unique_position' => $totalUniquePosition,
+                'total_voters' => $totalVoters,
+                'caste' => $positionGrouped->values(), // Get values as array
+            ], 200);
+        }
+
+    }
+
+    public function searchPosition(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'lang' => 'required|in:en,mr,hi',
+            'position' => 'required',
+        ]);
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()], 400);
+        }
+        $lang = $request->input('lang');
+        $translator = new GoogleTranslate($lang);
+        if($request->lang == 'en'){
+            $voters = Voters::where('position', $request->position)->get();
+            $voters = $voters->groupBy('position')
+            ->map(function ($voters) use ($translator) {
+                return [
+                    'position' => $voters->first()->position ? $translator->translate($voters->first()->position) : null,
+                    'total_voters' => $voters->count(),
+                ];
+            })->values();
+            return response()->json([
+                'status' => 200,
+                'message' => 'Position searched successfully in English',
+                'voters' => $voters,
+            ], 200);
+        }
+
+        if($request->lang == 'mr'){
+            $voters = Voters::where('position_mr', $request->position)->get();
+            $voters = $voters->groupBy('position_mr')
+            ->map(function ($voters) use ($translator) {
+                return [
+                    'position' => $voters->first()->position_mr ?? null,
+                    'total_voters' => $voters->count(),
+                ];
+            })->values();
+            return response()->json([
+                'status' => 200,
+                'message' => 'Position searched successfully in Marathi',
+                'voters' => $voters,
+            ], 200);
+        }
+
+        if($request->lang == 'hi'){
+            $voters = Voters::where('position_hi', $request->position)->get();
+            $voters = $voters->groupBy('position_hi')
+            ->map(function ($voters) use ($translator) {
+                return [
+                    'position' => $voters->first()->position_hi ?? null,
+                    'total_voters' => $voters->count(),
+                ];
+            })->values();
+            return response()->json([
+                'status' => 200,
+                'message' => 'Position searched successfully in hindi',
+                'voters' => $voters,
+            ], 200);
+        }
+
+    }
+
+    public function voterDetailsByPosition(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'lang' => 'required|in:en,mr,hi',
+            'position' => 'required',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()], 400);
+        }
+
+        $lang = $request->input('lang');
+        $translator = new GoogleTranslate($lang);
+       if($request->lang == 'en'){
+        $voters = voters::where('position', $request->position)
+        ->with(['voterAddress', 'voterInformation'])
+        ->get()
+        ->map(function ($voter) use ($translator) {
+            return [
+                'voter_details' => [
+                    'id' => $voter->id,
+                    'first_name' => $voter->first_name ? $translator->translate($voter->first_name) : null,
+                    'middle_name' => $voter->middle_name ? $translator->translate($voter->middle_name) : null,
+                    'surname' => $voter->surname ? $translator->translate($voter->surname) : null,
+                    'email' => $voter->email ? $translator->translate($voter->email) : null,
+                    'gender' => $voter->gender ? $translator->translate($voter->gender) : null,
+                    'age' => $voter->age,
+                    'dob' => $voter->dob,
+                    'cast' => $voter->cast ? $translator->translate($voter->cast) : null,
+                    'position' => $voter->position ? $translator->translate($voter->position) : null,
+                    'personnel' => $voter->personnel ? $translator->translate($voter->personnel) : null,
+                    'voter_id' => $voter->voter_id,
+                ],
+                'extra_information' => $voter->voterInformation ? [
+                    'extra_info_1' => $voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null,
+                    'extra_info_2' => $voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null,
+                    'extra_info_3' => $voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null,
+                    'extra_info_4' => $voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null,
+                    'extra_info_5' => $voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null,
+                    'extra_check_1' =>$voter->voterInformation->extra_check_1 ?? null,
+                    'extra_check_2' =>$voter->voterInformation->extra_check_2 ?? null,
+                ] : null,
+                'address_details' => $voter->voterAddress ? [
+                    'society' => $voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null,
+                    'house_no' => $voter->voterAddress->house_no ? $translator->translate($voter->voterAddress->house_no) : null,
+                    'flat_no' => $voter->voterAddress->flat_no ? $translator->translate($voter->voterAddress->flat_no) : null,
+                    'address' => $voter->voterAddress->address ? $translator->translate($voter->voterAddress->address) : null,
+                    'booth' => $voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null,
+                    'village' => $voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null,
+                    'part_no' => $voter->voterAddress->part_no,
+                    'srn' => $voter->voterAddress->srn,
+                    'voting_centre' => $voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null,
+                ] : null,
+            ];
+        });
+
+        return response()->json([
+            'status' => 200,
+            'message' => 'Voter details retrieved successfully',
+            'voters' => $voters,
+        ], 200);
+       }
+
+       if ($request->lang == 'mr') {
+        $voters = voters::where('position_mr', $request->position)
+            ->with(['voterAddress', 'voterInformation'])
+            ->get()
+            ->map(function ($voter) use ($translator) {
+                return [
+                    'voter_details' => [
+                        'id' => $voter->id,
+                        'first_name' => $voter->first_name_mr ?? ($voter->first_name ? $translator->translate($voter->first_name) : null),
+                        'middle_name' => $voter->middle_name_mr ?? ($voter->middle_name ? $translator->translate($voter->middle_name) : null),
+                        'surname' => $voter->surname_mr ?? ($voter->surname ? $translator->translate($voter->surname) : null),
+                        'email' => $voter->email ?? null,
+                        'gender' => $voter->gender_mr ?? ($voter->gender ? $translator->translate($voter->gender) : null),
+                        'age' => $voter->age,
+                        'dob' => $voter->dob,
+                        'cast' => $voter->cast_mr ?? ($voter->cast ? $translator->translate($voter->cast) : null),
+                        'position' => $voter->position_mr ?? ($voter->position ? $translator->translate($voter->position) : null),
+                        'personnel' => $voter->personnel_mr ?? ($voter->personnel ? $translator->translate($voter->personnel) : null),
+                        'voter_id' => $voter->voter_id,
+                    ],
+                    'extra_information' => $voter->voterInformation ? [
+                        'extra_info_1' => $voter->voterInformation->extra_info_1_mr ?? ($voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null),
+                        'extra_info_2' => $voter->voterInformation->extra_info_2_mr ?? ($voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null),
+                        'extra_info_3' => $voter->voterInformation->extra_info_3_mr ?? ($voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null),
+                        'extra_info_4' => $voter->voterInformation->extra_info_4_mr ?? ($voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null),
+                        'extra_info_5' => $voter->voterInformation->extra_info_5_mr ?? ($voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null),
+                        'extra_check_1' =>$voter->voterInformation->extra_check_1 ?? null,
+                        'extra_check_2' =>$voter->voterInformation->extra_check_2 ?? null,
+                    ] : null,
+                    'address_details' => $voter->voterAddress ? [
+                        'society' => $voter->voterAddress->society_mr ?? ($voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null),
+                        'house_no' => $voter->voterAddress->house_no_mr ?? ($voter->voterAddress->house_no ? $translator->translate($voter->voterAddress->house_no) : null),
+                        'flat_no' => $voter->voterAddress->flat_no_mr ?? ($voter->voterAddress->flat_no ? $translator->translate($voter->voterAddress->flat_no) : null),
+                        'address' => $voter->voterAddress->address_mr ?? ($voter->voterAddress->address ? $translator->translate($voter->voterAddress->address) : null),
+                        'booth' => $voter->voterAddress->booth_mr ?? ($voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null),
+                        'village' => $voter->voterAddress->village_mr ?? ($voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null),
+                        'part_no' => $voter->voterAddress->part_no,
+                        'srn' => $voter->voterAddress->srn,
+                        'voting_centre' => $voter->voterAddress->voting_centre_mr ?? ($voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null),
+                    ] : null,
+                ];
+            });
+
+                return response()->json([
+                    'status' => 200,
+                    'message' => 'Voter details retrieved successfully in Marathi',
+                    'voters' => $voters,
+                ], 200);
+        }
+
+        if ($request->lang == 'hi') {
+            $voters = voters::where('position_hi', $request->position)
+                ->with(['voterAddress', 'voterInformation'])
+                ->get()
+                ->map(function ($voter) use ($translator) {
+                    return [
+                        'voter_details' => [
+                            'id' => $voter->id,
+                            'first_name' => $voter->first_name_hi ?? ($voter->first_name ? $translator->translate($voter->first_name) : null),
+                            'middle_name' => $voter->middle_name_hi ?? ($voter->middle_name ? $translator->translate($voter->middle_name) : null),
+                            'surname' => $voter->surname_hi ?? ($voter->surname ? $translator->translate($voter->surname) : null),
+                            'email' => $voter->email ?? null,
+                            'gender' => $voter->gender_hi ?? ($voter->gender ? $translator->translate($voter->gender) : null),
+                            'age' => $voter->age,
+                            'dob' => $voter->dob,
+                            'cast' => $voter->cast_hi ?? ($voter->cast ? $translator->translate($voter->cast) : null),
+                            'position' => $voter->position_hi ?? ($voter->position ? $translator->translate($voter->position) : null),
+                            'personnel' => $voter->personnel_hi ?? ($voter->personnel ? $translator->translate($voter->personnel) : null),
+                            'voter_id' => $voter->voter_id,
+                        ],
+                        'extra_information' => $voter->voterInformation ? [
+                            'extra_info_1' => $voter->voterInformation->extra_info_1_hi ?? ($voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null),
+                            'extra_info_2' => $voter->voterInformation->extra_info_2_hi ?? ($voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null),
+                            'extra_info_3' => $voter->voterInformation->extra_info_3_hi ?? ($voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null),
+                            'extra_info_4' => $voter->voterInformation->extra_info_4_hi ?? ($voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null),
+                            'extra_info_5' => $voter->voterInformation->extra_info_5_hi ?? ($voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null),
+                            'extra_check_1' =>$voter->voterInformation->extra_check_1 ?? null,
+                            'extra_check_2' =>$voter->voterInformation->extra_check_2 ?? null,
+                        ] : null,
+                        'address_details' => $voter->voterAddress ? [
+                            'society' => $voter->voterAddress->society_hi ?? ($voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null),
+                            'house_no' => $voter->voterAddress->house_no_hi ?? ($voter->voterAddress->house_no ? $translator->translate($voter->voterAddress->house_no) : null),
+                            'flat_no' => $voter->voterAddress->flat_no_hi ?? ($voter->voterAddress->flat_no ? $translator->translate($voter->voterAddress->flat_no) : null),
+                            'address' => $voter->voterAddress->address_hi ?? ($voter->voterAddress->address ? $translator->translate($voter->voterAddress->address) : null),
+                            'booth' => $voter->voterAddress->booth_hi ?? ($voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null),
+                            'village' => $voter->voterAddress->village_hi ?? ($voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null),
+                            'part_no' => $voter->voterAddress->part_no,
+                            'srn' => $voter->voterAddress->srn,
+                            'voting_centre' => $voter->voterAddress->voting_centre_hi ?? ($voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null),
+                        ] : null,
+                    ];
+                });
+
+            return response()->json([
+                'status' => 200,
+                'message' => 'Voter details retrieved successfully in Hindi',
+                'voters' => $voters,
+            ], 200);
+        }
+
+
+
+
+    }
+
+    public function houseNoList(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'lang' => 'required|in:en,mr,hi',
+        ]);
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()], 400);
+        }
+
+        $lang = $request->input('lang');
+        $translator = new GoogleTranslate($lang);
+        if($request->lang == 'en'){
+            $userAddresses = UserAddress::all();
+            $houseNoGrouped = $userAddresses->groupBy('house_no')
+            ->map(function ($houseNoGroup) use ($translator) {
+                return [
+                    'house_no' => $houseNoGroup->first()->house_no ?? null,
+                    'total_voters' => $houseNoGroup->count(),
+                ];
+            })->values();
+            $totalHouseNos = $houseNoGrouped->count();
+            return response()->json([
+                'status' => 200,
+                'message' => 'Society list retrieved successfully in English',
+                'total_houseno' => $totalHouseNos,
+                'housenos' => $houseNoGrouped,
+            ], 200);
+        }
+        if($request->lang == 'mr'){
+            $userAddresses = UserAddress::all();
+            $houseNoGrouped = $userAddresses->groupBy('house_no_mr')
+            ->map(function ($houseNoGroup) use ($translator) {
+                return [
+                    'house_no' => $houseNoGroup->first()->house_no_mr ?? null,
+                    'total_voters' => $houseNoGroup->count(),
+                ];
+            })->values();
+            $totalHouseNos = $houseNoGrouped->count();
+            return response()->json([
+                'status' => 200,
+                'message' => 'Society list retrieved successfully in Marathi',
+                'total_houseno' => $totalHouseNos,
+                'housenos' => $houseNoGrouped,
+            ], 200);
+        }
+        if($request->lang == 'hi'){
+            $userAddresses = UserAddress::all();
+            $houseNoGrouped = $userAddresses->groupBy('house_no_hi')
+            ->map(function ($houseNoGroup) use ($translator) {
+                return [
+                    'house_no' => $houseNoGroup->first()->house_no_hi ?? null,
+                    'total_voters' => $houseNoGroup->count(),
+                ];
+            })->values();
+            $totalHouseNos = $houseNoGrouped->count();
+            return response()->json([
+                'status' => 200,
+                'message' => 'Society list retrieved successfully in Hindi',
+                'total_houseno' => $totalHouseNos,
+                'housenos' => $houseNoGrouped,
+            ], 200);
+        }
+
+
+    }
+
+    public function searchHouseNo(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'lang' => 'required|in:en,mr,hi',
+            'house_no' => 'required',
+        ]);
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()], 400);
+        }
+        $lang = $request->input('lang');
+        $translator = new GoogleTranslate($lang);
+        if($request->lang == 'en'){
+            $houseNos = UserAddress::
+            where('house_no', 'LIKE', '%' . $request->house_no . '%')->orderBy('house_no', 'asc')
+            ->get();
+            $houseNos = $houseNos->groupBy('house_no')
+            ->map(function ($houseNo) use ($translator) {
+                return [
+                    'house_no' => $houseNo->first()->house_no ?? null,
+                    'total_voters' => $houseNo->count(),
+                ];
+            })->values();
+            return response()->json([
+                'status' => 200,
+                'message' => 'House no list searched successfully',
+                'house_nos' => $houseNos,
+            ], 200);
+        }
+        if($request->lang == 'mr'){
+            $houseNos = UserAddress::
+            where('house_no_mr', 'LIKE', '%' . $request->house_no . '%')->orderBy('house_no_mr', 'asc')
+            ->get();
+            $houseNos = $houseNos->groupBy('house_no_mr')
+            ->map(function ($houseNo) use ($translator) {
+                return [
+                    'house_no' => $houseNo->first()->house_no_mr ?? null,
+                    'total_voters' => $houseNo->count(),
+                ];
+            })->values();
+            return response()->json([
+                'status' => 200,
+                'message' => 'House no list searched successfully in Marathi',
+                'house_nos' => $houseNos,
+            ], 200);
+        }
+        if($request->lang == 'hi'){
+            $houseNos = UserAddress::
+            where('house_no_hi', 'LIKE', '%' . $request->house_no . '%')->orderBy('house_no_hi', 'asc')
+            ->get();
+            $houseNos = $houseNos->groupBy('house_no_hi')
+            ->map(function ($houseNo) use ($translator) {
+                return [
+                    'house_no' => $houseNo->first()->house_no_hi ?? null,
+                    'total_voters' => $houseNo->count(),
+                ];
+            })->values();
+            return response()->json([
+                'status' => 200,
+                'message' => 'House no list searched successfully in Hindi',
+                'house_nos' => $houseNos,
+            ], 200);
+        }
+
+    }
+
+    public function voterDetailsByHouseNo(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'lang' => 'required|in:en,mr,hi',
+            'house_no' => 'required',
+        ]);
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()], 400);
+        }
+        $lang = $request->input('lang');
+        $translator = new GoogleTranslate($lang);
+        if($request->lang == 'en'){
+            $users = UserAddress::where('house_no', $request->house_no)
+            ->with(['voter', 'voter.voterInformation']) // Eager load voter and extra information
+            ->get()
+            ->map(function ($houseNo) use ($translator) {
+                return [
+                    'voter_details' => [
+                        'id' => $houseNo->voter->id,
+                        'first_name' => $houseNo->voter->first_name ? $translator->translate($houseNo->voter->first_name) : null,
+                        'middle_name' => $houseNo->voter->middle_name ? $translator->translate($houseNo->voter->middle_name) : null,
+                        'surname' => $houseNo->voter->surname ? $translator->translate($houseNo->voter->surname) : null,
+                        'email' => $houseNo->voter->email ? $translator->translate($houseNo->voter->email) : null,
+                        'gender' => $houseNo->voter->gender ? $translator->translate($houseNo->voter->gender) : null,
+                        'age' => $houseNo->voter->age ? $translator->translate($houseNo->voter->age) : null,
+                        'dob' => $houseNo->voter->dob ? $translator->translate($houseNo->voter->dob) : null,
+                        'cast' => $houseNo->voter->cast ? $translator->translate($houseNo->voter->cast) : null,
+                        'position' => $houseNo->voter->position ? $translator->translate($houseNo->voter->position) : null,
+                        'personnel' => $houseNo->voter->personnel ? $translator->translate($houseNo->voter->personnel) : null,
+                        'voter_id' => $houseNo->voter->voter_id ? $translator->translate($houseNo->voter->voter_id) : null,
+                    ],
+                    'extra_information' => $houseNo->voter->voterInformation ? [
+
+                        'extra_info_1' => $houseNo->voter->voterInformation->extra_info_1 ? $translator->translate($houseNo->voter->voterInformation->extra_info_1) : null,
+                        'extra_info_2' => $houseNo->voter->voterInformation->extra_info_2 ? $translator->translate($houseNo->voter->voterInformation->extra_info_2) : null,
+                        'extra_info_3' => $houseNo->voter->voterInformation->extra_info_3 ? $translator->translate($houseNo->voter->voterInformation->extra_info_3) : null,
+                        'extra_info_4' => $houseNo->voter->voterInformation->extra_info_4 ? $translator->translate($houseNo->voter->voterInformation->extra_info_4) : null,
+                        'extra_info_5' => $houseNo->voter->voterInformation->extra_info_5 ? $translator->translate($houseNo->voter->voterInformation->extra_info_5) : null,
+                        'extra_check_1' => $houseNo->voter->voterInformation->extra_check_1 ?? null,
+                        'extra_check_2' => $houseNo->voter->voterInformation->extra_check_2 ?? null,
+                    ] : null, // Include null if extra information is not available
+                    'address_details' => [
+                        'society' => $houseNo->society ? $translator->translate($houseNo->society) : null,
+                        'house_no' => $houseNo->house_no ? $translator->translate($houseNo->house_no) : null,
+                        'flat_no' => $houseNo->flat_no ? $translator->translate($houseNo->flat_no) : null,
+                        'address' => $houseNo->address ? $translator->translate($houseNo->address) : null,
+                        'booth' => $houseNo->booth ? $translator->translate($houseNo->booth) : null,
+                        'village' => $houseNo->village ? $translator->translate($houseNo->village) : null,
+                        'part_no' => $houseNo->part_no ? $translator->translate($houseNo->part_no) : null,
+                        'srn' => $houseNo->srn ? $translator->translate($houseNo->srn) : null,
+                        'voting_centre' => $houseNo->voting_centre ? $translator->translate($houseNo->voting_centre) : null,
+                    ],
+                ];
+            });
+            return response()->json([
+                'status' => 200,
+                'message' => 'Voter details retrieved successfully',
+                'voters' => $users,
+            ], 200);
+        }
+        if ($request->lang == 'mr') {
+            $users = UserAddress::where('house_no_mr', $request->house_no)
+                ->with(['voter', 'voter.voterInformation']) // Eager load voter and extra information
+                ->get()
+                ->map(function ($houseNo) use ($translator) {
+                    return [
+                        'voter_details' => [
+                            'id' => $houseNo->voter->id,
+                            'first_name' => $houseNo->voter->first_name_mr ?? ($houseNo->voter->first_name ? $translator->translate($houseNo->voter->first_name) : null),
+                            'middle_name' => $houseNo->voter->middle_name_mr ?? ($houseNo->voter->middle_name ? $translator->translate($houseNo->voter->middle_name) : null),
+                            'surname' => $houseNo->voter->surname_mr ?? ($houseNo->voter->surname ? $translator->translate($houseNo->voter->surname) : null),
+                            'email' => $houseNo->voter->email_mr ?? ($houseNo->voter->email ? $translator->translate($houseNo->voter->email) : null),
+                            'gender' => $houseNo->voter->gender_mr ?? ($houseNo->voter->gender ? $translator->translate($houseNo->voter->gender) : null),
+                            'age' => $houseNo->voter->age_mr ?? ($houseNo->voter->age ? $translator->translate($houseNo->voter->age) : null),
+                            'dob' => $houseNo->voter->dob_mr ?? ($houseNo->voter->dob ? $translator->translate($houseNo->voter->dob) : null),
+                            'cast' => $houseNo->voter->cast_mr ?? ($houseNo->voter->cast ? $translator->translate($houseNo->voter->cast) : null),
+                            'position' => $houseNo->voter->position_mr ?? ($houseNo->voter->position ? $translator->translate($houseNo->voter->position) : null),
+                            'personnel' => $houseNo->voter->personnel ?? null,
+                            'voter_id' => $houseNo->voter->voter_id ??  null,
+                        ],
+                        'extra_information' => $houseNo->voter->voterInformation ? [
+                            'extra_info_1' => $houseNo->voter->voterInformation->extra_info_1_mr ?? ($houseNo->voter->voterInformation->extra_info_1 ? $translator->translate($houseNo->voter->voterInformation->extra_info_1) : null),
+                            'extra_info_2' => $houseNo->voter->voterInformation->extra_info_2_mr ?? ($houseNo->voter->voterInformation->extra_info_2 ? $translator->translate($houseNo->voter->voterInformation->extra_info_2) : null),
+                            'extra_info_3' => $houseNo->voter->voterInformation->extra_info_3_mr ?? ($houseNo->voter->voterInformation->extra_info_3 ? $translator->translate($houseNo->voter->voterInformation->extra_info_3) : null),
+                            'extra_info_4' => $houseNo->voter->voterInformation->extra_info_4_mr ?? ($houseNo->voter->voterInformation->extra_info_4 ? $translator->translate($houseNo->voter->voterInformation->extra_info_4) : null),
+                            'extra_info_5' => $houseNo->voter->voterInformation->extra_info_5_mr ?? ($houseNo->voter->voterInformation->extra_info_5 ? $translator->translate($houseNo->voter->voterInformation->extra_info_5) : null),
+                            'extra_check_1' => $houseNo->voter->voterInformation->extra_check_1 ?? null,
+                            'extra_check_2' => $houseNo->voter->voterInformation->extra_check_2 ?? null,
+                        ] : null,
+                        'address_details' => [
+                            'society' => $houseNo->society_mr ?? ($houseNo->society ? $translator->translate($houseNo->society) : null),
+                            'house_no' => $houseNo->house_no_mr ?? ($houseNo->house_no ? $translator->translate($houseNo->house_no) : null),
+                            'flat_no' => $houseNo->flat_no_mr ?? ($houseNo->flat_no ? $translator->translate($houseNo->flat_no) : null),
+                            'address' => $houseNo->address_mr ?? ($houseNo->address ? $translator->translate($houseNo->address) : null),
+                            'booth' => $houseNo->booth_mr ?? ($houseNo->booth ? $translator->translate($houseNo->booth) : null),
+                            'village' => $houseNo->village_mr ?? ($houseNo->village ? $translator->translate($houseNo->village) : null),
+                            'part_no' => $houseNo->part_no_mr ?? ($houseNo->part_no ? $translator->translate($houseNo->part_no) : null),
+                            'srn' => $houseNo->srn_mr ?? ($houseNo->srn ? $translator->translate($houseNo->srn) : null),
+                            'voting_centre' => $houseNo->voting_centre_mr ?? ($houseNo->voting_centre ? $translator->translate($houseNo->voting_centre) : null),
+                        ],
+                    ];
+                });
+
+            return response()->json([
+                'status' => 200,
+                'message' => 'Voter details retrieved successfully in Marathi',
+                'voters' => $users,
+            ], 200);
+        }
+
+        if ($request->lang == 'hi') {
+            $users = UserAddress::where('house_no_hi', $request->house_no)
+                ->with(['voter', 'voter.voterInformation']) // Eager load voter and extra information
+                ->get()
+                ->map(function ($houseNo) use ($translator) {
+                    return [
+                        'voter_details' => [
+                            'id' => $houseNo->voter->id,
+                            'first_name' => $houseNo->voter->first_name_hi ?? ($houseNo->voter->first_name ? $translator->translate($houseNo->voter->first_name) : null),
+                            'middle_name' => $houseNo->voter->middle_name_hi ?? ($houseNo->voter->middle_name ? $translator->translate($houseNo->voter->middle_name) : null),
+                            'surname' => $houseNo->voter->surname_hi ?? ($houseNo->voter->surname ? $translator->translate($houseNo->voter->surname) : null),
+                            'email' => $houseNo->voter->email_hi ?? ($houseNo->voter->email ? $translator->translate($houseNo->voter->email) : null),
+                            'gender' => $houseNo->voter->gender_hi ?? ($houseNo->voter->gender ? $translator->translate($houseNo->voter->gender) : null),
+                            'age' => $houseNo->voter->age_hi ?? ($houseNo->voter->age ? $translator->translate($houseNo->voter->age) : null),
+                            'dob' => $houseNo->voter->dob_hi ?? ($houseNo->voter->dob ? $translator->translate($houseNo->voter->dob) : null),
+                            'cast' => $houseNo->voter->cast_hi ?? ($houseNo->voter->cast ? $translator->translate($houseNo->voter->cast) : null),
+                            'position' => $houseNo->voter->position_hi ?? ($houseNo->voter->position ? $translator->translate($houseNo->voter->position) : null),
+                            'personnel' => $houseNo->voter->personnel ?? null,
+                            'voter_id' => $houseNo->voter->voter_id ?? null,
+                        ],
+                        'extra_information' => $houseNo->voter->voterInformation ? [
+                            'extra_info_1' => $houseNo->voter->voterInformation->extra_info_1_hi ?? ($houseNo->voter->voterInformation->extra_info_1 ? $translator->translate($houseNo->voter->voterInformation->extra_info_1) : null),
+                            'extra_info_2' => $houseNo->voter->voterInformation->extra_info_2_hi ?? ($houseNo->voter->voterInformation->extra_info_2 ? $translator->translate($houseNo->voter->voterInformation->extra_info_2) : null),
+                            'extra_info_3' => $houseNo->voter->voterInformation->extra_info_3_hi ?? ($houseNo->voter->voterInformation->extra_info_3 ? $translator->translate($houseNo->voter->voterInformation->extra_info_3) : null),
+                            'extra_info_4' => $houseNo->voter->voterInformation->extra_info_4_hi ?? ($houseNo->voter->voterInformation->extra_info_4 ? $translator->translate($houseNo->voter->voterInformation->extra_info_4) : null),
+                            'extra_info_5' => $houseNo->voter->voterInformation->extra_info_5_hi ?? ($houseNo->voter->voterInformation->extra_info_5 ? $translator->translate($houseNo->voter->voterInformation->extra_info_5) : null),
+                            'extra_check_1' => $houseNo->voter->voterInformation->extra_check_1 ?? null,
+                            'extra_check_2' => $houseNo->voter->voterInformation->extra_check_2 ?? null,
+                        ] : null,
+                        'address_details' => [
+                            'society' => $houseNo->society_hi ?? ($houseNo->society ? $translator->translate($houseNo->society) : null),
+                            'house_no' => $houseNo->house_no_hi ?? ($houseNo->house_no ? $translator->translate($houseNo->house_no) : null),
+                            'flat_no' => $houseNo->flat_no_hi ?? ($houseNo->flat_no ? $translator->translate($houseNo->flat_no) : null),
+                            'address' => $houseNo->address_hi ?? ($houseNo->address ? $translator->translate($houseNo->address) : null),
+                            'booth' => $houseNo->booth_hi ?? ($houseNo->booth ? $translator->translate($houseNo->booth) : null),
+                            'village' => $houseNo->village_hi ?? ($houseNo->village ? $translator->translate($houseNo->village) : null),
+                            'part_no' => $houseNo->part_no_hi ?? ($houseNo->part_no ? $translator->translate($houseNo->part_no) : null),
+                            'srn' => $houseNo->srn_hi ?? ($houseNo->srn ? $translator->translate($houseNo->srn) : null),
+                            'voting_centre' => $houseNo->voting_centre_hi ?? ($houseNo->voting_centre ? $translator->translate($houseNo->voting_centre) : null),
+                        ],
+                    ];
+                });
+
+            return response()->json([
+                'status' => 200,
+                'message' => 'Voter details retrieved successfully in Hindi',
+                'voters' => $users,
+            ], 200);
+        }
+
+
+
+
+    }
+
+    // public function deadLiveList(Request $request)
+    // {
+
+    //     $deadVoters = Voters::where('dead', 0)->count();
+    //     $liveVoters = Voters::where('dead', 1)->count();
+    //     return response()->json([
+    //         'status' => 200,
+    //         'message' => 'Voter details retrieved successfully',
+    //         'dead voters' => $deadVoters,
+    //         'live voters' => $liveVoters,
+    //     ], 200);
+
+    // }
+    public function deadLiveList(Request $request)
+    {
+        // Fetch all voters
+        $voters = Voters::all();
+
+        // Group voters by their dead status and count each group
+        $groupedByStatus = $voters->groupBy('dead')->map(function ($group, $status) {
+            return [
+                'status' => $status == 1 ? 'Dead' : 'Live',
+                'voter_count' => $group->count(),
+            ];
+        });
+
+        // Convert grouped data to an array
+        $statusData = $groupedByStatus->values()->toArray();
+
+        // Return the response
+        return response()->json([
+            'status' => 200,
+            'message' => 'Dead and live voters count retrieved successfully',
+            'total_voters' => $voters->count(),
+            'voters' => $statusData,
+        ], 200);
+    }
+
+    public function deadLiveVotersDetails(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'lang' => 'required|in:en,mr,hi',
+            'status'=>'required |in:dead,live'
+
+        ]);
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()], 400);
+        }
+        $lang = $request->input('lang');
+        $translator = new GoogleTranslate($lang);
+       if( $request->status == 'live'){
+        if($request->lang == 'en'){
+            $voters = voters::where('dead', 0)
+            ->with(['voterAddress', 'voterInformation'])
+            ->get()
+            ->map(function ($voter) use ($translator) {
+                return [
+                    'voter_details' => [
+                        'id' => $voter->id,
+                        'first_name' => $voter->first_name ? $translator->translate($voter->first_name) : null,
+                        'middle_name' => $voter->middle_name ? $translator->translate($voter->middle_name) : null,
+                        'surname' => $voter->surname ? $translator->translate($voter->surname) : null,
+                        'email' => $voter->email ? $translator->translate($voter->email) : null,
+                        'gender' => $voter->gender ? $translator->translate($voter->gender) : null,
+                        'age' => $voter->age,
+                        'dob' => $voter->dob,
+                        'cast' => $voter->cast ? $translator->translate($voter->cast) : null,
+                        'position' => $voter->position ? $translator->translate($voter->position) : null,
+                        'personnel' => $voter->personnel ? $translator->translate($voter->personnel) : null,
+                        'voter_id' => $voter->voter_id,
+                    ],
+                    'extra_information' => $voter->voterInformation ? [
+                        'extra_info_1' => $voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null,
+                        'extra_info_2' => $voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null,
+                        'extra_info_3' => $voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null,
+                        'extra_info_4' => $voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null,
+                        'extra_info_5' => $voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null,
+                        'extra_check_1' => $voter->voterInformation->extra_check_1,
+                        'extra_check_2' => $voter->voterInformation->extra_check_2,
+                    ] : null,
+                    'address_details' => $voter->voterAddress ? [
+                        'society' => $voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null,
+                        'house_no' => $voter->voterAddress->house_no ? $translator->translate($voter->voterAddress->house_no) : null,
+                        'flat_no' => $voter->voterAddress->flat_no ? $translator->translate($voter->voterAddress->flat_no) : null,
+                        'address' => $voter->voterAddress->address ? $translator->translate($voter->voterAddress->address) : null,
+                        'booth' => $voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null,
+                        'village' => $voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null,
+                        'part_no' => $voter->voterAddress->part_no,
+                        'srn' => $voter->voterAddress->srn,
+                        'voting_centre' => $voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null,
+                    ] : null,
+                ];
+            });
+
+            return response()->json([
+                'status' => 200,
+                'message' => 'Live voter details retrieved successfully in English',
+                'voters' => $voters,
+            ], 200);
+        }
+
+        if ($request->lang == 'mr') {
+            $voters = voters::where('dead', 0)
+                ->with(['voterAddress', 'voterInformation'])
+                ->get()
+                ->map(function ($voter) use ($translator) {
+                    return [
+                        'voter_details' => [
+                            'id' => $voter->id,
+                            'first_name' => $voter->first_name_mr ?? ($voter->first_name ? $translator->translate($voter->first_name) : null),
+                            'middle_name' => $voter->middle_name_mr ?? ($voter->middle_name ? $translator->translate($voter->middle_name) : null),
+                            'surname' => $voter->surname_mr ?? ($voter->surname ? $translator->translate($voter->surname) : null),
+                            'email' => $voter->email_mr ?? ($voter->email ? $translator->translate($voter->email) : null),
+                            'gender' => $voter->gender_mr ?? ($voter->gender ? $translator->translate($voter->gender) : null),
+                            'age' => $voter->age_mr ?? ($voter->age ? $translator->translate($voter->age) : null),
+                            'dob' => $voter->dob_mr ?? ($voter->dob ? $translator->translate($voter->dob) : null),
+                            'cast' => $voter->cast_mr ?? ($voter->cast ? $translator->translate($voter->cast) : null),
+                            'position' => $voter->position_mr ?? ($voter->position ? $translator->translate($voter->position) : null),
+                            'personnel' => $voter->personnel ?? null,
+                            'voter_id' => $voter->voter_id ?? null,
+                        ],
+                        'extra_information' => $voter->voterInformation ? [
+                            'extra_info_1' => $voter->voterInformation->extra_info_1_mr ?? ($voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null),
+                            'extra_info_2' => $voter->voterInformation->extra_info_2_mr ?? ($voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null),
+                            'extra_info_3' => $voter->voterInformation->extra_info_3_mr ?? ($voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null),
+                            'extra_info_4' => $voter->voterInformation->extra_info_4_mr ?? ($voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null),
+                            'extra_info_5' => $voter->voterInformation->extra_info_5_mr ?? ($voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null),
+                            'extra_check_1' => $voter->voterInformation->extra_check_1,
+                            'extra_check_2' => $voter->voterInformation->extra_check_2,
+                        ] : null,
+                        'address_details' => $voter->voterAddress ? [
+                            'society' => $voter->voterAddress->society_mr ?? ($voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null),
+                            'house_no' => $voter->voterAddress->house_no_mr ?? ($voter->voterAddress->house_no ? $translator->translate($voter->voterAddress->house_no) : null),
+                            'flat_no' => $voter->voterAddress->flat_no_mr ?? ($voter->voterAddress->flat_no ? $translator->translate($voter->voterAddress->flat_no) : null),
+                            'address' => $voter->voterAddress->address_mr ?? ($voter->voterAddress->address ? $translator->translate($voter->voterAddress->address) : null),
+                            'booth' => $voter->voterAddress->booth_mr ?? ($voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null),
+                            'village' => $voter->voterAddress->village_mr ?? ($voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null),
+                            'part_no' => $voter->voterAddress->part_no_mr ?? ($voter->voterAddress->part_no ? $translator->translate($voter->voterAddress->part_no) : null),
+                            'srn' => $voter->voterAddress->srn_mr ?? ($voter->voterAddress->srn ? $translator->translate($voter->voterAddress->srn) : null),
+                            'voting_centre' => $voter->voterAddress->voting_centre_mr ?? ($voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null),
+                        ] : null,
+                    ];
+                });
+
+            return response()->json([
+                'status' => 200,
+                'message' => 'Live voter details retrieved successfully in Marathi',
+                'voters' => $voters,
+            ], 200);
+        }
+
+        if ($request->lang == 'hi') {
+            $voters = voters::where('dead', 0)
+                ->with(['voterAddress', 'voterInformation'])
+                ->get()
+                ->map(function ($voter) use ($translator) {
+                    return [
+                        'voter_details' => [
+                            'id' => $voter->id,
+                            'first_name' => $voter->first_name_hi ?? ($voter->first_name ? $translator->translate($voter->first_name) : null),
+                            'middle_name' => $voter->middle_name_hi ?? ($voter->middle_name ? $translator->translate($voter->middle_name) : null),
+                            'surname' => $voter->surname_hi ?? ($voter->surname ? $translator->translate($voter->surname) : null),
+                            'email' => $voter->email_hi ?? ($voter->email ? $translator->translate($voter->email) : null),
+                            'gender' => $voter->gender_hi ?? ($voter->gender ? $translator->translate($voter->gender) : null),
+                            'age' => $voter->age_hi ?? ($voter->age ? $translator->translate($voter->age) : null),
+                            'dob' => $voter->dob_hi ?? ($voter->dob ? $translator->translate($voter->dob) : null),
+                            'cast' => $voter->cast_hi ?? ($voter->cast ? $translator->translate($voter->cast) : null),
+                            'position' => $voter->position_hi ?? ($voter->position ? $translator->translate($voter->position) : null),
+                            'personnel' => $voter->personnel ?? null,
+                            'voter_id' => $voter->voter_id ?? null,
+                        ],
+                        'extra_information' => $voter->voterInformation ? [
+                            'extra_info_1' => $voter->voterInformation->extra_info_1_hi ?? ($voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null),
+                            'extra_info_2' => $voter->voterInformation->extra_info_2_hi ?? ($voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null),
+                            'extra_info_3' => $voter->voterInformation->extra_info_3_hi ?? ($voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null),
+                            'extra_info_4' => $voter->voterInformation->extra_info_4_hi ?? ($voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null),
+                            'extra_info_5' => $voter->voterInformation->extra_info_5_hi ?? ($voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null),
+                            'extra_check_1' => $voter->voterInformation->extra_check_1,
+                            'extra_check_2' => $voter->voterInformation->extra_check_2,
+                        ] : null,
+                        'address_details' => $voter->voterAddress ? [
+                            'society' => $voter->voterAddress->society_hi ?? ($voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null),
+                            'house_no' => $voter->voterAddress->house_no_hi ?? ($voter->voterAddress->house_no ? $translator->translate($voter->voterAddress->house_no) : null),
+                            'flat_no' => $voter->voterAddress->flat_no_hi ?? ($voter->voterAddress->flat_no ? $translator->translate($voter->voterAddress->flat_no) : null),
+                            'address' => $voter->voterAddress->address_hi ?? ($voter->voterAddress->address ? $translator->translate($voter->voterAddress->address) : null),
+                            'booth' => $voter->voterAddress->booth_hi ?? ($voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null),
+                            'village' => $voter->voterAddress->village_hi ?? ($voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null),
+                            'part_no' => $voter->voterAddress->part_no_hi ?? ($voter->voterAddress->part_no ? $translator->translate($voter->voterAddress->part_no) : null),
+                            'srn' => $voter->voterAddress->srn_hi ?? ($voter->voterAddress->srn ? $translator->translate($voter->voterAddress->srn) : null),
+                            'voting_centre' => $voter->voterAddress->voting_centre_hi ?? ($voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null),
+                        ] : null,
+                    ];
+                });
+
+            return response()->json([
+                'status' => 200,
+                'message' => 'Live voter details retrieved successfully in Hindi',
+                'voters' => $voters,
+            ], 200);
+        }
+
+       }
+
+       if( $request->status == 'dead'){
+        if($request->lang == 'en'){
+            $voters = voters::where('dead', 1)
+            ->with(['voterAddress', 'voterInformation'])
+            ->get()
+            ->map(function ($voter) use ($translator) {
+                return [
+                    'voter_details' => [
+                        'id' => $voter->id,
+                        'first_name' => $voter->first_name ? $translator->translate($voter->first_name) : null,
+                        'middle_name' => $voter->middle_name ? $translator->translate($voter->middle_name) : null,
+                        'surname' => $voter->surname ? $translator->translate($voter->surname) : null,
+                        'email' => $voter->email ? $translator->translate($voter->email) : null,
+                        'gender' => $voter->gender ? $translator->translate($voter->gender) : null,
+                        'age' => $voter->age,
+                        'dob' => $voter->dob,
+                        'cast' => $voter->cast ? $translator->translate($voter->cast) : null,
+                        'position' => $voter->position ? $translator->translate($voter->position) : null,
+                        'personnel' => $voter->personnel ? $translator->translate($voter->personnel) : null,
+                        'voter_id' => $voter->voter_id,
+                    ],
+                    'extra_information' => $voter->voterInformation ? [
+                        'extra_info_1' => $voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null,
+                        'extra_info_2' => $voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null,
+                        'extra_info_3' => $voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null,
+                        'extra_info_4' => $voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null,
+                        'extra_info_5' => $voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null,
+                        'extra_check_1' => $voter->voterInformation->extra_check_1,
+                        'extra_check_2' => $voter->voterInformation->extra_check_2,
+                    ] : null,
+                    'address_details' => $voter->voterAddress ? [
+                        'society' => $voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null,
+                        'house_no' => $voter->voterAddress->house_no ? $translator->translate($voter->voterAddress->house_no) : null,
+                        'flat_no' => $voter->voterAddress->flat_no ? $translator->translate($voter->voterAddress->flat_no) : null,
+                        'address' => $voter->voterAddress->address ? $translator->translate($voter->voterAddress->address) : null,
+                        'booth' => $voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null,
+                        'village' => $voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null,
+                        'part_no' => $voter->voterAddress->part_no,
+                        'srn' => $voter->voterAddress->srn,
+                        'voting_centre' => $voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null,
+                    ] : null,
+                ];
+            });
+
+            return response()->json([
+                'status' => 200,
+                'message' => 'Dead voter details retrieved successfully in English',
+                'voters' => $voters,
+            ], 200);
+        }
+
+        if ($request->lang == 'mr') {
+            $voters = voters::where('dead', 1)
+                ->with(['voterAddress', 'voterInformation'])
+                ->get()
+                ->map(function ($voter) use ($translator) {
+                    return [
+                        'voter_details' => [
+                            'id' => $voter->id,
+                            'first_name' => $voter->first_name_mr ?? ($voter->first_name ? $translator->translate($voter->first_name) : null),
+                            'middle_name' => $voter->middle_name_mr ?? ($voter->middle_name ? $translator->translate($voter->middle_name) : null),
+                            'surname' => $voter->surname_mr ?? ($voter->surname ? $translator->translate($voter->surname) : null),
+                            'email' => $voter->email_mr ?? ($voter->email ? $translator->translate($voter->email) : null),
+                            'gender' => $voter->gender_mr ?? ($voter->gender ? $translator->translate($voter->gender) : null),
+                            'age' => $voter->age_mr ?? ($voter->age ? $translator->translate($voter->age) : null),
+                            'dob' => $voter->dob_mr ?? ($voter->dob ? $translator->translate($voter->dob) : null),
+                            'cast' => $voter->cast_mr ?? ($voter->cast ? $translator->translate($voter->cast) : null),
+                            'position' => $voter->position_mr ?? ($voter->position ? $translator->translate($voter->position) : null),
+                            'personnel' => $voter->personnel ?? null,
+                            'voter_id' => $voter->voter_id ?? null,
+                        ],
+                        'extra_information' => $voter->voterInformation ? [
+                            'extra_info_1' => $voter->voterInformation->extra_info_1_mr ?? ($voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null),
+                            'extra_info_2' => $voter->voterInformation->extra_info_2_mr ?? ($voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null),
+                            'extra_info_3' => $voter->voterInformation->extra_info_3_mr ?? ($voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null),
+                            'extra_info_4' => $voter->voterInformation->extra_info_4_mr ?? ($voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null),
+                            'extra_info_5' => $voter->voterInformation->extra_info_5_mr ?? ($voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null),
+                            'extra_check_1' => $voter->voterInformation->extra_check_1,
+                            'extra_check_2' => $voter->voterInformation->extra_check_2,
+                        ] : null,
+                        'address_details' => $voter->voterAddress ? [
+                            'society' => $voter->voterAddress->society_mr ?? ($voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null),
+                            'house_no' => $voter->voterAddress->house_no_mr ?? ($voter->voterAddress->house_no ? $translator->translate($voter->voterAddress->house_no) : null),
+                            'flat_no' => $voter->voterAddress->flat_no_mr ?? ($voter->voterAddress->flat_no ? $translator->translate($voter->voterAddress->flat_no) : null),
+                            'address' => $voter->voterAddress->address_mr ?? ($voter->voterAddress->address ? $translator->translate($voter->voterAddress->address) : null),
+                            'booth' => $voter->voterAddress->booth_mr ?? ($voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null),
+                            'village' => $voter->voterAddress->village_mr ?? ($voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null),
+                            'part_no' => $voter->voterAddress->part_no_mr ?? ($voter->voterAddress->part_no ? $translator->translate($voter->voterAddress->part_no) : null),
+                            'srn' => $voter->voterAddress->srn_mr ?? ($voter->voterAddress->srn ? $translator->translate($voter->voterAddress->srn) : null),
+                            'voting_centre' => $voter->voterAddress->voting_centre_mr ?? ($voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null),
+                        ] : null,
+                    ];
+                });
+
+            return response()->json([
+                'status' => 200,
+                'message' => 'Dead voter details retrieved successfully in Marathi',
+                'voters' => $voters,
+            ], 200);
+        }
+
+        if ($request->lang == 'hi') {
+            $voters = voters::where('dead', 1)
+                ->with(['voterAddress', 'voterInformation'])
+                ->get()
+                ->map(function ($voter) use ($translator) {
+                    return [
+                        'voter_details' => [
+                            'id' => $voter->id,
+                            'first_name' => $voter->first_name_hi ?? ($voter->first_name ? $translator->translate($voter->first_name) : null),
+                            'middle_name' => $voter->middle_name_hi ?? ($voter->middle_name ? $translator->translate($voter->middle_name) : null),
+                            'surname' => $voter->surname_hi ?? ($voter->surname ? $translator->translate($voter->surname) : null),
+                            'email' => $voter->email_hi ?? ($voter->email ? $translator->translate($voter->email) : null),
+                            'gender' => $voter->gender_hi ?? ($voter->gender ? $translator->translate($voter->gender) : null),
+                            'age' => $voter->age_hi ?? ($voter->age ? $translator->translate($voter->age) : null),
+                            'dob' => $voter->dob_hi ?? ($voter->dob ? $translator->translate($voter->dob) : null),
+                            'cast' => $voter->cast_hi ?? ($voter->cast ? $translator->translate($voter->cast) : null),
+                            'position' => $voter->position_hi ?? ($voter->position ? $translator->translate($voter->position) : null),
+                            'personnel' => $voter->personnel ?? null,
+                            'voter_id' => $voter->voter_id ?? null,
+                        ],
+                        'extra_information' => $voter->voterInformation ? [
+                            'extra_info_1' => $voter->voterInformation->extra_info_1_hi ?? ($voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null),
+                            'extra_info_2' => $voter->voterInformation->extra_info_2_hi ?? ($voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null),
+                            'extra_info_3' => $voter->voterInformation->extra_info_3_hi ?? ($voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null),
+                            'extra_info_4' => $voter->voterInformation->extra_info_4_hi ?? ($voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null),
+                            'extra_info_5' => $voter->voterInformation->extra_info_5_hi ?? ($voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null),
+                            'extra_check_1' => $voter->voterInformation->extra_check_1,
+                            'extra_check_2' => $voter->voterInformation->extra_check_2,
+                        ] : null,
+                        'address_details' => $voter->voterAddress ? [
+                            'society' => $voter->voterAddress->society_hi ?? ($voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null),
+                            'house_no' => $voter->voterAddress->house_no_hi ?? ($voter->voterAddress->house_no ? $translator->translate($voter->voterAddress->house_no) : null),
+                            'flat_no' => $voter->voterAddress->flat_no_hi ?? ($voter->voterAddress->flat_no ? $translator->translate($voter->voterAddress->flat_no) : null),
+                            'address' => $voter->voterAddress->address_hi ?? ($voter->voterAddress->address ? $translator->translate($voter->voterAddress->address) : null),
+                            'booth' => $voter->voterAddress->booth_hi ?? ($voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null),
+                            'village' => $voter->voterAddress->village_hi ?? ($voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null),
+                            'part_no' => $voter->voterAddress->part_no_hi ?? ($voter->voterAddress->part_no ? $translator->translate($voter->voterAddress->part_no) : null),
+                            'srn' => $voter->voterAddress->srn_hi ?? ($voter->voterAddress->srn ? $translator->translate($voter->voterAddress->srn) : null),
+                            'voting_centre' => $voter->voterAddress->voting_centre_hi ?? ($voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null),
+                        ] : null,
+                    ];
+                });
+
+            return response()->json([
+                'status' => 200,
+                'message' => 'Dead voter details retrieved successfully in Hindi',
+                'voters' => $voters,
+            ], 200);
+        }
+
+       }
+
+
+
+
+    }
+
+    public function liveVotersDetails(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'lang' => 'required|in:en,mr,hi',
+
+        ]);
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()], 400);
+        }
+        $lang = $request->input('lang');
+        $translator = new GoogleTranslate($lang);
+
+        if($request->lang == 'en'){
+            $voters = voters::where('dead', 1)
+            ->with(['voterAddress', 'voterInformation'])
+            ->get()
+            ->map(function ($voter) use ($translator) {
+                return [
+                    'voter_details' => [
+                        'id' => $voter->id,
+                        'first_name' => $voter->first_name ? $translator->translate($voter->first_name) : null,
+                        'middle_name' => $voter->middle_name ? $translator->translate($voter->middle_name) : null,
+                        'surname' => $voter->surname ? $translator->translate($voter->surname) : null,
+                        'email' => $voter->email ? $translator->translate($voter->email) : null,
+                        'gender' => $voter->gender ? $translator->translate($voter->gender) : null,
+                        'age' => $voter->age,
+                        'dob' => $voter->dob,
+                        'cast' => $voter->cast ? $translator->translate($voter->cast) : null,
+                        'position' => $voter->position ? $translator->translate($voter->position) : null,
+                        'personnel' => $voter->personnel ? $translator->translate($voter->personnel) : null,
+                        'voter_id' => $voter->voter_id,
+                    ],
+                    'extra_information' => $voter->voterInformation ? [
+                        'extra_info_1' => $voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null,
+                        'extra_info_2' => $voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null,
+                        'extra_info_3' => $voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null,
+                        'extra_info_4' => $voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null,
+                        'extra_info_5' => $voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null,
+                        'extra_check_1' => $voter->voterInformation->extra_check_1,
+                        'extra_check_2' => $voter->voterInformation->extra_check_2,
+                    ] : null,
+                    'address_details' => $voter->voterAddress ? [
+                        'society' => $voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null,
+                        'house_no' => $voter->voterAddress->house_no ? $translator->translate($voter->voterAddress->house_no) : null,
+                        'flat_no' => $voter->voterAddress->flat_no ? $translator->translate($voter->voterAddress->flat_no) : null,
+                        'address' => $voter->voterAddress->address ? $translator->translate($voter->voterAddress->address) : null,
+                        'booth' => $voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null,
+                        'village' => $voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null,
+                        'part_no' => $voter->voterAddress->part_no,
+                        'srn' => $voter->voterAddress->srn,
+                        'voting_centre' => $voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null,
+                    ] : null,
+                ];
+            });
+
+            return response()->json([
+                'status' => 200,
+                'message' => 'Live voter details retrieved successfully in English',
+                'voters' => $voters,
+            ], 200);
+        }
+
+        if ($request->lang == 'mr') {
+            $voters = voters::where('dead', 1)
+                ->with(['voterAddress', 'voterInformation'])
+                ->get()
+                ->map(function ($voter) use ($translator) {
+                    return [
+                        'voter_details' => [
+                            'id' => $voter->id,
+                            'first_name' => $voter->first_name_mr ?? ($voter->first_name ? $translator->translate($voter->first_name) : null),
+                            'middle_name' => $voter->middle_name_mr ?? ($voter->middle_name ? $translator->translate($voter->middle_name) : null),
+                            'surname' => $voter->surname_mr ?? ($voter->surname ? $translator->translate($voter->surname) : null),
+                            'email' => $voter->email_mr ?? ($voter->email ? $translator->translate($voter->email) : null),
+                            'gender' => $voter->gender_mr ?? ($voter->gender ? $translator->translate($voter->gender) : null),
+                            'age' => $voter->age_mr ?? ($voter->age ? $translator->translate($voter->age) : null),
+                            'dob' => $voter->dob_mr ?? ($voter->dob ? $translator->translate($voter->dob) : null),
+                            'cast' => $voter->cast_mr ?? ($voter->cast ? $translator->translate($voter->cast) : null),
+                            'position' => $voter->position_mr ?? ($voter->position ? $translator->translate($voter->position) : null),
+                            'personnel' => $voter->personnel ?? null,
+                            'voter_id' => $voter->voter_id ?? null,
+                        ],
+                        'extra_information' => $voter->voterInformation ? [
+                            'extra_info_1' => $voter->voterInformation->extra_info_1_mr ?? ($voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null),
+                            'extra_info_2' => $voter->voterInformation->extra_info_2_mr ?? ($voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null),
+                            'extra_info_3' => $voter->voterInformation->extra_info_3_mr ?? ($voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null),
+                            'extra_info_4' => $voter->voterInformation->extra_info_4_mr ?? ($voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null),
+                            'extra_info_5' => $voter->voterInformation->extra_info_5_mr ?? ($voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null),
+                            'extra_check_1' => $voter->voterInformation->extra_check_1,
+                            'extra_check_2' => $voter->voterInformation->extra_check_2,
+                        ] : null,
+                        'address_details' => $voter->voterAddress ? [
+                            'society' => $voter->voterAddress->society_mr ?? ($voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null),
+                            'house_no' => $voter->voterAddress->house_no_mr ?? ($voter->voterAddress->house_no ? $translator->translate($voter->voterAddress->house_no) : null),
+                            'flat_no' => $voter->voterAddress->flat_no_mr ?? ($voter->voterAddress->flat_no ? $translator->translate($voter->voterAddress->flat_no) : null),
+                            'address' => $voter->voterAddress->address_mr ?? ($voter->voterAddress->address ? $translator->translate($voter->voterAddress->address) : null),
+                            'booth' => $voter->voterAddress->booth_mr ?? ($voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null),
+                            'village' => $voter->voterAddress->village_mr ?? ($voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null),
+                            'part_no' => $voter->voterAddress->part_no_mr ?? ($voter->voterAddress->part_no ? $translator->translate($voter->voterAddress->part_no) : null),
+                            'srn' => $voter->voterAddress->srn_mr ?? ($voter->voterAddress->srn ? $translator->translate($voter->voterAddress->srn) : null),
+                            'voting_centre' => $voter->voterAddress->voting_centre_mr ?? ($voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null),
+                        ] : null,
+                    ];
+                });
+
+            return response()->json([
+                'status' => 200,
+                'message' => 'Live voter details retrieved successfully in Marathi',
+                'voters' => $voters,
+            ], 200);
+        }
+
+        if ($request->lang == 'hi') {
+            $voters = voters::where('dead', 1)
+                ->with(['voterAddress', 'voterInformation'])
+                ->get()
+                ->map(function ($voter) use ($translator) {
+                    return [
+                        'voter_details' => [
+                            'id' => $voter->id,
+                            'first_name' => $voter->first_name_hi ?? ($voter->first_name ? $translator->translate($voter->first_name) : null),
+                            'middle_name' => $voter->middle_name_hi ?? ($voter->middle_name ? $translator->translate($voter->middle_name) : null),
+                            'surname' => $voter->surname_hi ?? ($voter->surname ? $translator->translate($voter->surname) : null),
+                            'email' => $voter->email_hi ?? ($voter->email ? $translator->translate($voter->email) : null),
+                            'gender' => $voter->gender_hi ?? ($voter->gender ? $translator->translate($voter->gender) : null),
+                            'age' => $voter->age_hi ?? ($voter->age ? $translator->translate($voter->age) : null),
+                            'dob' => $voter->dob_hi ?? ($voter->dob ? $translator->translate($voter->dob) : null),
+                            'cast' => $voter->cast_hi ?? ($voter->cast ? $translator->translate($voter->cast) : null),
+                            'position' => $voter->position_hi ?? ($voter->position ? $translator->translate($voter->position) : null),
+                            'personnel' => $voter->personnel ?? null,
+                            'voter_id' => $voter->voter_id ?? null,
+                        ],
+                        'extra_information' => $voter->voterInformation ? [
+                            'extra_info_1' => $voter->voterInformation->extra_info_1_hi ?? ($voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null),
+                            'extra_info_2' => $voter->voterInformation->extra_info_2_hi ?? ($voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null),
+                            'extra_info_3' => $voter->voterInformation->extra_info_3_hi ?? ($voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null),
+                            'extra_info_4' => $voter->voterInformation->extra_info_4_hi ?? ($voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null),
+                            'extra_info_5' => $voter->voterInformation->extra_info_5_hi ?? ($voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null),
+                            'extra_check_1' => $voter->voterInformation->extra_check_1,
+                            'extra_check_2' => $voter->voterInformation->extra_check_2,
+                        ] : null,
+                        'address_details' => $voter->voterAddress ? [
+                            'society' => $voter->voterAddress->society_hi ?? ($voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null),
+                            'house_no' => $voter->voterAddress->house_no_hi ?? ($voter->voterAddress->house_no ? $translator->translate($voter->voterAddress->house_no) : null),
+                            'flat_no' => $voter->voterAddress->flat_no_hi ?? ($voter->voterAddress->flat_no ? $translator->translate($voter->voterAddress->flat_no) : null),
+                            'address' => $voter->voterAddress->address_hi ?? ($voter->voterAddress->address ? $translator->translate($voter->voterAddress->address) : null),
+                            'booth' => $voter->voterAddress->booth_hi ?? ($voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null),
+                            'village' => $voter->voterAddress->village_hi ?? ($voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null),
+                            'part_no' => $voter->voterAddress->part_no_hi ?? ($voter->voterAddress->part_no ? $translator->translate($voter->voterAddress->part_no) : null),
+                            'srn' => $voter->voterAddress->srn_hi ?? ($voter->voterAddress->srn ? $translator->translate($voter->voterAddress->srn) : null),
+                            'voting_centre' => $voter->voterAddress->voting_centre_hi ?? ($voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null),
+                        ] : null,
+                    ];
+                });
+
+            return response()->json([
+                'status' => 200,
+                'message' => 'Live voter details retrieved successfully in Hindi',
+                'voters' => $voters,
+            ], 200);
+        }
+
+    }
+    public function starVoterList()
+    {
+
+
+        // Fetch all voters
+        $voters = Voters::all();
+        $checkedCount = Voters::where('star_voter',1)->count();
+        $uncheckedCount = Voters::where('star_voter',0)->count();
+        if( $checkedCount == 0 && $uncheckedCount >0 ){
+            $total_count = 1;
+        }
+        else if( $checkedCount >0 && $uncheckedCount ==0 ){
+            $total_count = 1;
+        }
+        else if( $checkedCount >0 && $uncheckedCount >0 ){
+            $total_count = 2;
+        }
+        // Group voters by their dead status and count each group
+        $groupedByStatus = $voters->groupBy('star_voter')->map(function ($group, $status) {
+            return [
+                'status' => $status == 1 ? 'StarVoter' : 'NonStarVoter',
+                'voter_count' => $group->count(),
+            ];
+        });
+
+        // Convert grouped data to an array
+        $statusData = $groupedByStatus->values()->toArray();
+
+        // Return the response
+        return response()->json([
+            'status' => 200,
+            'message' => 'Star and NonStar voters count retrieved successfully',
+            'total_count' => $total_count,
+            'total_voters' => $voters->count(),
+            'voters' => $statusData,
+        ], 200);
+    }
+
+    public function starVotersDetails(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'lang' => 'required|in:en,mr,hi',
+            'status'=>'required |in:StarVoter,NonStarVoter',
+
+        ]);
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()], 400);
+        }
+        $lang = $request->input('lang');
+        $translator = new GoogleTranslate($lang);
+       if( $request->status == 'StarVoter'){
+        if($request->lang == 'en'){
+            $voters = voters::where('star_voter', 1)
+            ->with(['voterAddress', 'voterInformation'])
+            ->get()
+            ->map(function ($voter) use ($translator) {
+                return [
+                    'voter_details' => [
+                        'id' => $voter->id,
+                        'first_name' => $voter->first_name ? $translator->translate($voter->first_name) : null,
+                        'middle_name' => $voter->middle_name ? $translator->translate($voter->middle_name) : null,
+                        'surname' => $voter->surname ? $translator->translate($voter->surname) : null,
+                        'email' => $voter->email ? $translator->translate($voter->email) : null,
+                        'gender' => $voter->gender ? $translator->translate($voter->gender) : null,
+                        'age' => $voter->age,
+                        'dob' => $voter->dob,
+                        'cast' => $voter->cast ? $translator->translate($voter->cast) : null,
+                        'position' => $voter->position ? $translator->translate($voter->position) : null,
+                        'personnel' => $voter->personnel ? $translator->translate($voter->personnel) : null,
+                        'voter_id' => $voter->voter_id,
+                    ],
+                    'extra_information' => $voter->voterInformation ? [
+                        'extra_info_1' => $voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null,
+                        'extra_info_2' => $voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null,
+                        'extra_info_3' => $voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null,
+                        'extra_info_4' => $voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null,
+                        'extra_info_5' => $voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null,
+                        'extra_check_1' => $voter->voterInformation->extra_check_1,
+                        'extra_check_2' => $voter->voterInformation->extra_check_2,
+                    ] : null,
+                    'address_details' => $voter->voterAddress ? [
+                        'society' => $voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null,
+                        'house_no' => $voter->voterAddress->house_no ? $translator->translate($voter->voterAddress->house_no) : null,
+                        'flat_no' => $voter->voterAddress->flat_no ? $translator->translate($voter->voterAddress->flat_no) : null,
+                        'address' => $voter->voterAddress->address ? $translator->translate($voter->voterAddress->address) : null,
+                        'booth' => $voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null,
+                        'village' => $voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null,
+                        'part_no' => $voter->voterAddress->part_no,
+                        'srn' => $voter->voterAddress->srn,
+                        'voting_centre' => $voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null,
+                    ] : null,
+                ];
+            });
+
+            return response()->json([
+                'status' => 200,
+                'message' => 'Star voter details retrieved successfully in English',
+                'voters' => $voters,
+            ], 200);
+        }
+
+        if ($request->lang == 'mr') {
+            $voters = voters::where('star_voter', 1)
+                ->with(['voterAddress', 'voterInformation'])
+                ->get()
+                ->map(function ($voter) use ($translator) {
+                    return [
+                        'voter_details' => [
+                            'id' => $voter->id,
+                            'first_name' => $voter->first_name_mr ?? ($voter->first_name ? $translator->translate($voter->first_name) : null),
+                            'middle_name' => $voter->middle_name_mr ?? ($voter->middle_name ? $translator->translate($voter->middle_name) : null),
+                            'surname' => $voter->surname_mr ?? ($voter->surname ? $translator->translate($voter->surname) : null),
+                            'email' => $voter->email_mr ?? ($voter->email ? $translator->translate($voter->email) : null),
+                            'gender' => $voter->gender_mr ?? ($voter->gender ? $translator->translate($voter->gender) : null),
+                            'age' => $voter->age_mr ?? ($voter->age ? $translator->translate($voter->age) : null),
+                            'dob' => $voter->dob_mr ?? ($voter->dob ? $translator->translate($voter->dob) : null),
+                            'cast' => $voter->cast_mr ?? ($voter->cast ? $translator->translate($voter->cast) : null),
+                            'position' => $voter->position_mr ?? ($voter->position ? $translator->translate($voter->position) : null),
+                            'personnel' => $voter->personnel ?? null,
+                            'voter_id' => $voter->voter_id ?? null,
+                        ],
+                        'extra_information' => $voter->voterInformation ? [
+                            'extra_info_1' => $voter->voterInformation->extra_info_1_mr ?? ($voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null),
+                            'extra_info_2' => $voter->voterInformation->extra_info_2_mr ?? ($voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null),
+                            'extra_info_3' => $voter->voterInformation->extra_info_3_mr ?? ($voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null),
+                            'extra_info_4' => $voter->voterInformation->extra_info_4_mr ?? ($voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null),
+                            'extra_info_5' => $voter->voterInformation->extra_info_5_mr ?? ($voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null),
+                            'extra_check_1' => $voter->voterInformation->extra_check_1,
+                            'extra_check_2' => $voter->voterInformation->extra_check_2,
+                        ] : null,
+                        'address_details' => $voter->voterAddress ? [
+                            'society' => $voter->voterAddress->society_mr ?? ($voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null),
+                            'house_no' => $voter->voterAddress->house_no_mr ?? ($voter->voterAddress->house_no ? $translator->translate($voter->voterAddress->house_no) : null),
+                            'flat_no' => $voter->voterAddress->flat_no_mr ?? ($voter->voterAddress->flat_no ? $translator->translate($voter->voterAddress->flat_no) : null),
+                            'address' => $voter->voterAddress->address_mr ?? ($voter->voterAddress->address ? $translator->translate($voter->voterAddress->address) : null),
+                            'booth' => $voter->voterAddress->booth_mr ?? ($voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null),
+                            'village' => $voter->voterAddress->village_mr ?? ($voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null),
+                            'part_no' => $voter->voterAddress->part_no_mr ?? ($voter->voterAddress->part_no ? $translator->translate($voter->voterAddress->part_no) : null),
+                            'srn' => $voter->voterAddress->srn_mr ?? ($voter->voterAddress->srn ? $translator->translate($voter->voterAddress->srn) : null),
+                            'voting_centre' => $voter->voterAddress->voting_centre_mr ?? ($voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null),
+                        ] : null,
+                    ];
+                });
+
+            return response()->json([
+                'status' => 200,
+                'message' => 'Star  voter details retrieved successfully in Marathi',
+                'voters' => $voters,
+            ], 200);
+        }
+
+        if ($request->lang == 'hi') {
+            $voters = voters::where('star_voter', 1)
+                ->with(['voterAddress', 'voterInformation'])
+                ->get()
+                ->map(function ($voter) use ($translator) {
+                    return [
+                        'voter_details' => [
+                            'id' => $voter->id,
+                            'first_name' => $voter->first_name_hi ?? ($voter->first_name ? $translator->translate($voter->first_name) : null),
+                            'middle_name' => $voter->middle_name_hi ?? ($voter->middle_name ? $translator->translate($voter->middle_name) : null),
+                            'surname' => $voter->surname_hi ?? ($voter->surname ? $translator->translate($voter->surname) : null),
+                            'email' => $voter->email_hi ?? ($voter->email ? $translator->translate($voter->email) : null),
+                            'gender' => $voter->gender_hi ?? ($voter->gender ? $translator->translate($voter->gender) : null),
+                            'age' => $voter->age_hi ?? ($voter->age ? $translator->translate($voter->age) : null),
+                            'dob' => $voter->dob_hi ?? ($voter->dob ? $translator->translate($voter->dob) : null),
+                            'cast' => $voter->cast_hi ?? ($voter->cast ? $translator->translate($voter->cast) : null),
+                            'position' => $voter->position_hi ?? ($voter->position ? $translator->translate($voter->position) : null),
+                            'personnel' => $voter->personnel ?? null,
+                            'voter_id' => $voter->voter_id ?? null,
+                        ],
+                        'extra_information' => $voter->voterInformation ? [
+                            'extra_info_1' => $voter->voterInformation->extra_info_1_hi ?? ($voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null),
+                            'extra_info_2' => $voter->voterInformation->extra_info_2_hi ?? ($voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null),
+                            'extra_info_3' => $voter->voterInformation->extra_info_3_hi ?? ($voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null),
+                            'extra_info_4' => $voter->voterInformation->extra_info_4_hi ?? ($voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null),
+                            'extra_info_5' => $voter->voterInformation->extra_info_5_hi ?? ($voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null),
+                            'extra_check_1' => $voter->voterInformation->extra_check_1,
+                            'extra_check_2' => $voter->voterInformation->extra_check_2,
+                        ] : null,
+                        'address_details' => $voter->voterAddress ? [
+                            'society' => $voter->voterAddress->society_hi ?? ($voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null),
+                            'house_no' => $voter->voterAddress->house_no_hi ?? ($voter->voterAddress->house_no ? $translator->translate($voter->voterAddress->house_no) : null),
+                            'flat_no' => $voter->voterAddress->flat_no_hi ?? ($voter->voterAddress->flat_no ? $translator->translate($voter->voterAddress->flat_no) : null),
+                            'address' => $voter->voterAddress->address_hi ?? ($voter->voterAddress->address ? $translator->translate($voter->voterAddress->address) : null),
+                            'booth' => $voter->voterAddress->booth_hi ?? ($voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null),
+                            'village' => $voter->voterAddress->village_hi ?? ($voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null),
+                            'part_no' => $voter->voterAddress->part_no_hi ?? ($voter->voterAddress->part_no ? $translator->translate($voter->voterAddress->part_no) : null),
+                            'srn' => $voter->voterAddress->srn_hi ?? ($voter->voterAddress->srn ? $translator->translate($voter->voterAddress->srn) : null),
+                            'voting_centre' => $voter->voterAddress->voting_centre_hi ?? ($voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null),
+                        ] : null,
+                    ];
+                });
+
+            return response()->json([
+                'status' => 200,
+                'message' => 'Star voter details retrieved successfully in Hindi',
+                'voters' => $voters,
+            ], 200);
+        }
+
+       }
+
+       if( $request->status == 'NonStarVoter'){
+            if($request->lang == 'en'){
+                $voters = voters::where('star_voter', 0)
+                ->with(['voterAddress', 'voterInformation'])
+                ->get()
+                ->map(function ($voter) use ($translator) {
+                    return [
+                        'voter_details' => [
+                            'id' => $voter->id,
+                            'first_name' => $voter->first_name ? $translator->translate($voter->first_name) : null,
+                            'middle_name' => $voter->middle_name ? $translator->translate($voter->middle_name) : null,
+                            'surname' => $voter->surname ? $translator->translate($voter->surname) : null,
+                            'email' => $voter->email ? $translator->translate($voter->email) : null,
+                            'gender' => $voter->gender ? $translator->translate($voter->gender) : null,
+                            'age' => $voter->age,
+                            'dob' => $voter->dob,
+                            'cast' => $voter->cast ? $translator->translate($voter->cast) : null,
+                            'position' => $voter->position ? $translator->translate($voter->position) : null,
+                            'personnel' => $voter->personnel ? $translator->translate($voter->personnel) : null,
+                            'voter_id' => $voter->voter_id,
+                        ],
+                        'extra_information' => $voter->voterInformation ? [
+                            'extra_info_1' => $voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null,
+                            'extra_info_2' => $voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null,
+                            'extra_info_3' => $voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null,
+                            'extra_info_4' => $voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null,
+                            'extra_info_5' => $voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null,
+                            'extra_check_1' => $voter->voterInformation->extra_check_1,
+                            'extra_check_2' => $voter->voterInformation->extra_check_2,
+                        ] : null,
+                        'address_details' => $voter->voterAddress ? [
+                            'society' => $voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null,
+                            'house_no' => $voter->voterAddress->house_no ? $translator->translate($voter->voterAddress->house_no) : null,
+                            'flat_no' => $voter->voterAddress->flat_no ? $translator->translate($voter->voterAddress->flat_no) : null,
+                            'address' => $voter->voterAddress->address ? $translator->translate($voter->voterAddress->address) : null,
+                            'booth' => $voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null,
+                            'village' => $voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null,
+                            'part_no' => $voter->voterAddress->part_no,
+                            'srn' => $voter->voterAddress->srn,
+                            'voting_centre' => $voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null,
+                        ] : null,
+                    ];
+                });
+
+                return response()->json([
+                    'status' => 200,
+                    'message' => 'Non star voter details retrieved successfully in English',
+                    'voters' => $voters,
+                ], 200);
+            }
+
+            if ($request->lang == 'mr') {
+                $voters = voters::where('star_voter', 0)
+                    ->with(['voterAddress', 'voterInformation'])
+                    ->get()
+                    ->map(function ($voter) use ($translator) {
+                        return [
+                            'voter_details' => [
+                                'id' => $voter->id,
+                                'first_name' => $voter->first_name_mr ?? ($voter->first_name ? $translator->translate($voter->first_name) : null),
+                                'middle_name' => $voter->middle_name_mr ?? ($voter->middle_name ? $translator->translate($voter->middle_name) : null),
+                                'surname' => $voter->surname_mr ?? ($voter->surname ? $translator->translate($voter->surname) : null),
+                                'email' => $voter->email_mr ?? ($voter->email ? $translator->translate($voter->email) : null),
+                                'gender' => $voter->gender_mr ?? ($voter->gender ? $translator->translate($voter->gender) : null),
+                                'age' => $voter->age_mr ?? ($voter->age ? $translator->translate($voter->age) : null),
+                                'dob' => $voter->dob_mr ?? ($voter->dob ? $translator->translate($voter->dob) : null),
+                                'cast' => $voter->cast_mr ?? ($voter->cast ? $translator->translate($voter->cast) : null),
+                                'position' => $voter->position_mr ?? ($voter->position ? $translator->translate($voter->position) : null),
+                                'personnel' => $voter->personnel ?? null,
+                                'voter_id' => $voter->voter_id ?? null,
+                            ],
+                            'extra_information' => $voter->voterInformation ? [
+                                'extra_info_1' => $voter->voterInformation->extra_info_1_mr ?? ($voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null),
+                                'extra_info_2' => $voter->voterInformation->extra_info_2_mr ?? ($voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null),
+                                'extra_info_3' => $voter->voterInformation->extra_info_3_mr ?? ($voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null),
+                                'extra_info_4' => $voter->voterInformation->extra_info_4_mr ?? ($voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null),
+                                'extra_info_5' => $voter->voterInformation->extra_info_5_mr ?? ($voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null),
+                                'extra_check_1' => $voter->voterInformation->extra_check_1,
+                                'extra_check_2' => $voter->voterInformation->extra_check_2,
+                            ] : null,
+                            'address_details' => $voter->voterAddress ? [
+                                'society' => $voter->voterAddress->society_mr ?? ($voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null),
+                                'house_no' => $voter->voterAddress->house_no_mr ?? ($voter->voterAddress->house_no ? $translator->translate($voter->voterAddress->house_no) : null),
+                                'flat_no' => $voter->voterAddress->flat_no_mr ?? ($voter->voterAddress->flat_no ? $translator->translate($voter->voterAddress->flat_no) : null),
+                                'address' => $voter->voterAddress->address_mr ?? ($voter->voterAddress->address ? $translator->translate($voter->voterAddress->address) : null),
+                                'booth' => $voter->voterAddress->booth_mr ?? ($voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null),
+                                'village' => $voter->voterAddress->village_mr ?? ($voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null),
+                                'part_no' => $voter->voterAddress->part_no_mr ?? ($voter->voterAddress->part_no ? $translator->translate($voter->voterAddress->part_no) : null),
+                                'srn' => $voter->voterAddress->srn_mr ?? ($voter->voterAddress->srn ? $translator->translate($voter->voterAddress->srn) : null),
+                                'voting_centre' => $voter->voterAddress->voting_centre_mr ?? ($voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null),
+                            ] : null,
+                        ];
+                    });
+
+                return response()->json([
+                    'status' => 200,
+                    'message' => 'Non star voter details retrieved successfully in Marathi',
+                    'voters' => $voters,
+                ], 200);
+            }
+
+            if ($request->lang == 'hi') {
+                $voters = voters::where('star_voter', 0)
+                    ->with(['voterAddress', 'voterInformation'])
+                    ->get()
+                    ->map(function ($voter) use ($translator) {
+                        return [
+                            'voter_details' => [
+                                'id' => $voter->id,
+                                'first_name' => $voter->first_name_hi ?? ($voter->first_name ? $translator->translate($voter->first_name) : null),
+                                'middle_name' => $voter->middle_name_hi ?? ($voter->middle_name ? $translator->translate($voter->middle_name) : null),
+                                'surname' => $voter->surname_hi ?? ($voter->surname ? $translator->translate($voter->surname) : null),
+                                'email' => $voter->email_hi ?? ($voter->email ? $translator->translate($voter->email) : null),
+                                'gender' => $voter->gender_hi ?? ($voter->gender ? $translator->translate($voter->gender) : null),
+                                'age' => $voter->age_hi ?? ($voter->age ? $translator->translate($voter->age) : null),
+                                'dob' => $voter->dob_hi ?? ($voter->dob ? $translator->translate($voter->dob) : null),
+                                'cast' => $voter->cast_hi ?? ($voter->cast ? $translator->translate($voter->cast) : null),
+                                'position' => $voter->position_hi ?? ($voter->position ? $translator->translate($voter->position) : null),
+                                'personnel' => $voter->personnel ?? null,
+                                'voter_id' => $voter->voter_id ?? null,
+                            ],
+                            'extra_information' => $voter->voterInformation ? [
+                                'extra_info_1' => $voter->voterInformation->extra_info_1_hi ?? ($voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null),
+                                'extra_info_2' => $voter->voterInformation->extra_info_2_hi ?? ($voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null),
+                                'extra_info_3' => $voter->voterInformation->extra_info_3_hi ?? ($voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null),
+                                'extra_info_4' => $voter->voterInformation->extra_info_4_hi ?? ($voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null),
+                                'extra_info_5' => $voter->voterInformation->extra_info_5_hi ?? ($voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null),
+                                'extra_check_1' => $voter->voterInformation->extra_check_1,
+                                'extra_check_2' => $voter->voterInformation->extra_check_2,
+                            ] : null,
+                            'address_details' => $voter->voterAddress ? [
+                                'society' => $voter->voterAddress->society_hi ?? ($voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null),
+                                'house_no' => $voter->voterAddress->house_no_hi ?? ($voter->voterAddress->house_no ? $translator->translate($voter->voterAddress->house_no) : null),
+                                'flat_no' => $voter->voterAddress->flat_no_hi ?? ($voter->voterAddress->flat_no ? $translator->translate($voter->voterAddress->flat_no) : null),
+                                'address' => $voter->voterAddress->address_hi ?? ($voter->voterAddress->address ? $translator->translate($voter->voterAddress->address) : null),
+                                'booth' => $voter->voterAddress->booth_hi ?? ($voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null),
+                                'village' => $voter->voterAddress->village_hi ?? ($voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null),
+                                'part_no' => $voter->voterAddress->part_no_hi ?? ($voter->voterAddress->part_no ? $translator->translate($voter->voterAddress->part_no) : null),
+                                'srn' => $voter->voterAddress->srn_hi ?? ($voter->voterAddress->srn ? $translator->translate($voter->voterAddress->srn) : null),
+                                'voting_centre' => $voter->voterAddress->voting_centre_hi ?? ($voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null),
+                            ] : null,
+                        ];
+                    });
+
+                return response()->json([
+                    'status' => 200,
+                    'message' => 'Non star voter details retrieved successfully in Hindi',
+                    'voters' => $voters,
+                ], 200);
+            }
+
+       }
+
+
+    }
+
+    public function extracheckOneVoterList()
+    {
+        // Fetch all voters
+        $voters = ExtraInformation::all();
+        $checkedCount = ExtraInformation::where('extra_check_1',1)->count();
+        $uncheckedCount = ExtraInformation::where('extra_check_1',0)->count();
+        if( $checkedCount == 0 && $uncheckedCount >0 ){
+            $total_count = 1;
+        }
+        else if( $checkedCount >0 && $uncheckedCount ==0 ){
+            $total_count = 1;
+        }
+        else if( $checkedCount >0 && $uncheckedCount >0 ){
+            $total_count = 2;
+        }
+
+        // Group voters by 'extra_check_1' status and count each group
+        $groupedByStatus = $voters->groupBy(function ($voter) {
+            // Ensure we categorize properly even if the value isn't 1 or 0
+            return $voter->extra_check_1 == 1 ? 'ExtraChecked' : 'Unchecked';
+        })->map(function ($group, $status) {
+            return [
+                'status' => $status,
+                'voter_count' => $group->count(),
+            ];
+        });
+
+        // Convert grouped data to an array
+        $statusData = $groupedByStatus->values()->toArray();
+
+        // Return the response
+        return response()->json([
+            'status' => 200,
+            'message' => 'ExtraChecked and Unchecked voters count retrieved successfully',
+            'total_count' => $total_count,
+            'total_voters' => $voters->count(),
+            'voters' => $statusData,
+        ], 200);
+    }
+    public function extracheckOneVotersDetails(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'lang' => 'required|in:en,mr,hi',
+            'status'=>'required |in:ExtraChecked,UnChecked',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()], 400);
+        }
+
+        $lang = $request->input('lang');
+        $translator = new GoogleTranslate($lang);
+
+        if($request->status == 'ExtraChecked'){
+            if($request->lang == 'en'){
+                $voters = ExtraInformation::where('extra_check_1',1)
+                ->with(['voter', 'voter.voterAddress']) // Eager load voter and extra information
+                ->get()
+                ->map(function ($extracheckOneVoter) use ($translator) {
+                    return [
+                        'voter_details' => [
+                            'id' => $extracheckOneVoter->voter->id,
+                            'first_name' => $extracheckOneVoter->voter->first_name ? $translator->translate($extracheckOneVoter->voter->first_name) : null,
+                            'middle_name' => $extracheckOneVoter->voter->middle_name ? $translator->translate($extracheckOneVoter->voter->middle_name) : null,
+                            'surname' => $extracheckOneVoter->voter->surname ? $translator->translate($extracheckOneVoter->voter->surname) : null,
+                            'email' => $extracheckOneVoter->voter->email ? $translator->translate($extracheckOneVoter->voter->email) : null,
+                            'gender' => $extracheckOneVoter->voter->gender ? $translator->translate($extracheckOneVoter->voter->gender) : null,
+                            'age' => $extracheckOneVoter->voter->age ? $translator->translate($extracheckOneVoter->voter->age) : null,
+                            'dob' => $extracheckOneVoter->voter->dob ? $translator->translate($extracheckOneVoter->voter->dob) : null,
+                            'cast' => $extracheckOneVoter->voter->cast ? $translator->translate($extracheckOneVoter->voter->cast) : null,
+                            'position' => $extracheckOneVoter->voter->position ? $translator->translate($extracheckOneVoter->voter->position) : null,
+                            'personnel' => $extracheckOneVoter->voter->personnel ? $translator->translate($extracheckOneVoter->voter->personnel) : null,
+                            'voter_id' => $extracheckOneVoter->voter->voter_id ? $translator->translate($extracheckOneVoter->voter->voter_id) : null,
+                        ],
+                        'extra_information' => $extracheckOneVoter ? [
+                            'extra_info_1' => $extracheckOneVoter->extra_info_1 ? $translator->translate($extracheckOneVoter->extra_info_1) : null,
+                            'extra_info_2' => $extracheckOneVoter->extra_info_2 ? $translator->translate($extracheckOneVoter->extra_info_2) : null,
+                            'extra_info_3' => $extracheckOneVoter->extra_info_3 ? $translator->translate($extracheckOneVoter->extra_info_3) : null,
+                            'extra_info_4' => $extracheckOneVoter->extra_info_4 ? $translator->translate($extracheckOneVoter->extra_info_4) : null,
+                            'extra_info_5' => $extracheckOneVoter->extra_info_5 ? $translator->translate($extracheckOneVoter->extra_info_5) : null,
+                            'extra_check_1' => $extracheckOneVoter->extra_check_1 ?? null,
+                            'extra_check_2' => $extracheckOneVoter->extra_check_2 ?? null,
+
+                            // Add more fields as needed
+                        ] : null,
+                        'address_details' => [
+                            'society' => $extracheckOneVoter->voter->voterAddress->society ? $translator->translate($extracheckOneVoter->voter->voterAddress->society) : null,
+                            'house_no' => $extracheckOneVoter->voter->voterAddress->house_no ? $translator->translate($extracheckOneVoter->voter->voterAddress->house_no) : null,
+                            'flat_no' => $extracheckOneVoter->voter->voterAddress->flat_no ? $translator->translate($extracheckOneVoter->voter->voterAddress->flat_no) : null,
+                            'address' => $extracheckOneVoter->voter->voterAddress->address ? $translator->translate($extracheckOneVoter->voter->voterAddress->address) : null,
+                            'booth' => $extracheckOneVoter->voter->voterAddress->booth ? $translator->translate($extracheckOneVoter->voter->voterAddress->booth) : null,
+                            'village' => $extracheckOneVoter->voter->voterAddress->village ? $translator->translate($extracheckOneVoter->voter->voterAddress->village) : null,
+                            'part_no' => $extracheckOneVoter->voter->voterAddress->part_no ? $translator->translate($extracheckOneVoter->voter->voterAddress->part_no) : null,
+                            'srn' => $extracheckOneVoter->voter->voterAddress->srn ? $translator->translate($extracheckOneVoter->voter->voterAddress->srn) : null,
+                            'voting_centre' => $extracheckOneVoter->voter->voterAddress->voting_centre ? $translator->translate($extracheckOneVoter->voter->voterAddress->voting_centre) : null,
+                        ],
+                    ];
+                });
+                return response()->json([
+                    'status' => 200,
+                    'message' => 'Voter details retrieved successfully',
+                    'voters' => $voters,
+                ], 200);
+
+            }
+
+            if ($request->lang == 'mr') {
+                $users = ExtraInformation::where('extra_check_1',1)
+                    ->with(['voter', 'voter.voterAddress']) // Eager load voter and extra information
+                    ->get()
+                    ->map(function ($extracheckOneVoter) use ($translator) {
+                        return [
+                            'voter_details' => [
+                                'id' => $extracheckOneVoter->voter->id,
+                                'first_name' => $extracheckOneVoter->voter->first_name_mr ?? ($extracheckOneVoter->voter->first_name ? $translator->translate($extracheckOneVoter->voter->first_name) : null),
+                                'middle_name' => $extracheckOneVoter->voter->middle_name_mr ?? ($extracheckOneVoter->voter->middle_name ? $translator->translate($extracheckOneVoter->voter->middle_name) : null),
+                                'surname' => $extracheckOneVoter->voter->surname_mr ?? ($extracheckOneVoter->voter->surname ? $translator->translate($extracheckOneVoter->voter->surname) : null),
+                                'email' => $extracheckOneVoter->voter->email ? $translator->translate($extracheckOneVoter->voter->email) : null,
+                                'gender' => $extracheckOneVoter->voter->gender_mr ?? ($extracheckOneVoter->voter->gender ? $translator->translate($extracheckOneVoter->voter->gender) : null),
+                                'age' => $extracheckOneVoter->voter->age ? $translator->translate($extracheckOneVoter->voter->age) : null,
+                                'dob' => $extracheckOneVoter->voter->dob ? $translator->translate($extracheckOneVoter->voter->dob) : null,
+                                'cast' => $extracheckOneVoter->voter->cast_mr ?? ($extracheckOneVoter->voter->cast ? $translator->translate($extracheckOneVoter->voter->cast) : null),
+                                'position' => $extracheckOneVoter->voter->position_mr ?? ($extracheckOneVoter->voter->position ? $translator->translate($extracheckOneVoter->voter->position) : null),
+                                'personnel' => $extracheckOneVoter->voter->personnel_mr ?? ($extracheckOneVoter->voter->personnel ? $translator->translate($extracheckOneVoter->voter->personnel) : null),
+                                'voter_id' => $extracheckOneVoter->voter->voter_id_mr ?? ($extracheckOneVoter->voter->voter_id ? $translator->translate($extracheckOneVoter->voter->voter_id) : null),
+                            ],
+                            'extra_information' => $extracheckOneVoter ? [
+                                'extra_info_1' => $extracheckOneVoter->extra_info_1_mr ?? ($extracheckOneVoter->extra_info_1 ? $translator->translate($extracheckOneVoter->extra_info_1) : null),
+                                'extra_info_2' => $extracheckOneVoter->extra_info_2_mr ?? ($extracheckOneVoter->extra_info_2 ? $translator->translate($extracheckOneVoter->extra_info_2) : null),
+                                'extra_info_3' => $extracheckOneVoter->extra_info_3_mr ?? ($extracheckOneVoter->extra_info_3 ? $translator->translate($extracheckOneVoter->extra_info_3) : null),
+                                'extra_info_4' => $extracheckOneVoter->extra_info_4_mr ?? ($extracheckOneVoter->extra_info_4 ? $translator->translate($extracheckOneVoter->extra_info_4) : null),
+                                'extra_info_5' => $extracheckOneVoter->extra_info_5_mr ?? ($extracheckOneVoter->extra_info_5 ? $translator->translate($extracheckOneVoter->extra_info_5) : null),
+                                'extra_check_1' => $extracheckOneVoter->extra_check_1 ?? null,
+                                'extra_check_2' => $extracheckOneVoter->extra_check_2 ?? null,
+                            ] : null,
+                            'address_details' => [
+                                'society' => $extracheckOneVoter->voter->voterAddress->society_mr ?? ($extracheckOneVoter->voter->voterAddress->society ? $translator->translate($extracheckOneVoter->voter->voterAddress->society) : null),
+                                'house_no' => $extracheckOneVoter->voter->voterAddress->house_no_mr ?? ($extracheckOneVoter->voter->voterAddress->house_no ? $translator->translate($extracheckOneVoter->voter->voterAddress->house_no) : null),
+                                'flat_no' => $extracheckOneVoter->voter->voterAddress->flat_no_mr ?? ($extracheckOneVoter->voter->voterAddress->flat_no ? $translator->translate($extracheckOneVoter->voter->voterAddress->flat_no) : null),
+                                'address' => $extracheckOneVoter->voter->voterAddress->address_mr ?? ($extracheckOneVoter->voter->voterAddress->address ? $translator->translate($extracheckOneVoter->voter->voterAddress->address) : null),
+                                'booth' => $extracheckOneVoter->voter->voterAddress->booth_mr ?? ($extracheckOneVoter->voter->voterAddress->booth ? $translator->translate($extracheckOneVoter->voter->voterAddress->booth) : null),
+                                'village' => $extracheckOneVoter->voter->voterAddress->village_mr ?? ($extracheckOneVoter->voter->voterAddress->village ? $translator->translate($extracheckOneVoter->voter->voterAddress->village) : null),
+                                'part_no' => $extracheckOneVoter->voter->voterAddress->part_no_mr ?? ($extracheckOneVoter->voter->voterAddress->part_no ? $translator->translate($extracheckOneVoter->voter->voterAddress->part_no) : null),
+                                'srn' => $extracheckOneVoter->voter->voterAddress->srn_mr ?? ($extracheckOneVoter->voter->voterAddress->srn ? $translator->translate($extracheckOneVoter->voter->voterAddress->srn) : null),
+                                'voting_centre' => $extracheckOneVoter->voter->voterAddress->voting_centre_mr ?? ($extracheckOneVoter->voter->voterAddress->voting_centre ? $translator->translate($extracheckOneVoter->voter->voterAddress->voting_centre) : null),
+                            ],
+                        ];
+                    });
+                return response()->json([
+                    'status' => 200,
+                    'message' => 'Voter details retrieved successfully',
+                    'voters' => $users,
+                ], 200);
+            }
+
+            if ($request->lang == 'hi') {
+                $users = ExtraInformation::where('extra_check_1',1)
+                    ->with(['voter', 'voter.voterAddress']) // Eager load voter and extra information
+                    ->get()
+                    ->map(function ($extracheckOneVoter) use ($translator) {
+                        return [
+                            'voter_details' => [
+                                'id' => $extracheckOneVoter->voter->id,
+                                'first_name' => $extracheckOneVoter->voter->first_name_hi ?? ($extracheckOneVoter->voter->first_name ? $translator->translate($extracheckOneVoter->voter->first_name) : null),
+                                'middle_name' => $extracheckOneVoter->voter->middle_name_hi ?? ($extracheckOneVoter->voter->middle_name ? $translator->translate($extracheckOneVoter->voter->middle_name) : null),
+                                'surname' => $extracheckOneVoter->voter->surname_hi ?? ($extracheckOneVoter->voter->surname ? $translator->translate($extracheckOneVoter->voter->surname) : null),
+                                'email' => $extracheckOneVoter->voter->email ? $translator->translate($extracheckOneVoter->voter->email) : null,
+                                'gender' => $extracheckOneVoter->voter->gender_hi ?? ($extracheckOneVoter->voter->gender ? $translator->translate($extracheckOneVoter->voter->gender) : null),
+                                'age' => $extracheckOneVoter->voter->age ? $translator->translate($extracheckOneVoter->voter->age) : null,
+                                'dob' => $extracheckOneVoter->voter->dob ? $translator->translate($extracheckOneVoter->voter->dob) : null,
+                                'cast' => $extracheckOneVoter->voter->cast_hi ?? ($extracheckOneVoter->voter->cast ? $translator->translate($extracheckOneVoter->voter->cast) : null),
+                                'position' => $extracheckOneVoter->voter->position_hi ?? ($extracheckOneVoter->voter->position ? $translator->translate($extracheckOneVoter->voter->position) : null),
+                                'personnel' => $extracheckOneVoter->voter->personnel_hi ?? ($extracheckOneVoter->voter->personnel ? $translator->translate($extracheckOneVoter->voter->personnel) : null),
+                                'voter_id' => $extracheckOneVoter->voter->voter_id_hi ?? ($extracheckOneVoter->voter->voter_id ? $translator->translate($extracheckOneVoter->voter->voter_id) : null),
+                            ],
+                            'extra_information' => $extracheckOneVoter ? [
+                                'extra_info_1' => $extracheckOneVoter->extra_info_1_hi ?? ($extracheckOneVoter->extra_info_1 ? $translator->translate($extracheckOneVoter->extra_info_1) : null),
+                                'extra_info_2' => $extracheckOneVoter->extra_info_2_hi ?? ($extracheckOneVoter->extra_info_2 ? $translator->translate($extracheckOneVoter->extra_info_2) : null),
+                                'extra_info_3' => $extracheckOneVoter->extra_info_3_hi ?? ($extracheckOneVoter->extra_info_3 ? $translator->translate($extracheckOneVoter->extra_info_3) : null),
+                                'extra_info_4' => $extracheckOneVoter->extra_info_4_hi ?? ($extracheckOneVoter->extra_info_4 ? $translator->translate($extracheckOneVoter->extra_info_4) : null),
+                                'extra_info_5' => $extracheckOneVoter->extra_info_5_hi ?? ($extracheckOneVoter->extra_info_5 ? $translator->translate($extracheckOneVoter->extra_info_5) : null),
+                                'extra_check_1' => $extracheckOneVoter->extra_check_1 ?? null,
+                                'extra_check_2' => $extracheckOneVoter->extra_check_2 ?? null,
+                            ] : null,
+                            'address_details' => [
+                                'society' => $extracheckOneVoter->voter->voterAddress->society_hi ?? ($extracheckOneVoter->voter->voterAddress->society ? $translator->translate($extracheckOneVoter->voter->voterAddress->society) : null),
+                                'house_no' => $extracheckOneVoter->voter->voterAddress->house_no_hi ?? ($extracheckOneVoter->voter->voterAddress->house_no ? $translator->translate($extracheckOneVoter->voter->voterAddress->house_no) : null),
+                                'flat_no' => $extracheckOneVoter->voter->voterAddress->flat_no_hi ?? ($extracheckOneVoter->voter->voterAddress->flat_no ? $translator->translate($extracheckOneVoter->voter->voterAddress->flat_no) : null),
+                                'address' => $extracheckOneVoter->voter->voterAddress->address_hi ?? ($extracheckOneVoter->voter->voterAddress->address ? $translator->translate($extracheckOneVoter->voter->voterAddress->address) : null),
+                                'booth' => $extracheckOneVoter->voter->voterAddress->booth_hi ?? ($extracheckOneVoter->voter->voterAddress->booth ? $translator->translate($extracheckOneVoter->voter->voterAddress->booth) : null),
+                                'village' => $extracheckOneVoter->voter->voterAddress->village_hi ?? ($extracheckOneVoter->voter->voterAddress->village ? $translator->translate($extracheckOneVoter->voter->voterAddress->village) : null),
+                                'part_no' => $extracheckOneVoter->voter->voterAddress->part_no_hi ?? ($extracheckOneVoter->voter->voterAddress->part_no ? $translator->translate($extracheckOneVoter->voter->voterAddress->part_no) : null),
+                                'srn' => $extracheckOneVoter->voter->voterAddress->srn_hi ?? ($extracheckOneVoter->voter->voterAddress->srn ? $translator->translate($extracheckOneVoter->voter->voterAddress->srn) : null),
+                                'voting_centre' => $extracheckOneVoter->voter->voterAddress->voting_centre_hi ?? ($extracheckOneVoter->voter->voterAddress->voting_centre ? $translator->translate($extracheckOneVoter->voter->voterAddress->voting_centre) : null),
+                            ],
+                        ];
+                    });
+                return response()->json([
+                    'status' => 200,
+                    'message' => 'Voter details retrieved successfully',
+                    'voters' => $users,
+                ], 200);
+            }
+        }
+        if($request->status == 'UnChecked'){
+            if($request->lang == 'en'){
+                $voters = ExtraInformation::where('extra_check_1',0)
+                ->with(['voter', 'voter.voterAddress']) // Eager load voter and extra information
+                ->get()
+                ->map(function ($extracheckOneVoter) use ($translator) {
+                    return [
+                        'voter_details' => [
+                            'id' => $extracheckOneVoter->voter->id,
+                            'first_name' => $extracheckOneVoter->voter->first_name ? $translator->translate($extracheckOneVoter->voter->first_name) : null,
+                            'middle_name' => $extracheckOneVoter->voter->middle_name ? $translator->translate($extracheckOneVoter->voter->middle_name) : null,
+                            'surname' => $extracheckOneVoter->voter->surname ? $translator->translate($extracheckOneVoter->voter->surname) : null,
+                            'email' => $extracheckOneVoter->voter->email ? $translator->translate($extracheckOneVoter->voter->email) : null,
+                            'gender' => $extracheckOneVoter->voter->gender ? $translator->translate($extracheckOneVoter->voter->gender) : null,
+                            'age' => $extracheckOneVoter->voter->age ? $translator->translate($extracheckOneVoter->voter->age) : null,
+                            'dob' => $extracheckOneVoter->voter->dob ? $translator->translate($extracheckOneVoter->voter->dob) : null,
+                            'cast' => $extracheckOneVoter->voter->cast ? $translator->translate($extracheckOneVoter->voter->cast) : null,
+                            'position' => $extracheckOneVoter->voter->position ? $translator->translate($extracheckOneVoter->voter->position) : null,
+                            'personnel' => $extracheckOneVoter->voter->personnel ? $translator->translate($extracheckOneVoter->voter->personnel) : null,
+                            'voter_id' => $extracheckOneVoter->voter->voter_id ? $translator->translate($extracheckOneVoter->voter->voter_id) : null,
+                        ],
+                        'extra_information' => $extracheckOneVoter ? [
+                            'extra_info_1' => $extracheckOneVoter->extra_info_1 ? $translator->translate($extracheckOneVoter->extra_info_1) : null,
+                            'extra_info_2' => $extracheckOneVoter->extra_info_2 ? $translator->translate($extracheckOneVoter->extra_info_2) : null,
+                            'extra_info_3' => $extracheckOneVoter->extra_info_3 ? $translator->translate($extracheckOneVoter->extra_info_3) : null,
+                            'extra_info_4' => $extracheckOneVoter->extra_info_4 ? $translator->translate($extracheckOneVoter->extra_info_4) : null,
+                            'extra_info_5' => $extracheckOneVoter->extra_info_5 ? $translator->translate($extracheckOneVoter->extra_info_5) : null,
+                            'extra_check_1' => $extracheckOneVoter->extra_check_1 ?? null,
+                            'extra_check_2' => $extracheckOneVoter->extra_check_2 ?? null,
+
+                            // Add more fields as needed
+                        ] : null,
+                        'address_details' => [
+                            'society' => $extracheckOneVoter->voter->voterAddress->society ? $translator->translate($extracheckOneVoter->voter->voterAddress->society) : null,
+                            'house_no' => $extracheckOneVoter->voter->voterAddress->house_no ? $translator->translate($extracheckOneVoter->voter->voterAddress->house_no) : null,
+                            'flat_no' => $extracheckOneVoter->voter->voterAddress->flat_no ? $translator->translate($extracheckOneVoter->voter->voterAddress->flat_no) : null,
+                            'address' => $extracheckOneVoter->voter->voterAddress->address ? $translator->translate($extracheckOneVoter->voter->voterAddress->address) : null,
+                            'booth' => $extracheckOneVoter->voter->voterAddress->booth ? $translator->translate($extracheckOneVoter->voter->voterAddress->booth) : null,
+                            'village' => $extracheckOneVoter->voter->voterAddress->village ? $translator->translate($extracheckOneVoter->voter->voterAddress->village) : null,
+                            'part_no' => $extracheckOneVoter->voter->voterAddress->part_no ? $translator->translate($extracheckOneVoter->voter->voterAddress->part_no) : null,
+                            'srn' => $extracheckOneVoter->voter->voterAddress->srn ? $translator->translate($extracheckOneVoter->voter->voterAddress->srn) : null,
+                            'voting_centre' => $extracheckOneVoter->voter->voterAddress->voting_centre ? $translator->translate($extracheckOneVoter->voter->voterAddress->voting_centre) : null,
+                        ],
+                    ];
+                });
+                return response()->json([
+                    'status' => 200,
+                    'message' => 'Voter details retrieved successfully',
+                    'voters' => $voters,
+                ], 200);
+
+            }
+
+            if ($request->lang == 'mr') {
+                $users = ExtraInformation::where('extra_check_1',0)
+                    ->with(['voter', 'voter.voterAddress']) // Eager load voter and extra information
+                    ->get()
+                    ->map(function ($extracheckOneVoter) use ($translator) {
+                        return [
+                            'voter_details' => [
+                                'id' => $extracheckOneVoter->voter->id,
+                                'first_name' => $extracheckOneVoter->voter->first_name_mr ?? ($extracheckOneVoter->voter->first_name ? $translator->translate($extracheckOneVoter->voter->first_name) : null),
+                                'middle_name' => $extracheckOneVoter->voter->middle_name_mr ?? ($extracheckOneVoter->voter->middle_name ? $translator->translate($extracheckOneVoter->voter->middle_name) : null),
+                                'surname' => $extracheckOneVoter->voter->surname_mr ?? ($extracheckOneVoter->voter->surname ? $translator->translate($extracheckOneVoter->voter->surname) : null),
+                                'email' => $extracheckOneVoter->voter->email ? $translator->translate($extracheckOneVoter->voter->email) : null,
+                                'gender' => $extracheckOneVoter->voter->gender_mr ?? ($extracheckOneVoter->voter->gender ? $translator->translate($extracheckOneVoter->voter->gender) : null),
+                                'age' => $extracheckOneVoter->voter->age ? $translator->translate($extracheckOneVoter->voter->age) : null,
+                                'dob' => $extracheckOneVoter->voter->dob ? $translator->translate($extracheckOneVoter->voter->dob) : null,
+                                'cast' => $extracheckOneVoter->voter->cast_mr ?? ($extracheckOneVoter->voter->cast ? $translator->translate($extracheckOneVoter->voter->cast) : null),
+                                'position' => $extracheckOneVoter->voter->position_mr ?? ($extracheckOneVoter->voter->position ? $translator->translate($extracheckOneVoter->voter->position) : null),
+                                'personnel' => $extracheckOneVoter->voter->personnel_mr ?? ($extracheckOneVoter->voter->personnel ? $translator->translate($extracheckOneVoter->voter->personnel) : null),
+                                'voter_id' => $extracheckOneVoter->voter->voter_id_mr ?? ($extracheckOneVoter->voter->voter_id ? $translator->translate($extracheckOneVoter->voter->voter_id) : null),
+                            ],
+                            'extra_information' => $extracheckOneVoter ? [
+                                'extra_info_1' => $extracheckOneVoter->extra_info_1_mr ?? ($extracheckOneVoter->extra_info_1 ? $translator->translate($extracheckOneVoter->extra_info_1) : null),
+                                'extra_info_2' => $extracheckOneVoter->extra_info_2_mr ?? ($extracheckOneVoter->extra_info_2 ? $translator->translate($extracheckOneVoter->extra_info_2) : null),
+                                'extra_info_3' => $extracheckOneVoter->extra_info_3_mr ?? ($extracheckOneVoter->extra_info_3 ? $translator->translate($extracheckOneVoter->extra_info_3) : null),
+                                'extra_info_4' => $extracheckOneVoter->extra_info_4_mr ?? ($extracheckOneVoter->extra_info_4 ? $translator->translate($extracheckOneVoter->extra_info_4) : null),
+                                'extra_info_5' => $extracheckOneVoter->extra_info_5_mr ?? ($extracheckOneVoter->extra_info_5 ? $translator->translate($extracheckOneVoter->extra_info_5) : null),
+                                'extra_check_1' => $extracheckOneVoter->extra_check_1 ?? null,
+                                'extra_check_2' => $extracheckOneVoter->extra_check_2 ?? null,
+                            ] : null,
+                            'address_details' => [
+                                'society' => $extracheckOneVoter->voter->voterAddress->society_mr ?? ($extracheckOneVoter->voter->voterAddress->society ? $translator->translate($extracheckOneVoter->voter->voterAddress->society) : null),
+                                'house_no' => $extracheckOneVoter->voter->voterAddress->house_no_mr ?? ($extracheckOneVoter->voter->voterAddress->house_no ? $translator->translate($extracheckOneVoter->voter->voterAddress->house_no) : null),
+                                'flat_no' => $extracheckOneVoter->voter->voterAddress->flat_no_mr ?? ($extracheckOneVoter->voter->voterAddress->flat_no ? $translator->translate($extracheckOneVoter->voter->voterAddress->flat_no) : null),
+                                'address' => $extracheckOneVoter->voter->voterAddress->address_mr ?? ($extracheckOneVoter->voter->voterAddress->address ? $translator->translate($extracheckOneVoter->voter->voterAddress->address) : null),
+                                'booth' => $extracheckOneVoter->voter->voterAddress->booth_mr ?? ($extracheckOneVoter->voter->voterAddress->booth ? $translator->translate($extracheckOneVoter->voter->voterAddress->booth) : null),
+                                'village' => $extracheckOneVoter->voter->voterAddress->village_mr ?? ($extracheckOneVoter->voter->voterAddress->village ? $translator->translate($extracheckOneVoter->voter->voterAddress->village) : null),
+                                'part_no' => $extracheckOneVoter->voter->voterAddress->part_no_mr ?? ($extracheckOneVoter->voter->voterAddress->part_no ? $translator->translate($extracheckOneVoter->voter->voterAddress->part_no) : null),
+                                'srn' => $extracheckOneVoter->voter->voterAddress->srn_mr ?? ($extracheckOneVoter->voter->voterAddress->srn ? $translator->translate($extracheckOneVoter->voter->voterAddress->srn) : null),
+                                'voting_centre' => $extracheckOneVoter->voter->voterAddress->voting_centre_mr ?? ($extracheckOneVoter->voter->voterAddress->voting_centre ? $translator->translate($extracheckOneVoter->voter->voterAddress->voting_centre) : null),
+                            ],
+                        ];
+                    });
+                return response()->json([
+                    'status' => 200,
+                    'message' => 'Voter details retrieved successfully',
+                    'voters' => $users,
+                ], 200);
+            }
+
+            if ($request->lang == 'hi') {
+                $users = ExtraInformation::where('extra_check_1',0)
+                    ->with(['voter', 'voter.voterAddress']) // Eager load voter and extra information
+                    ->get()
+                    ->map(function ($extracheckOneVoter) use ($translator) {
+                        return [
+                            'voter_details' => [
+                                'id' => $extracheckOneVoter->voter->id,
+                                'first_name' => $extracheckOneVoter->voter->first_name_hi ?? ($extracheckOneVoter->voter->first_name ? $translator->translate($extracheckOneVoter->voter->first_name) : null),
+                                'middle_name' => $extracheckOneVoter->voter->middle_name_hi ?? ($extracheckOneVoter->voter->middle_name ? $translator->translate($extracheckOneVoter->voter->middle_name) : null),
+                                'surname' => $extracheckOneVoter->voter->surname_hi ?? ($extracheckOneVoter->voter->surname ? $translator->translate($extracheckOneVoter->voter->surname) : null),
+                                'email' => $extracheckOneVoter->voter->email ? $translator->translate($extracheckOneVoter->voter->email) : null,
+                                'gender' => $extracheckOneVoter->voter->gender_hi ?? ($extracheckOneVoter->voter->gender ? $translator->translate($extracheckOneVoter->voter->gender) : null),
+                                'age' => $extracheckOneVoter->voter->age ? $translator->translate($extracheckOneVoter->voter->age) : null,
+                                'dob' => $extracheckOneVoter->voter->dob ? $translator->translate($extracheckOneVoter->voter->dob) : null,
+                                'cast' => $extracheckOneVoter->voter->cast_hi ?? ($extracheckOneVoter->voter->cast ? $translator->translate($extracheckOneVoter->voter->cast) : null),
+                                'position' => $extracheckOneVoter->voter->position_hi ?? ($extracheckOneVoter->voter->position ? $translator->translate($extracheckOneVoter->voter->position) : null),
+                                'personnel' => $extracheckOneVoter->voter->personnel_hi ?? ($extracheckOneVoter->voter->personnel ? $translator->translate($extracheckOneVoter->voter->personnel) : null),
+                                'voter_id' => $extracheckOneVoter->voter->voter_id_hi ?? ($extracheckOneVoter->voter->voter_id ? $translator->translate($extracheckOneVoter->voter->voter_id) : null),
+                            ],
+                            'extra_information' => $extracheckOneVoter ? [
+                                'extra_info_1' => $extracheckOneVoter->extra_info_1_hi ?? ($extracheckOneVoter->extra_info_1 ? $translator->translate($extracheckOneVoter->extra_info_1) : null),
+                                'extra_info_2' => $extracheckOneVoter->extra_info_2_hi ?? ($extracheckOneVoter->extra_info_2 ? $translator->translate($extracheckOneVoter->extra_info_2) : null),
+                                'extra_info_3' => $extracheckOneVoter->extra_info_3_hi ?? ($extracheckOneVoter->extra_info_3 ? $translator->translate($extracheckOneVoter->extra_info_3) : null),
+                                'extra_info_4' => $extracheckOneVoter->extra_info_4_hi ?? ($extracheckOneVoter->extra_info_4 ? $translator->translate($extracheckOneVoter->extra_info_4) : null),
+                                'extra_info_5' => $extracheckOneVoter->extra_info_5_hi ?? ($extracheckOneVoter->extra_info_5 ? $translator->translate($extracheckOneVoter->extra_info_5) : null),
+                                'extra_check_1' => $extracheckOneVoter->extra_check_1 ?? null,
+                                'extra_check_2' => $extracheckOneVoter->extra_check_2 ?? null,
+                            ] : null,
+                            'address_details' => [
+                                'society' => $extracheckOneVoter->voter->voterAddress->society_hi ?? ($extracheckOneVoter->voter->voterAddress->society ? $translator->translate($extracheckOneVoter->voter->voterAddress->society) : null),
+                                'house_no' => $extracheckOneVoter->voter->voterAddress->house_no_hi ?? ($extracheckOneVoter->voter->voterAddress->house_no ? $translator->translate($extracheckOneVoter->voter->voterAddress->house_no) : null),
+                                'flat_no' => $extracheckOneVoter->voter->voterAddress->flat_no_hi ?? ($extracheckOneVoter->voter->voterAddress->flat_no ? $translator->translate($extracheckOneVoter->voter->voterAddress->flat_no) : null),
+                                'address' => $extracheckOneVoter->voter->voterAddress->address_hi ?? ($extracheckOneVoter->voter->voterAddress->address ? $translator->translate($extracheckOneVoter->voter->voterAddress->address) : null),
+                                'booth' => $extracheckOneVoter->voter->voterAddress->booth_hi ?? ($extracheckOneVoter->voter->voterAddress->booth ? $translator->translate($extracheckOneVoter->voter->voterAddress->booth) : null),
+                                'village' => $extracheckOneVoter->voter->voterAddress->village_hi ?? ($extracheckOneVoter->voter->voterAddress->village ? $translator->translate($extracheckOneVoter->voter->voterAddress->village) : null),
+                                'part_no' => $extracheckOneVoter->voter->voterAddress->part_no_hi ?? ($extracheckOneVoter->voter->voterAddress->part_no ? $translator->translate($extracheckOneVoter->voter->voterAddress->part_no) : null),
+                                'srn' => $extracheckOneVoter->voter->voterAddress->srn_hi ?? ($extracheckOneVoter->voter->voterAddress->srn ? $translator->translate($extracheckOneVoter->voter->voterAddress->srn) : null),
+                                'voting_centre' => $extracheckOneVoter->voter->voterAddress->voting_centre_hi ?? ($extracheckOneVoter->voter->voterAddress->voting_centre ? $translator->translate($extracheckOneVoter->voter->voterAddress->voting_centre) : null),
+                            ],
+                        ];
+                    });
+                return response()->json([
+                    'status' => 200,
+                    'message' => 'Voter details retrieved successfully',
+                    'voters' => $users,
+                ], 200);
+            }
+        }
+    }
+
+    public function extraCheckTwoVoterList()
+    {
+         // Fetch all voters
+         $voters = ExtraInformation::all();
+         $checkedCount = ExtraInformation::where('extra_check_2',1)->count();
+         $uncheckedCount = ExtraInformation::where('extra_check_2',0)->count();
+         if( $checkedCount == 0 && $uncheckedCount >0 ){
+             $total_count = 1;
+         }
+         else if( $checkedCount >0 && $uncheckedCount ==0 ){
+             $total_count = 1;
+         }
+         else if( $checkedCount >0 && $uncheckedCount >0 ){
+             $total_count = 2;
+         }
+
+         // Group voters by their dead status and count each group
+          $groupedByStatus = $voters->groupBy('extra_check_2')->map(function ($group, $status) {
+              return [
+                  'status' => $status == 1 ? 'ExtraChecked' : 'Unchecked',
+                  'voter_count' => $group->count(),
+              ];
+          });
+         // Convert grouped data to an array
+          $statusData = $groupedByStatus->values()->toArray();
+         // Return the response
+             return response()->json([
+                 'status' => 200,
+                 'message' => 'ExtraChecked and Unchecked voters count retrieved successfully',
+                 'total_count' => $total_count,
+                 'total_voters' => $voters->count(),
+                 'voters' => $statusData,
+             ], 200);
+
+    }
+
+    public function extraCheckTwoVotersDetails(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'lang' => 'required|in:en,mr,hi',
+            'status'=>'required |in:ExtraChecked,UnChecked',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()], 400);
+        }
+
+        $lang = $request->input('lang');
+        $translator = new GoogleTranslate($lang);
+
+        if($request->status == 'ExtraChecked'){
+            if($request->lang == 'en'){
+                $voters = ExtraInformation::where('extra_check_2',1)
+                ->with(['voter', 'voter.voterAddress']) // Eager load voter and extra information
+                ->get()
+                ->map(function ($extracheckTwoVoter) use ($translator) {
+                    return [
+                        'voter_details' => [
+                            'id' => $extracheckTwoVoter->voter->id,
+                            'first_name' => $extracheckTwoVoter->voter->first_name ? $translator->translate($extracheckTwoVoter->voter->first_name) : null,
+                            'middle_name' => $extracheckTwoVoter->voter->middle_name ? $translator->translate($extracheckTwoVoter->voter->middle_name) : null,
+                            'surname' => $extracheckTwoVoter->voter->surname ? $translator->translate($extracheckTwoVoter->voter->surname) : null,
+                            'email' => $extracheckTwoVoter->voter->email ? $translator->translate($extracheckTwoVoter->voter->email) : null,
+                            'gender' => $extracheckTwoVoter->voter->gender ? $translator->translate($extracheckTwoVoter->voter->gender) : null,
+                            'age' => $extracheckTwoVoter->voter->age ? $translator->translate($extracheckTwoVoter->voter->age) : null,
+                            'dob' => $extracheckTwoVoter->voter->dob ? $translator->translate($extracheckTwoVoter->voter->dob) : null,
+                            'cast' => $extracheckTwoVoter->voter->cast ? $translator->translate($extracheckTwoVoter->voter->cast) : null,
+                            'position' => $extracheckTwoVoter->voter->position ? $translator->translate($extracheckTwoVoter->voter->position) : null,
+                            'personnel' => $extracheckTwoVoter->voter->personnel ? $translator->translate($extracheckTwoVoter->voter->personnel) : null,
+                            'voter_id' => $extracheckTwoVoter->voter->voter_id ? $translator->translate($extracheckTwoVoter->voter->voter_id) : null,
+                        ],
+                        'extra_information' => $extracheckTwoVoter ? [
+                            'extra_info_1' => $extracheckTwoVoter->extra_info_1 ? $translator->translate($extracheckTwoVoter->extra_info_1) : null,
+                            'extra_info_2' => $extracheckTwoVoter->extra_info_2 ? $translator->translate($extracheckTwoVoter->extra_info_2) : null,
+                            'extra_info_3' => $extracheckTwoVoter->extra_info_3 ? $translator->translate($extracheckTwoVoter->extra_info_3) : null,
+                            'extra_info_4' => $extracheckTwoVoter->extra_info_4 ? $translator->translate($extracheckTwoVoter->extra_info_4) : null,
+                            'extra_info_5' => $extracheckTwoVoter->extra_info_5 ? $translator->translate($extracheckTwoVoter->extra_info_5) : null,
+                            'extra_check_1' => $extracheckTwoVoter->extra_check_1 ?? null,
+                            'extra_check_2' => $extracheckTwoVoter->extra_check_2 ?? null,
+
+                            // Add more fields as needed
+                        ] : null,
+                        'address_details' => [
+                            'society' => $extracheckTwoVoter->voter->voterAddress->society ? $translator->translate($extracheckTwoVoter->voter->voterAddress->society) : null,
+                            'house_no' => $extracheckTwoVoter->voter->voterAddress->house_no ? $translator->translate($extracheckTwoVoter->voter->voterAddress->house_no) : null,
+                            'flat_no' => $extracheckTwoVoter->voter->voterAddress->flat_no ? $translator->translate($extracheckTwoVoter->voter->voterAddress->flat_no) : null,
+                            'address' => $extracheckTwoVoter->voter->voterAddress->address ? $translator->translate($extracheckTwoVoter->voter->voterAddress->address) : null,
+                            'booth' => $extracheckTwoVoter->voter->voterAddress->booth ? $translator->translate($extracheckTwoVoter->voter->voterAddress->booth) : null,
+                            'village' => $extracheckTwoVoter->voter->voterAddress->village ? $translator->translate($extracheckTwoVoter->voter->voterAddress->village) : null,
+                            'part_no' => $extracheckTwoVoter->voter->voterAddress->part_no ? $translator->translate($extracheckTwoVoter->voter->voterAddress->part_no) : null,
+                            'srn' => $extracheckTwoVoter->voter->voterAddress->srn ? $translator->translate($extracheckTwoVoter->voter->voterAddress->srn) : null,
+                            'voting_centre' => $extracheckTwoVoter->voter->voterAddress->voting_centre ? $translator->translate($extracheckTwoVoter->voter->voterAddress->voting_centre) : null,
+                        ],
+                    ];
+                });
+                return response()->json([
+                    'status' => 200,
+                    'message' => 'Voter details retrieved successfully',
+                    'voters' => $voters,
+                ], 200);
+
+            }
+
+            if ($request->lang == 'mr') {
+                $users = ExtraInformation::where('extra_check_2',1)
+                    ->with(['voter', 'voter.voterAddress']) // Eager load voter and extra information
+                    ->get()
+                    ->map(function ($extracheckTwoVoter) use ($translator) {
+                        return [
+                            'voter_details' => [
+                                'id' => $extracheckTwoVoter->voter->id,
+                                'first_name' => $extracheckTwoVoter->voter->first_name_mr ?? ($extracheckTwoVoter->voter->first_name ? $translator->translate($extracheckTwoVoter->voter->first_name) : null),
+                                'middle_name' => $extracheckTwoVoter->voter->middle_name_mr ?? ($extracheckTwoVoter->voter->middle_name ? $translator->translate($extracheckTwoVoter->voter->middle_name) : null),
+                                'surname' => $extracheckTwoVoter->voter->surname_mr ?? ($extracheckTwoVoter->voter->surname ? $translator->translate($extracheckTwoVoter->voter->surname) : null),
+                                'email' => $extracheckTwoVoter->voter->email ? $translator->translate($extracheckTwoVoter->voter->email) : null,
+                                'gender' => $extracheckTwoVoter->voter->gender_mr ?? ($extracheckTwoVoter->voter->gender ? $translator->translate($extracheckTwoVoter->voter->gender) : null),
+                                'age' => $extracheckTwoVoter->voter->age ? $translator->translate($extracheckTwoVoter->voter->age) : null,
+                                'dob' => $extracheckTwoVoter->voter->dob ? $translator->translate($extracheckTwoVoter->voter->dob) : null,
+                                'cast' => $extracheckTwoVoter->voter->cast_mr ?? ($extracheckTwoVoter->voter->cast ? $translator->translate($extracheckTwoVoter->voter->cast) : null),
+                                'position' => $extracheckTwoVoter->voter->position_mr ?? ($extracheckTwoVoter->voter->position ? $translator->translate($extracheckTwoVoter->voter->position) : null),
+                                'personnel' => $extracheckTwoVoter->voter->personnel_mr ?? ($extracheckTwoVoter->voter->personnel ? $translator->translate($extracheckTwoVoter->voter->personnel) : null),
+                                'voter_id' => $extracheckTwoVoter->voter->voter_id_mr ?? ($extracheckTwoVoter->voter->voter_id ? $translator->translate($extracheckTwoVoter->voter->voter_id) : null),
+                            ],
+                            'extra_information' => $extracheckTwoVoter ? [
+                                'extra_info_1' => $extracheckTwoVoter->extra_info_1_mr ?? ($extracheckTwoVoter->extra_info_1 ? $translator->translate($extracheckTwoVoter->extra_info_1) : null),
+                                'extra_info_2' => $extracheckTwoVoter->extra_info_2_mr ?? ($extracheckTwoVoter->extra_info_2 ? $translator->translate($extracheckTwoVoter->extra_info_2) : null),
+                                'extra_info_3' => $extracheckTwoVoter->extra_info_3_mr ?? ($extracheckTwoVoter->extra_info_3 ? $translator->translate($extracheckTwoVoter->extra_info_3) : null),
+                                'extra_info_4' => $extracheckTwoVoter->extra_info_4_mr ?? ($extracheckTwoVoter->extra_info_4 ? $translator->translate($extracheckTwoVoter->extra_info_4) : null),
+                                'extra_info_5' => $extracheckTwoVoter->extra_info_5_mr ?? ($extracheckTwoVoter->extra_info_5 ? $translator->translate($extracheckTwoVoter->extra_info_5) : null),
+                                'extra_check_1' => $extracheckTwoVoter->extra_check_1 ?? null,
+                                'extra_check_2' => $extracheckTwoVoter->extra_check_2 ?? null,
+                            ] : null,
+                            'address_details' => [
+                                'society' => $extracheckTwoVoter->voter->voterAddress->society_mr ?? ($extracheckTwoVoter->voter->voterAddress->society ? $translator->translate($extracheckTwoVoter->voter->voterAddress->society) : null),
+                                'house_no' => $extracheckTwoVoter->voter->voterAddress->house_no_mr ?? ($extracheckTwoVoter->voter->voterAddress->house_no ? $translator->translate($extracheckTwoVoter->voter->voterAddress->house_no) : null),
+                                'flat_no' => $extracheckTwoVoter->voter->voterAddress->flat_no_mr ?? ($extracheckTwoVoter->voter->voterAddress->flat_no ? $translator->translate($extracheckTwoVoter->voter->voterAddress->flat_no) : null),
+                                'address' => $extracheckTwoVoter->voter->voterAddress->address_mr ?? ($extracheckTwoVoter->voter->voterAddress->address ? $translator->translate($extracheckTwoVoter->voter->voterAddress->address) : null),
+                                'booth' => $extracheckTwoVoter->voter->voterAddress->booth_mr ?? ($extracheckTwoVoter->voter->voterAddress->booth ? $translator->translate($extracheckTwoVoter->voter->voterAddress->booth) : null),
+                                'village' => $extracheckTwoVoter->voter->voterAddress->village_mr ?? ($extracheckTwoVoter->voter->voterAddress->village ? $translator->translate($extracheckTwoVoter->voter->voterAddress->village) : null),
+                                'part_no' => $extracheckTwoVoter->voter->voterAddress->part_no_mr ?? ($extracheckTwoVoter->voter->voterAddress->part_no ? $translator->translate($extracheckTwoVoter->voter->voterAddress->part_no) : null),
+                                'srn' => $extracheckTwoVoter->voter->voterAddress->srn_mr ?? ($extracheckTwoVoter->voter->voterAddress->srn ? $translator->translate($extracheckTwoVoter->voter->voterAddress->srn) : null),
+                                'voting_centre' => $extracheckTwoVoter->voter->voterAddress->voting_centre_mr ?? ($extracheckTwoVoter->voter->voterAddress->voting_centre ? $translator->translate($extracheckTwoVoter->voter->voterAddress->voting_centre) : null),
+                            ],
+                        ];
+                    });
+                return response()->json([
+                    'status' => 200,
+                    'message' => 'Voter details retrieved successfully',
+                    'voters' => $users,
+                ], 200);
+            }
+
+            if ($request->lang == 'hi') {
+                $users = ExtraInformation::where('extra_check_2',1)
+                    ->with(['voter', 'voter.voterAddress']) // Eager load voter and extra information
+                    ->get()
+                    ->map(function ($extracheckTwoVoter) use ($translator) {
+                        return [
+                            'voter_details' => [
+                                'id' => $extracheckTwoVoter->voter->id,
+                                'first_name' => $extracheckTwoVoter->voter->first_name_hi ?? ($extracheckTwoVoter->voter->first_name ? $translator->translate($extracheckTwoVoter->voter->first_name) : null),
+                                'middle_name' => $extracheckOneVoter->voter->middle_name_hi ?? ($extracheckTwoVoter->voter->middle_name ? $translator->translate($extracheckTwoVoter->voter->middle_name) : null),
+                                'surname' => $extracheckTwoVoter->voter->surname_hi ?? ($extracheckTwoVoter->voter->surname ? $translator->translate($extracheckTwoVoter->voter->surname) : null),
+                                'email' => $extracheckTwoVoter->voter->email ? $translator->translate($extracheckTwoVoter->voter->email) : null,
+                                'gender' => $extracheckTwoVoter->voter->gender_hi ?? ($extracheckTwoVoter->voter->gender ? $translator->translate($extracheckTwoVoter->voter->gender) : null),
+                                'age' => $extracheckTwoVoter->voter->age ? $translator->translate($extracheckTwoVoter->voter->age) : null,
+                                'dob' => $extracheckTwoVoter->voter->dob ? $translator->translate($extracheckTwoVoter->voter->dob) : null,
+                                'cast' => $extracheckTwoVoter->voter->cast_hi ?? ($extracheckTwoVoter->voter->cast ? $translator->translate($extracheckTwoVoter->voter->cast) : null),
+                                'position' => $extracheckTwoVoter->voter->position_hi ?? ($extracheckTwoVoter->voter->position ? $translator->translate($extracheckTwoVoter->voter->position) : null),
+                                'personnel' => $extracheckTwoVoter->voter->personnel_hi ?? ($extracheckTwoVoter->voter->personnel ? $translator->translate($extracheckTwoVoter->voter->personnel) : null),
+                                'voter_id' => $extracheckTwoVoter->voter->voter_id_hi ?? ($extracheckTwoVoter->voter->voter_id ? $translator->translate($extracheckTwoVoter->voter->voter_id) : null),
+                            ],
+                            'extra_information' => $extracheckTwoVoter ? [
+                                'extra_info_1' => $extracheckTwoVoter->extra_info_1_hi ?? ($extracheckTwoVoter->extra_info_1 ? $translator->translate($extracheckTwoVoter->extra_info_1) : null),
+                                'extra_info_2' => $extracheckTwoVoter->extra_info_2_hi ?? ($extracheckTwoVoter->extra_info_2 ? $translator->translate($extracheckTwoVoter->extra_info_2) : null),
+                                'extra_info_3' => $extracheckTwoVoter->extra_info_3_hi ?? ($extracheckTwoVoter->extra_info_3 ? $translator->translate($extracheckTwoVoter->extra_info_3) : null),
+                                'extra_info_4' => $extracheckTwoVoter->extra_info_4_hi ?? ($extracheckTwoVoter->extra_info_4 ? $translator->translate($extracheckTwoVoter->extra_info_4) : null),
+                                'extra_info_5' => $extracheckTwoVoter->extra_info_5_hi ?? ($extracheckTwoVoter->extra_info_5 ? $translator->translate($extracheckTwoVoter->extra_info_5) : null),
+                                'extra_check_1' => $extracheckTwoVoter->extra_check_1 ?? null,
+                                'extra_check_2' => $extracheckTwoVoter->extra_check_2 ?? null,
+                            ] : null,
+                            'address_details' => [
+                                'society' => $extracheckTwoVoter->voter->voterAddress->society_hi ?? ($extracheckTwoVoter->voter->voterAddress->society ? $translator->translate($extracheckTwoVoter->voter->voterAddress->society) : null),
+                                'house_no' => $extracheckTwoVoter->voter->voterAddress->house_no_hi ?? ($extracheckTwoVoter->voter->voterAddress->house_no ? $translator->translate($extracheckTwoVoter->voter->voterAddress->house_no) : null),
+                                'flat_no' => $extracheckTwoVoter->voter->voterAddress->flat_no_hi ?? ($extracheckTwoVoter->voter->voterAddress->flat_no ? $translator->translate($extracheckTwoVoter->voter->voterAddress->flat_no) : null),
+                                'address' => $extracheckTwoVoter->voter->voterAddress->address_hi ?? ($extracheckTwoVoter->voter->voterAddress->address ? $translator->translate($extracheckTwoVoter->voter->voterAddress->address) : null),
+                                'booth' => $extracheckTwoVoter->voter->voterAddress->booth_hi ?? ($extracheckTwoVoter->voter->voterAddress->booth ? $translator->translate($extracheckTwoVoter->voter->voterAddress->booth) : null),
+                                'village' => $extracheckTwoVoter->voter->voterAddress->village_hi ?? ($extracheckTwoVoter->voter->voterAddress->village ? $translator->translate($extracheckTwoVoter->voter->voterAddress->village) : null),
+                                'part_no' => $extracheckTwoVoter->voter->voterAddress->part_no_hi ?? ($extracheckTwoVoter->voter->voterAddress->part_no ? $translator->translate($extracheckTwoVoter->voter->voterAddress->part_no) : null),
+                                'srn' => $extracheckTwoVoter->voter->voterAddress->srn_hi ?? ($extracheckTwoVoter->voter->voterAddress->srn ? $translator->translate($extracheckTwoVoter->voter->voterAddress->srn) : null),
+                                'voting_centre' => $extracheckTwoVoter->voter->voterAddress->voting_centre_hi ?? ($extracheckTwoVoter->voter->voterAddress->voting_centre ? $translator->translate($extracheckTwoVoter->voter->voterAddress->voting_centre) : null),
+                            ],
+                        ];
+                    });
+                return response()->json([
+                    'status' => 200,
+                    'message' => 'Voter details retrieved successfully',
+                    'voters' => $users,
+                ], 200);
+            }
+        }
+        if($request->status == 'UnChecked'){
+            if($request->lang == 'en'){
+                $voters = ExtraInformation::where('extra_check_2',0)
+                ->with(['voter', 'voter.voterAddress']) // Eager load voter and extra information
+                ->get()
+                ->map(function ($extracheckTwoVoter) use ($translator) {
+                    return [
+                        'voter_details' => [
+                            'id' => $extracheckTwoVoter->voter->id,
+                            'first_name' => $extracheckTwoVoter->voter->first_name ? $translator->translate($extracheckTwoVoter->voter->first_name) : null,
+                            'middle_name' => $extracheckTwoVoter->voter->middle_name ? $translator->translate($extracheckTwoVoter->voter->middle_name) : null,
+                            'surname' => $extracheckTwoVoter->voter->surname ? $translator->translate($extracheckOneVoter->voter->surname) : null,
+                            'email' => $extracheckTwoVoter->voter->email ? $translator->translate($extracheckTwoVoter->voter->email) : null,
+                            'gender' => $extracheckTwoVoter->voter->gender ? $translator->translate($extracheckTwoVoter->voter->gender) : null,
+                            'age' => $extracheckTwoVoter->voter->age ? $translator->translate($extracheckTwoVoter->voter->age) : null,
+                            'dob' => $extracheckTwoVoter->voter->dob ? $translator->translate($extracheckTwoVoter->voter->dob) : null,
+                            'cast' => $extracheckTwoVoter->voter->cast ? $translator->translate($extracheckTwoVoter->voter->cast) : null,
+                            'position' => $extracheckTwoVoter->voter->position ? $translator->translate($extracheckTwoVoter->voter->position) : null,
+                            'personnel' => $extracheckTwoVoter->voter->personnel ? $translator->translate($extracheckTwoVoter->voter->personnel) : null,
+                            'voter_id' => $extracheckTwoVoter->voter->voter_id ? $translator->translate($extracheckTwoVoter->voter->voter_id) : null,
+                        ],
+                        'extra_information' => $extracheckTwoVoter ? [
+                            'extra_info_1' => $extracheckTwoVoter->extra_info_1 ? $translator->translate($extracheckTwoVoter->extra_info_1) : null,
+                            'extra_info_2' => $extracheckTwoVoter->extra_info_2 ? $translator->translate($extracheckTwoVoter->extra_info_2) : null,
+                            'extra_info_3' => $extracheckTwoVoter->extra_info_3 ? $translator->translate($extracheckTwoVoter->extra_info_3) : null,
+                            'extra_info_4' => $extracheckTwoVoter->extra_info_4 ? $translator->translate($extracheckTwoVoter->extra_info_4) : null,
+                            'extra_info_5' => $extracheckTwoVoter->extra_info_5 ? $translator->translate($extracheckTwoVoter->extra_info_5) : null,
+                            'extra_check_1' => $extracheckTwoVoter->extra_check_1 ?? null,
+                            'extra_check_2' => $extracheckTwoVoter->extra_check_2 ?? null,
+
+                            // Add more fields as needed
+                        ] : null,
+                        'address_details' => [
+                            'society' => $extracheckTwoVoter->voter->voterAddress->society ? $translator->translate($extracheckTwoVoter->voter->voterAddress->society) : null,
+                            'house_no' => $extracheckTwoVoter->voter->voterAddress->house_no ? $translator->translate($extracheckTwoVoter->voter->voterAddress->house_no) : null,
+                            'flat_no' => $extracheckTwoVoter->voter->voterAddress->flat_no ? $translator->translate($extracheckTwoVoter->voter->voterAddress->flat_no) : null,
+                            'address' => $extracheckTwoVoter->voter->voterAddress->address ? $translator->translate($extracheckTwoVoter->voter->voterAddress->address) : null,
+                            'booth' => $extracheckTwoVoter->voter->voterAddress->booth ? $translator->translate($extracheckTwoVoter->voter->voterAddress->booth) : null,
+                            'village' => $extracheckTwoVoter->voter->voterAddress->village ? $translator->translate($extracheckTwoVoter->voter->voterAddress->village) : null,
+                            'part_no' => $extracheckTwoVoter->voter->voterAddress->part_no ? $translator->translate($extracheckTwoVoter->voter->voterAddress->part_no) : null,
+                            'srn' => $extracheckTwoVoter->voter->voterAddress->srn ? $translator->translate($extracheckTwoVoter->voter->voterAddress->srn) : null,
+                            'voting_centre' => $extracheckTwoVoter->voter->voterAddress->voting_centre ? $translator->translate($extracheckTwoVoter->voter->voterAddress->voting_centre) : null,
+                        ],
+                    ];
+                });
+                return response()->json([
+                    'status' => 200,
+                    'message' => 'Voter details retrieved successfully',
+                    'voters' => $voters,
+                ], 200);
+
+            }
+
+            if ($request->lang == 'mr') {
+                $users = ExtraInformation::where('extra_check_2',0)
+                    ->with(['voter', 'voter.voterAddress']) // Eager load voter and extra information
+                    ->get()
+                    ->map(function ($extracheckTwoVoter) use ($translator) {
+                        return [
+                            'voter_details' => [
+                                'id' => $extracheckTwoVoter->voter->id,
+                                'first_name' => $extracheckTwoVoter->voter->first_name_mr ?? ($extracheckTwoVoter->voter->first_name ? $translator->translate($extracheckTwoVoter->voter->first_name) : null),
+                                'middle_name' => $extracheckTwoVoter->voter->middle_name_mr ?? ($extracheckTwoVoter->voter->middle_name ? $translator->translate($extracheckTwoVoter->voter->middle_name) : null),
+                                'surname' => $extracheckTwoVoter->voter->surname_mr ?? ($extracheckTwoVoter->voter->surname ? $translator->translate($extracheckOneVoter->voter->surname) : null),
+                                'email' => $extracheckTwoVoter->voter->email ? $translator->translate($extracheckTwoVoter->voter->email) : null,
+                                'gender' => $extracheckTwoVoter->voter->gender_mr ?? ($extracheckTwoVoter->voter->gender ? $translator->translate($extracheckTwoVoter->voter->gender) : null),
+                                'age' => $extracheckTwoVoter->voter->age ? $translator->translate($extracheckTwoVoter->voter->age) : null,
+                                'dob' => $extracheckTwoVoter->voter->dob ? $translator->translate($extracheckTwoVoter->voter->dob) : null,
+                                'cast' => $extracheckTwoVoter->voter->cast_mr ?? ($extracheckTwoVoter->voter->cast ? $translator->translate($extracheckTwoVoter->voter->cast) : null),
+                                'position' => $extracheckTwoVoter->voter->position_mr ?? ($extracheckTwoVoter->voter->position ? $translator->translate($extracheckTwoVoter->voter->position) : null),
+                                'personnel' => $extracheckTwoVoter->voter->personnel_mr ?? ($extracheckTwoVoter->voter->personnel ? $translator->translate($extracheckTwoVoter->voter->personnel) : null),
+                                'voter_id' => $extracheckTwoVoter->voter->voter_id_mr ?? ($extracheckTwoVoter->voter->voter_id ? $translator->translate($extracheckTwoVoter->voter->voter_id) : null),
+                            ],
+                            'extra_information' => $extracheckTwoVoter ? [
+                                'extra_info_1' => $extracheckTwoVoter->extra_info_1_mr ?? ($extracheckTwoVoter->extra_info_1 ? $translator->translate($extracheckTwoVoter->extra_info_1) : null),
+                                'extra_info_2' => $extracheckTwoVoter->extra_info_2_mr ?? ($extracheckTwoVoter->extra_info_2 ? $translator->translate($extracheckTwoVoter->extra_info_2) : null),
+                                'extra_info_3' => $extracheckTwoVoter->extra_info_3_mr ?? ($extracheckTwoVoter->extra_info_3 ? $translator->translate($extracheckTwoVoter->extra_info_3) : null),
+                                'extra_info_4' => $extracheckTwoVoter->extra_info_4_mr ?? ($extracheckTwoVoter->extra_info_4 ? $translator->translate($extracheckTwoVoter->extra_info_4) : null),
+                                'extra_info_5' => $extracheckTwoVoter->extra_info_5_mr ?? ($extracheckTwoVoter->extra_info_5 ? $translator->translate($extracheckTwoVoter->extra_info_5) : null),
+                                'extra_check_1' => $extracheckTwoVoter->extra_check_1 ?? null,
+                                'extra_check_2' => $extracheckTwoVoter->extra_check_2 ?? null,
+                            ] : null,
+                            'address_details' => [
+                                'society' => $extracheckTwoVoter->voter->voterAddress->society_mr ?? ($extracheckTwoVoter->voter->voterAddress->society ? $translator->translate($extracheckTwoVoter->voter->voterAddress->society) : null),
+                                'house_no' => $extracheckTwoVoter->voter->voterAddress->house_no_mr ?? ($extracheckTwoVoter->voter->voterAddress->house_no ? $translator->translate($extracheckTwoVoter->voter->voterAddress->house_no) : null),
+                                'flat_no' => $extracheckTwoVoter->voter->voterAddress->flat_no_mr ?? ($extracheckTwoVoter->voter->voterAddress->flat_no ? $translator->translate($extracheckTwoVoter->voter->voterAddress->flat_no) : null),
+                                'address' => $extracheckTwoVoter->voter->voterAddress->address_mr ?? ($extracheckTwoVoter->voter->voterAddress->address ? $translator->translate($extracheckTwoVoter->voter->voterAddress->address) : null),
+                                'booth' => $extracheckTwoVoter->voter->voterAddress->booth_mr ?? ($extracheckTwoVoter->voter->voterAddress->booth ? $translator->translate($extracheckTwoVoter->voter->voterAddress->booth) : null),
+                                'village' => $extracheckTwoVoter->voter->voterAddress->village_mr ?? ($extracheckTwoVoter->voter->voterAddress->village ? $translator->translate($extracheckTwoVoter->voter->voterAddress->village) : null),
+                                'part_no' => $extracheckTwoVoter->voter->voterAddress->part_no_mr ?? ($extracheckTwoVoter->voter->voterAddress->part_no ? $translator->translate($extracheckTwoVoter->voter->voterAddress->part_no) : null),
+                                'srn' => $extracheckTwoVoter->voter->voterAddress->srn_mr ?? ($extracheckTwoVoter->voter->voterAddress->srn ? $translator->translate($extracheckTwoVoter->voter->voterAddress->srn) : null),
+                                'voting_centre' => $extracheckTwoVoter->voter->voterAddress->voting_centre_mr ?? ($extracheckTwoVoter->voter->voterAddress->voting_centre ? $translator->translate($extracheckTwoVoter->voter->voterAddress->voting_centre) : null),
+                            ],
+                        ];
+                    });
+                return response()->json([
+                    'status' => 200,
+                    'message' => 'Voter details retrieved successfully',
+                    'voters' => $users,
+                ], 200);
+            }
+
+            if ($request->lang == 'hi') {
+                $users = ExtraInformation::where('extra_check_2',0)
+                    ->with(['voter', 'voter.voterAddress']) // Eager load voter and extra information
+                    ->get()
+                    ->map(function ($extracheckTwoVoter) use ($translator) {
+                        return [
+                            'voter_details' => [
+                                'id' => $extracheckTwoVoter->voter->id,
+                                'first_name' => $extracheckTwoVoter->voter->first_name_hi ?? ($extracheckTwoVoter->voter->first_name ? $translator->translate($extracheckTwoVoter->voter->first_name) : null),
+                                'middle_name' => $extracheckTwoVoter->voter->middle_name_hi ?? ($extracheckTwoVoter->voter->middle_name ? $translator->translate($extracheckTwoVoter->voter->middle_name) : null),
+                                'surname' => $extracheckTwoVoter->voter->surname_hi ?? ($extracheckTwoVoter->voter->surname ? $translator->translate($extracheckTwoVoter->voter->surname) : null),
+                                'email' => $extracheckTwoVoter->voter->email ? $translator->translate($extracheckTwoVoter->voter->email) : null,
+                                'gender' => $extracheckTwoVoter->voter->gender_hi ?? ($extracheckTwoVoter->voter->gender ? $translator->translate($extracheckTwoVoter->voter->gender) : null),
+                                'age' => $extracheckTwoVoter->voter->age ? $translator->translate($extracheckTwoVoter->voter->age) : null,
+                                'dob' => $extracheckTwoVoter->voter->dob ? $translator->translate($extracheckTwoVoter->voter->dob) : null,
+                                'cast' => $extracheckTwoVoter->voter->cast_hi ?? ($extracheckTwoVoter->voter->cast ? $translator->translate($extracheckTwoVoter->voter->cast) : null),
+                                'position' => $extracheckTwoVoter->voter->position_hi ?? ($extracheckTwoVoter->voter->position ? $translator->translate($extracheckTwoVoter->voter->position) : null),
+                                'personnel' => $extracheckTwoVoter->voter->personnel_hi ?? ($extracheckTwoVoter->voter->personnel ? $translator->translate($extracheckTwoVoter->voter->personnel) : null),
+                                'voter_id' => $extracheckTwoVoter->voter->voter_id_hi ?? ($extracheckTwoVoter->voter->voter_id ? $translator->translate($extracheckTwoVoter->voter->voter_id) : null),
+                            ],
+                            'extra_information' => $extracheckTwoVoter ? [
+                                'extra_info_1' => $extracheckTwoVoter->extra_info_1_hi ?? ($extracheckTwoVoter->extra_info_1 ? $translator->translate($extracheckTwoVoter->extra_info_1) : null),
+                                'extra_info_2' => $extracheckTwoVoter->extra_info_2_hi ?? ($extracheckTwoVoter->extra_info_2 ? $translator->translate($extracheckTwoVoter->extra_info_2) : null),
+                                'extra_info_3' => $extracheckTwoVoter->extra_info_3_hi ?? ($extracheckTwoVoter->extra_info_3 ? $translator->translate($extracheckTwoVoter->extra_info_3) : null),
+                                'extra_info_4' => $extracheckTwoVoter->extra_info_4_hi ?? ($extracheckTwoVoter->extra_info_4 ? $translator->translate($extracheckTwoVoter->extra_info_4) : null),
+                                'extra_info_5' => $extracheckTwoVoter->extra_info_5_hi ?? ($extracheckTwoVoter->extra_info_5 ? $translator->translate($extracheckTwoVoter->extra_info_5) : null),
+                                'extra_check_1' => $extracheckTwoVoter->extra_check_1 ?? null,
+                                'extra_check_2' => $extracheckTwoVoter->extra_check_2 ?? null,
+                            ] : null,
+                            'address_details' => [
+                                'society' => $extracheckTwoVoter->voter->voterAddress->society_hi ?? ($extracheckTwoVoter->voter->voterAddress->society ? $translator->translate($extracheckTwoVoter->voter->voterAddress->society) : null),
+                                'house_no' => $extracheckTwoVoter->voter->voterAddress->house_no_hi ?? ($extracheckTwoVoter->voter->voterAddress->house_no ? $translator->translate($extracheckTwoVoter->voter->voterAddress->house_no) : null),
+                                'flat_no' => $extracheckTwoVoter->voter->voterAddress->flat_no_hi ?? ($extracheckTwoVoter->voter->voterAddress->flat_no ? $translator->translate($extracheckTwoVoter->voter->voterAddress->flat_no) : null),
+                                'address' => $extracheckTwoVoter->voter->voterAddress->address_hi ?? ($extracheckTwoVoter->voter->voterAddress->address ? $translator->translate($extracheckTwoVoter->voter->voterAddress->address) : null),
+                                'booth' => $extracheckTwoVoter->voter->voterAddress->booth_hi ?? ($extracheckTwoVoter->voter->voterAddress->booth ? $translator->translate($extracheckTwoVoter->voter->voterAddress->booth) : null),
+                                'village' => $extracheckTwoVoter->voter->voterAddress->village_hi ?? ($extracheckTwoVoter->voter->voterAddress->village ? $translator->translate($extracheckTwoVoter->voter->voterAddress->village) : null),
+                                'part_no' => $extracheckTwoVoter->voter->voterAddress->part_no_hi ?? ($extracheckTwoVoter->voter->voterAddress->part_no ? $translator->translate($extracheckTwoVoter->voter->voterAddress->part_no) : null),
+                                'srn' => $extracheckTwoVoter->voter->voterAddress->srn_hi ?? ($extracheckTwoVoter->voter->voterAddress->srn ? $translator->translate($extracheckTwoVoter->voter->voterAddress->srn) : null),
+                                'voting_centre' => $extracheckTwoVoter->voter->voterAddress->voting_centre_hi ?? ($extracheckTwoVoter->voter->voterAddress->voting_centre ? $translator->translate($extracheckTwoVoter->voter->voterAddress->voting_centre) : null),
+                            ],
+                        ];
+                    });
+                return response()->json([
+                    'status' => 200,
+                    'message' => 'Voter details retrieved successfully',
+                    'voters' => $users,
+                ], 200);
+            }
+        }
+    }
+
+    public function votedList()
+    {
+        // Fetch all voters
+        $voters = Voters::all();
+        $checkedCount = Voters::where('voted',1)->count();
+        $uncheckedCount = Voters::where('voted',0)->count();
+        if( $checkedCount == 0 && $uncheckedCount >0 ){
+            $total_count = 1;
+        }
+        else if( $checkedCount >0 && $uncheckedCount ==0 ){
+            $total_count = 1;
+        }
+        else if( $checkedCount >0 && $uncheckedCount >0 ){
+            $total_count = 2;
+        }
+
+        // Group voters by their dead status and count each group
+        $groupedByStatus = $voters->groupBy('voted')->map(function ($group, $status) {
+            return [
+                'status' => $status == 1 ? 'Voted' : 'NonVoted',
+                'voter_count' => $group->count(),
+            ];
+        });
+
+        // Convert grouped data to an array
+        $statusData = $groupedByStatus->values()->toArray();
+
+        // Return the response
+        return response()->json([
+            'status' => 200,
+            'message' => 'Voted and NonVoted voters count retrieved successfully',
+            'total_count'=>$total_count,
+            'total_voters' => $voters->count(),
+            'voters' => $statusData,
+        ], 200);
+
+    }
+
+    public function votedVotersDetails(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'lang' => 'required|in:en,mr,hi',
+            'status'=>'required |in:voted,nonVoted',
+
+        ]);
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()], 400);
+        }
+        $lang = $request->input('lang');
+        $translator = new GoogleTranslate($lang);
+       if( $request->status == 'voted'){
+        if($request->lang == 'en'){
+            $voters = voters::where('voted', 1)
+            ->with(['voterAddress', 'voterInformation'])
+            ->get()
+            ->map(function ($voter) use ($translator) {
+                return [
+                    'voter_details' => [
+                        'id' => $voter->id,
+                        'first_name' => $voter->first_name ? $translator->translate($voter->first_name) : null,
+                        'middle_name' => $voter->middle_name ? $translator->translate($voter->middle_name) : null,
+                        'surname' => $voter->surname ? $translator->translate($voter->surname) : null,
+                        'email' => $voter->email ? $translator->translate($voter->email) : null,
+                        'gender' => $voter->gender ? $translator->translate($voter->gender) : null,
+                        'age' => $voter->age,
+                        'dob' => $voter->dob,
+                        'cast' => $voter->cast ? $translator->translate($voter->cast) : null,
+                        'position' => $voter->position ? $translator->translate($voter->position) : null,
+                        'personnel' => $voter->personnel ? $translator->translate($voter->personnel) : null,
+                        'voter_id' => $voter->voter_id,
+                    ],
+                    'extra_information' => $voter->voterInformation ? [
+                        'extra_info_1' => $voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null,
+                        'extra_info_2' => $voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null,
+                        'extra_info_3' => $voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null,
+                        'extra_info_4' => $voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null,
+                        'extra_info_5' => $voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null,
+                        'extra_check_1' => $voter->voterInformation->extra_check_1,
+                        'extra_check_2' => $voter->voterInformation->extra_check_2,
+                    ] : null,
+                    'address_details' => $voter->voterAddress ? [
+                        'society' => $voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null,
+                        'house_no' => $voter->voterAddress->house_no ? $translator->translate($voter->voterAddress->house_no) : null,
+                        'flat_no' => $voter->voterAddress->flat_no ? $translator->translate($voter->voterAddress->flat_no) : null,
+                        'address' => $voter->voterAddress->address ? $translator->translate($voter->voterAddress->address) : null,
+                        'booth' => $voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null,
+                        'village' => $voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null,
+                        'part_no' => $voter->voterAddress->part_no,
+                        'srn' => $voter->voterAddress->srn,
+                        'voting_centre' => $voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null,
+                    ] : null,
+                ];
+            });
+
+            return response()->json([
+                'status' => 200,
+                'message' => 'Voted voter details retrieved successfully in English',
+                'voters' => $voters,
+            ], 200);
+        }
+
+        if ($request->lang == 'mr') {
+            $voters = voters::where('voted', 1)
+                ->with(['voterAddress', 'voterInformation'])
+                ->get()
+                ->map(function ($voter) use ($translator) {
+                    return [
+                        'voter_details' => [
+                            'id' => $voter->id,
+                            'first_name' => $voter->first_name_mr ?? ($voter->first_name ? $translator->translate($voter->first_name) : null),
+                            'middle_name' => $voter->middle_name_mr ?? ($voter->middle_name ? $translator->translate($voter->middle_name) : null),
+                            'surname' => $voter->surname_mr ?? ($voter->surname ? $translator->translate($voter->surname) : null),
+                            'email' => $voter->email_mr ?? ($voter->email ? $translator->translate($voter->email) : null),
+                            'gender' => $voter->gender_mr ?? ($voter->gender ? $translator->translate($voter->gender) : null),
+                            'age' => $voter->age_mr ?? ($voter->age ? $translator->translate($voter->age) : null),
+                            'dob' => $voter->dob_mr ?? ($voter->dob ? $translator->translate($voter->dob) : null),
+                            'cast' => $voter->cast_mr ?? ($voter->cast ? $translator->translate($voter->cast) : null),
+                            'position' => $voter->position_mr ?? ($voter->position ? $translator->translate($voter->position) : null),
+                            'personnel' => $voter->personnel ?? null,
+                            'voter_id' => $voter->voter_id ?? null,
+                        ],
+                        'extra_information' => $voter->voterInformation ? [
+                            'extra_info_1' => $voter->voterInformation->extra_info_1_mr ?? ($voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null),
+                            'extra_info_2' => $voter->voterInformation->extra_info_2_mr ?? ($voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null),
+                            'extra_info_3' => $voter->voterInformation->extra_info_3_mr ?? ($voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null),
+                            'extra_info_4' => $voter->voterInformation->extra_info_4_mr ?? ($voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null),
+                            'extra_info_5' => $voter->voterInformation->extra_info_5_mr ?? ($voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null),
+                            'extra_check_1' => $voter->voterInformation->extra_check_1,
+                            'extra_check_2' => $voter->voterInformation->extra_check_2,
+                        ] : null,
+                        'address_details' => $voter->voterAddress ? [
+                            'society' => $voter->voterAddress->society_mr ?? ($voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null),
+                            'house_no' => $voter->voterAddress->house_no_mr ?? ($voter->voterAddress->house_no ? $translator->translate($voter->voterAddress->house_no) : null),
+                            'flat_no' => $voter->voterAddress->flat_no_mr ?? ($voter->voterAddress->flat_no ? $translator->translate($voter->voterAddress->flat_no) : null),
+                            'address' => $voter->voterAddress->address_mr ?? ($voter->voterAddress->address ? $translator->translate($voter->voterAddress->address) : null),
+                            'booth' => $voter->voterAddress->booth_mr ?? ($voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null),
+                            'village' => $voter->voterAddress->village_mr ?? ($voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null),
+                            'part_no' => $voter->voterAddress->part_no_mr ?? ($voter->voterAddress->part_no ? $translator->translate($voter->voterAddress->part_no) : null),
+                            'srn' => $voter->voterAddress->srn_mr ?? ($voter->voterAddress->srn ? $translator->translate($voter->voterAddress->srn) : null),
+                            'voting_centre' => $voter->voterAddress->voting_centre_mr ?? ($voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null),
+                        ] : null,
+                    ];
+                });
+
+            return response()->json([
+                'status' => 200,
+                'message' => 'Voted voter details retrieved successfully in Marathi',
+                'voters' => $voters,
+            ], 200);
+        }
+
+        if ($request->lang == 'hi') {
+            $voters = voters::where('voted', 1)
+                ->with(['voterAddress', 'voterInformation'])
+                ->get()
+                ->map(function ($voter) use ($translator) {
+                    return [
+                        'voter_details' => [
+                            'id' => $voter->id,
+                            'first_name' => $voter->first_name_hi ?? ($voter->first_name ? $translator->translate($voter->first_name) : null),
+                            'middle_name' => $voter->middle_name_hi ?? ($voter->middle_name ? $translator->translate($voter->middle_name) : null),
+                            'surname' => $voter->surname_hi ?? ($voter->surname ? $translator->translate($voter->surname) : null),
+                            'email' => $voter->email_hi ?? ($voter->email ? $translator->translate($voter->email) : null),
+                            'gender' => $voter->gender_hi ?? ($voter->gender ? $translator->translate($voter->gender) : null),
+                            'age' => $voter->age_hi ?? ($voter->age ? $translator->translate($voter->age) : null),
+                            'dob' => $voter->dob_hi ?? ($voter->dob ? $translator->translate($voter->dob) : null),
+                            'cast' => $voter->cast_hi ?? ($voter->cast ? $translator->translate($voter->cast) : null),
+                            'position' => $voter->position_hi ?? ($voter->position ? $translator->translate($voter->position) : null),
+                            'personnel' => $voter->personnel ?? null,
+                            'voter_id' => $voter->voter_id ?? null,
+                        ],
+                        'extra_information' => $voter->voterInformation ? [
+                            'extra_info_1' => $voter->voterInformation->extra_info_1_hi ?? ($voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null),
+                            'extra_info_2' => $voter->voterInformation->extra_info_2_hi ?? ($voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null),
+                            'extra_info_3' => $voter->voterInformation->extra_info_3_hi ?? ($voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null),
+                            'extra_info_4' => $voter->voterInformation->extra_info_4_hi ?? ($voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null),
+                            'extra_info_5' => $voter->voterInformation->extra_info_5_hi ?? ($voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null),
+                            'extra_check_1' => $voter->voterInformation->extra_check_1,
+                            'extra_check_2' => $voter->voterInformation->extra_check_2,
+                        ] : null,
+                        'address_details' => $voter->voterAddress ? [
+                            'society' => $voter->voterAddress->society_hi ?? ($voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null),
+                            'house_no' => $voter->voterAddress->house_no_hi ?? ($voter->voterAddress->house_no ? $translator->translate($voter->voterAddress->house_no) : null),
+                            'flat_no' => $voter->voterAddress->flat_no_hi ?? ($voter->voterAddress->flat_no ? $translator->translate($voter->voterAddress->flat_no) : null),
+                            'address' => $voter->voterAddress->address_hi ?? ($voter->voterAddress->address ? $translator->translate($voter->voterAddress->address) : null),
+                            'booth' => $voter->voterAddress->booth_hi ?? ($voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null),
+                            'village' => $voter->voterAddress->village_hi ?? ($voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null),
+                            'part_no' => $voter->voterAddress->part_no_hi ?? ($voter->voterAddress->part_no ? $translator->translate($voter->voterAddress->part_no) : null),
+                            'srn' => $voter->voterAddress->srn_hi ?? ($voter->voterAddress->srn ? $translator->translate($voter->voterAddress->srn) : null),
+                            'voting_centre' => $voter->voterAddress->voting_centre_hi ?? ($voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null),
+                        ] : null,
+                    ];
+                });
+
+            return response()->json([
+                'status' => 200,
+                'message' => 'Voted voter details retrieved successfully in Hindi',
+                'voters' => $voters,
+            ], 200);
+        }
+
+       }
+
+       if( $request->status == 'nonVoted'){
+            if($request->lang == 'en'){
+                $voters = voters::where('voted', 1)
+                ->with(['voterAddress', 'voterInformation'])
+                ->get()
+                ->map(function ($voter) use ($translator) {
+                    return [
+                        'voter_details' => [
+                            'id' => $voter->id,
+                            'first_name' => $voter->first_name ? $translator->translate($voter->first_name) : null,
+                            'middle_name' => $voter->middle_name ? $translator->translate($voter->middle_name) : null,
+                            'surname' => $voter->surname ? $translator->translate($voter->surname) : null,
+                            'email' => $voter->email ? $translator->translate($voter->email) : null,
+                            'gender' => $voter->gender ? $translator->translate($voter->gender) : null,
+                            'age' => $voter->age,
+                            'dob' => $voter->dob,
+                            'cast' => $voter->cast ? $translator->translate($voter->cast) : null,
+                            'position' => $voter->position ? $translator->translate($voter->position) : null,
+                            'personnel' => $voter->personnel ? $translator->translate($voter->personnel) : null,
+                            'voter_id' => $voter->voter_id,
+                        ],
+                        'extra_information' => $voter->voterInformation ? [
+                            'extra_info_1' => $voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null,
+                            'extra_info_2' => $voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null,
+                            'extra_info_3' => $voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null,
+                            'extra_info_4' => $voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null,
+                            'extra_info_5' => $voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null,
+                            'extra_check_1' => $voter->voterInformation->extra_check_1,
+                            'extra_check_2' => $voter->voterInformation->extra_check_2,
+                        ] : null,
+                        'address_details' => $voter->voterAddress ? [
+                            'society' => $voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null,
+                            'house_no' => $voter->voterAddress->house_no ? $translator->translate($voter->voterAddress->house_no) : null,
+                            'flat_no' => $voter->voterAddress->flat_no ? $translator->translate($voter->voterAddress->flat_no) : null,
+                            'address' => $voter->voterAddress->address ? $translator->translate($voter->voterAddress->address) : null,
+                            'booth' => $voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null,
+                            'village' => $voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null,
+                            'part_no' => $voter->voterAddress->part_no,
+                            'srn' => $voter->voterAddress->srn,
+                            'voting_centre' => $voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null,
+                        ] : null,
+                    ];
+                });
+
+                return response()->json([
+                    'status' => 200,
+                    'message' => 'Dead voter details retrieved successfully in English',
+                    'voters' => $voters,
+                ], 200);
+            }
+
+            if ($request->lang == 'mr') {
+                $voters = voters::where('voted', 1)
+                    ->with(['voterAddress', 'voterInformation'])
+                    ->get()
+                    ->map(function ($voter) use ($translator) {
+                        return [
+                            'voter_details' => [
+                                'id' => $voter->id,
+                                'first_name' => $voter->first_name_mr ?? ($voter->first_name ? $translator->translate($voter->first_name) : null),
+                                'middle_name' => $voter->middle_name_mr ?? ($voter->middle_name ? $translator->translate($voter->middle_name) : null),
+                                'surname' => $voter->surname_mr ?? ($voter->surname ? $translator->translate($voter->surname) : null),
+                                'email' => $voter->email_mr ?? ($voter->email ? $translator->translate($voter->email) : null),
+                                'gender' => $voter->gender_mr ?? ($voter->gender ? $translator->translate($voter->gender) : null),
+                                'age' => $voter->age_mr ?? ($voter->age ? $translator->translate($voter->age) : null),
+                                'dob' => $voter->dob_mr ?? ($voter->dob ? $translator->translate($voter->dob) : null),
+                                'cast' => $voter->cast_mr ?? ($voter->cast ? $translator->translate($voter->cast) : null),
+                                'position' => $voter->position_mr ?? ($voter->position ? $translator->translate($voter->position) : null),
+                                'personnel' => $voter->personnel ?? null,
+                                'voter_id' => $voter->voter_id ?? null,
+                            ],
+                            'extra_information' => $voter->voterInformation ? [
+                                'extra_info_1' => $voter->voterInformation->extra_info_1_mr ?? ($voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null),
+                                'extra_info_2' => $voter->voterInformation->extra_info_2_mr ?? ($voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null),
+                                'extra_info_3' => $voter->voterInformation->extra_info_3_mr ?? ($voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null),
+                                'extra_info_4' => $voter->voterInformation->extra_info_4_mr ?? ($voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null),
+                                'extra_info_5' => $voter->voterInformation->extra_info_5_mr ?? ($voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null),
+                                'extra_check_1' => $voter->voterInformation->extra_check_1,
+                                'extra_check_2' => $voter->voterInformation->extra_check_2,
+                            ] : null,
+                            'address_details' => $voter->voterAddress ? [
+                                'society' => $voter->voterAddress->society_mr ?? ($voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null),
+                                'house_no' => $voter->voterAddress->house_no_mr ?? ($voter->voterAddress->house_no ? $translator->translate($voter->voterAddress->house_no) : null),
+                                'flat_no' => $voter->voterAddress->flat_no_mr ?? ($voter->voterAddress->flat_no ? $translator->translate($voter->voterAddress->flat_no) : null),
+                                'address' => $voter->voterAddress->address_mr ?? ($voter->voterAddress->address ? $translator->translate($voter->voterAddress->address) : null),
+                                'booth' => $voter->voterAddress->booth_mr ?? ($voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null),
+                                'village' => $voter->voterAddress->village_mr ?? ($voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null),
+                                'part_no' => $voter->voterAddress->part_no_mr ?? ($voter->voterAddress->part_no ? $translator->translate($voter->voterAddress->part_no) : null),
+                                'srn' => $voter->voterAddress->srn_mr ?? ($voter->voterAddress->srn ? $translator->translate($voter->voterAddress->srn) : null),
+                                'voting_centre' => $voter->voterAddress->voting_centre_mr ?? ($voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null),
+                            ] : null,
+                        ];
+                    });
+
+                return response()->json([
+                    'status' => 200,
+                    'message' => 'Dead voter details retrieved successfully in Marathi',
+                    'voters' => $voters,
+                ], 200);
+            }
+
+            if ($request->lang == 'hi') {
+                $voters = voters::where('voted', 1)
+                    ->with(['voterAddress', 'voterInformation'])
+                    ->get()
+                    ->map(function ($voter) use ($translator) {
+                        return [
+                            'voter_details' => [
+                                'id' => $voter->id,
+                                'first_name' => $voter->first_name_hi ?? ($voter->first_name ? $translator->translate($voter->first_name) : null),
+                                'middle_name' => $voter->middle_name_hi ?? ($voter->middle_name ? $translator->translate($voter->middle_name) : null),
+                                'surname' => $voter->surname_hi ?? ($voter->surname ? $translator->translate($voter->surname) : null),
+                                'email' => $voter->email_hi ?? ($voter->email ? $translator->translate($voter->email) : null),
+                                'gender' => $voter->gender_hi ?? ($voter->gender ? $translator->translate($voter->gender) : null),
+                                'age' => $voter->age_hi ?? ($voter->age ? $translator->translate($voter->age) : null),
+                                'dob' => $voter->dob_hi ?? ($voter->dob ? $translator->translate($voter->dob) : null),
+                                'cast' => $voter->cast_hi ?? ($voter->cast ? $translator->translate($voter->cast) : null),
+                                'position' => $voter->position_hi ?? ($voter->position ? $translator->translate($voter->position) : null),
+                                'personnel' => $voter->personnel ?? null,
+                                'voter_id' => $voter->voter_id ?? null,
+                            ],
+                            'extra_information' => $voter->voterInformation ? [
+                                'extra_info_1' => $voter->voterInformation->extra_info_1_hi ?? ($voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null),
+                                'extra_info_2' => $voter->voterInformation->extra_info_2_hi ?? ($voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null),
+                                'extra_info_3' => $voter->voterInformation->extra_info_3_hi ?? ($voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null),
+                                'extra_info_4' => $voter->voterInformation->extra_info_4_hi ?? ($voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null),
+                                'extra_info_5' => $voter->voterInformation->extra_info_5_hi ?? ($voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null),
+                                'extra_check_1' => $voter->voterInformation->extra_check_1,
+                                'extra_check_2' => $voter->voterInformation->extra_check_2,
+                            ] : null,
+                            'address_details' => $voter->voterAddress ? [
+                                'society' => $voter->voterAddress->society_hi ?? ($voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null),
+                                'house_no' => $voter->voterAddress->house_no_hi ?? ($voter->voterAddress->house_no ? $translator->translate($voter->voterAddress->house_no) : null),
+                                'flat_no' => $voter->voterAddress->flat_no_hi ?? ($voter->voterAddress->flat_no ? $translator->translate($voter->voterAddress->flat_no) : null),
+                                'address' => $voter->voterAddress->address_hi ?? ($voter->voterAddress->address ? $translator->translate($voter->voterAddress->address) : null),
+                                'booth' => $voter->voterAddress->booth_hi ?? ($voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null),
+                                'village' => $voter->voterAddress->village_hi ?? ($voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null),
+                                'part_no' => $voter->voterAddress->part_no_hi ?? ($voter->voterAddress->part_no ? $translator->translate($voter->voterAddress->part_no) : null),
+                                'srn' => $voter->voterAddress->srn_hi ?? ($voter->voterAddress->srn ? $translator->translate($voter->voterAddress->srn) : null),
+                                'voting_centre' => $voter->voterAddress->voting_centre_hi ?? ($voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null),
+                            ] : null,
+                        ];
+                    });
+
+                return response()->json([
+                    'status' => 200,
+                    'message' => 'Dead voter details retrieved successfully in Hindi',
+                    'voters' => $voters,
+                ], 200);
+            }
+
+       }
+
+    }
+
+    public function talukaList(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'lang' => 'required|in:en,mr,hi',
+        ]);
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()], 400);
+        }
+
+        $lang = $request->input('lang');
+        $translator = new GoogleTranslate($lang);
+        $userAddresses = UserAddress::all();
+        if($request->lang == 'en'){
+            $talukaGrouped = $userAddresses->groupBy('taluka')
+            ->map(function ($talukaGroup) use ($translator) {
+                return [
+                    'taluka' => $talukaGroup->first()->taluka ?? null,
+                    'total_voters' => $talukaGroup->count(),
+                ];
+            })->values();
+            $totalTalukaNos = $talukaGrouped->count();
+            return response()->json([
+                'status' => 200,
+                'message' => 'Taluka list retrieved successfully in english',
+                'total_taluka' => $totalTalukaNos,
+                'talukanos' => $talukaGrouped,
+            ], 200);
+        }
+
+        if($request->lang == 'mr'){
+            $talukaGrouped = $userAddresses->groupBy('taluka_mr')
+            ->map(function ($talukaGroup) use ($translator) {
+                return [
+                    'taluka' => $talukaGroup->first()->taluka_mr ?? null,
+                    'total_voters' => $talukaGroup->count(),
+                ];
+            })->values();
+            $totalTalukaNos = $talukaGrouped->count();
+            return response()->json([
+                'status' => 200,
+                'message' => 'Taluka list retrieved successfully in Marathi',
+                'total_taluka' => $totalTalukaNos,
+                'talukanos' => $talukaGrouped,
+            ], 200);
+        }
+
+        if($request->lang == 'hi'){
+            $talukaGrouped = $userAddresses->groupBy('taluka_hi')
+            ->map(function ($talukaGroup) use ($translator) {
+                return [
+                    'taluka' => $talukaGroup->first()->taluka_hi ?? null,
+                    'total_voters' => $talukaGroup->count(),
+                ];
+            })->values();
+            $totalTalukaNos = $talukaGrouped->count();
+            return response()->json([
+                'status' => 200,
+                'message' => 'Taluka list retrieved successfully in Hindi',
+                'total_taluka' => $totalTalukaNos,
+                'talukanos' => $talukaGrouped,
+            ], 200);
+        }
+
+    }
+
+    public function searchTaluka(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'lang' => 'required|in:en,mr,hi',
+            'taluka' => 'required',
+        ]);
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()], 400);
+        }
+        $lang = $request->input('lang');
+        $translator = new GoogleTranslate($lang);
+        if($request->lang == 'en'){
+            $talukas = UserAddress::
+            where('taluka', 'LIKE', '%' . $request->taluka . '%')->orderBy('taluka', 'asc')
+            ->get();
+            $talukas = $talukas->groupBy('taluka')
+            ->map(function ($talukas) use ($translator) {
+                return [
+                    'taluka' => $talukas->first()->taluka ? $translator->translate($talukas->first()->taluka) : null,
+                    'total_voters' => $talukas->count(),
+                ];
+            })->values();
+            return response()->json([
+                'status' => 200,
+                'message' => 'Taluka list searched successfully in English',
+                'talukas' => $talukas,
+            ], 200);
+        }
+
+        if($request->lang == 'mr'){
+            $talukas = UserAddress::
+            where('taluka_mr', 'LIKE', '%' . $request->taluka . '%')->orderBy('taluka_mr', 'asc')
+            ->get();
+            $talukas = $talukas->groupBy('taluka_mr')
+            ->map(function ($talukas) use ($translator) {
+                return [
+                    'taluka' => $talukas->first()->taluka_mr ?? null,
+                    'total_voters' => $talukas->count(),
+                ];
+            })->values();
+            return response()->json([
+                'status' => 200,
+                'message' => 'Taluka list searched successfully in marathi',
+                'talukas' => $talukas,
+            ], 200);
+        }
+
+        if($request->lang == 'hi'){
+            $talukas = UserAddress::
+            where('taluka_hi', 'LIKE', '%' . $request->taluka . '%')->orderBy('taluka_hi', 'asc')
+            ->get();
+            $talukas = $talukas->groupBy('taluka_hi')
+            ->map(function ($talukas) use ($translator) {
+                return [
+                    'taluka' => $talukas->first()->taluka_hi ?? null,
+                    'total_voters' => $talukas->count(),
+                ];
+            })->values();
+            return response()->json([
+                'status' => 200,
+                'message' => 'Taluka list searched successfully in hindi',
+                'talukas' => $talukas,
+            ], 200);
+        }
+
+
+    }
+
+    public function voterDetailsByTaluka(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'lang' => 'required|in:en,mr,hi',
+            'taluka' => 'required',
+        ]);
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()], 400);
+        }
+        $lang = $request->input('lang');
+        $translator = new GoogleTranslate($lang);
+        if($request->lang == 'en'){
+            $users = UserAddress::where('taluka', $request->taluka)
+            ->with(['voter', 'voter.voterInformation']) // Eager load voter and extra information
+            ->get()
+            ->map(function ($taluka) use ($translator) {
+                return [
+                    'voter_details' => [
+                        'id' => $taluka->voter->id,
+                        'first_name' => $taluka->voter->first_name ? $translator->translate($taluka->voter->first_name) : null,
+                        'middle_name' => $taluka->voter->middle_name ? $translator->translate($taluka->voter->middle_name) : null,
+                        'surname' => $taluka->voter->surname ? $translator->translate($taluka->voter->surname) : null,
+                        'email' => $taluka->voter->email ? $translator->translate($taluka->voter->email) : null,
+                        'gender' => $taluka->voter->gender ? $translator->translate($taluka->voter->gender) : null,
+                        'age' => $taluka->voter->age ? $translator->translate($taluka->voter->age) : null,
+                        'dob' => $taluka->voter->dob ? $translator->translate($taluka->voter->dob) : null,
+                        'cast' => $taluka->voter->cast ? $translator->translate($taluka->voter->cast) : null,
+                        'position' => $taluka->voter->position ? $translator->translate($taluka->voter->position) : null,
+                        'personnel' => $taluka->voter->personnel ? $translator->translate($taluka->voter->personnel) : null,
+                        'voter_id' => $taluka->voter->voter_id ? $translator->translate($taluka->voter->voter_id) : null,
+                    ],
+                    'extra_information' => $taluka->voter->voterInformation ? [
+
+                        'extra_info_1' => $taluka->voter->voterInformation->extra_info_1 ? $translator->translate($taluka->voter->voterInformation->extra_info_1) : null,
+                        'extra_info_2' => $taluka->voter->voterInformation->extra_info_2 ? $translator->translate($taluka->voter->voterInformation->extra_info_2) : null,
+                        'extra_info_3' => $taluka->voter->voterInformation->extra_info_3 ? $translator->translate($taluka->voter->voterInformation->extra_info_3) : null,
+                        'extra_info_4' => $taluka->voter->voterInformation->extra_info_4 ? $translator->translate($taluka->voter->voterInformation->extra_info_4) : null,
+                        'extra_info_5' => $taluka->voter->voterInformation->extra_info_5 ? $translator->translate($taluka->voter->voterInformation->extra_info_5) : null,
+                        'extra_check_1' => $taluka->voter->voterInformation->extra_check_1 ?? null,
+                        'extra_check_2' => $taluka->voter->voterInformation->extra_check_2 ?? null,
+                    ] : null, // Include null if extra information is not available
+                    'address_details' => [
+                        'society' => $taluka->society ? $translator->translate($taluka->society) : null,
+                        'house_no' => $taluka->house_no ? $translator->translate($taluka->house_no) : null,
+                        'flat_no' => $taluka->flat_no ? $translator->translate($taluka->flat_no) : null,
+                        'address' => $taluka->address ? $translator->translate($taluka->address) : null,
+                        'booth' => $taluka->booth ? $translator->translate($taluka->booth) : null,
+                        'village' => $taluka->village ? $translator->translate($taluka->village) : null,
+                        'part_no' => $taluka->part_no ? $translator->translate($taluka->part_no) : null,
+                        'srn' => $taluka->srn ? $translator->translate($taluka->srn) : null,
+                        'voting_centre' => $taluka->voting_centre ? $translator->translate($taluka->voting_centre) : null,
+                        'taluka' => $taluka->taluka ? $translator->translate($taluka->taluka) : null,
+                    ],
+                ];
+            });
+            return response()->json([
+                'status' => 200,
+                'message' => 'Voter details retrieved successfully',
+                'voters' => $users,
+            ], 200);
+        }
+
+        if ($request->lang == 'mr') {
+            $users = UserAddress::where('taluka_mr', $request->taluka)
+                ->with(['voter', 'voter.voterInformation']) // Eager load voter and extra information
+                ->get()
+                ->map(function ($taluka) {
+                    return [
+                        'voter_details' => [
+                            'id' => $taluka->voter->id,
+                            'first_name' => $taluka->voter->first_name_mr ?? $taluka->voter->first_name,
+                            'middle_name' => $taluka->voter->middle_name_mr ?? $taluka->voter->middle_name,
+                            'surname' => $taluka->voter->surname_mr ?? $taluka->voter->surname,
+                            'email' => $taluka->voter->email,
+                            'gender' => $taluka->voter->gender_mr ?? $taluka->voter->gender,
+                            'age' => $taluka->voter->age,
+                            'dob' => $taluka->voter->dob,
+                            'cast' => $taluka->voter->cast_mr ?? $taluka->voter->cast,
+                            'position' => $taluka->voter->position_mr ?? $taluka->voter->position,
+                            'personnel' => $taluka->voter->personnel_mr ?? $taluka->voter->personnel,
+                            'voter_id' => $taluka->voter->voter_id,
+                        ],
+                        'extra_information' => $taluka->voter->voterInformation ? [
+                            'extra_info_1' => $taluka->voter->voterInformation->extra_info_1_mr ?? $taluka->voter->voterInformation->extra_info_1,
+                            'extra_info_2' => $taluka->voter->voterInformation->extra_info_2_mr ?? $taluka->voter->voterInformation->extra_info_2,
+                            'extra_info_3' => $taluka->voter->voterInformation->extra_info_3_mr ?? $taluka->voter->voterInformation->extra_info_3,
+                            'extra_info_4' => $taluka->voter->voterInformation->extra_info_4_mr ?? $taluka->voter->voterInformation->extra_info_4,
+                            'extra_info_5' => $taluka->voter->voterInformation->extra_info_5_mr ?? $taluka->voter->voterInformation->extra_info_5,
+                            'extra_check_1' => $taluka->voter->voterInformation->extra_check_1,
+                            'extra_check_2' => $taluka->voter->voterInformation->extra_check_2,
+                        ] : null,
+                        'address_details' => [
+                            'society' => $taluka->society_mr ?? $taluka->society,
+                            'house_no' => $taluka->house_no_mr ?? $taluka->house_no,
+                            'flat_no' => $taluka->flat_no_mr ?? $taluka->flat_no,
+                            'address' => $taluka->address_mr ?? $taluka->address,
+                            'booth' => $taluka->booth_mr ?? $taluka->booth,
+                            'village' => $taluka->village_mr ?? $taluka->village,
+                            'part_no' => $taluka->part_no_mr ?? $taluka->part_no,
+                            'srn' => $taluka->srn_mr ?? $taluka->srn,
+                            'voting_centre' => $taluka->voting_centre_mr ?? $taluka->voting_centre,
+                            'taluka' => $taluka->taluka_mr ?? $taluka->taluka,
+                        ],
+                    ];
+                });
+
+            return response()->json([
+                'status' => 200,
+                'message' => 'Voter details retrieved successfully',
+                'voters' => $users,
+            ], 200);
+        }
+
+        if ($request->lang == 'hi') {
+            $users = UserAddress::where('taluka_hi', $request->taluka)
+                ->with(['voter', 'voter.voterInformation']) // Eager load voter and extra information
+                ->get()
+                ->map(function ($taluka) {
+                    return [
+                        'voter_details' => [
+                            'id' => $taluka->voter->id,
+                            'first_name' => $taluka->voter->first_name_hi ?? $taluka->voter->first_name,
+                            'middle_name' => $taluka->voter->middle_name_hi ?? $taluka->voter->middle_name,
+                            'surname' => $taluka->voter->surname_hi ?? $taluka->voter->surname,
+                            'email' => $taluka->voter->email,
+                            'gender' => $taluka->voter->gender_hi ?? $taluka->voter->gender,
+                            'age' => $taluka->voter->age,
+                            'dob' => $taluka->voter->dob,
+                            'cast' => $taluka->voter->cast_hi ?? $taluka->voter->cast,
+                            'position' => $taluka->voter->position_hi ?? $taluka->voter->position,
+                            'personnel' => $taluka->voter->personnel_hi ?? $taluka->voter->personnel,
+                            'voter_id' => $taluka->voter->voter_id,
+                        ],
+                        'extra_information' => $taluka->voter->voterInformation ? [
+                            'extra_info_1' => $taluka->voter->voterInformation->extra_info_1_hi ?? $taluka->voter->voterInformation->extra_info_1,
+                            'extra_info_2' => $taluka->voter->voterInformation->extra_info_2_hi ?? $taluka->voter->voterInformation->extra_info_2,
+                            'extra_info_3' => $taluka->voter->voterInformation->extra_info_3_hi ?? $taluka->voter->voterInformation->extra_info_3,
+                            'extra_info_4' => $taluka->voter->voterInformation->extra_info_4_hi ?? $taluka->voter->voterInformation->extra_info_4,
+                            'extra_info_5' => $taluka->voter->voterInformation->extra_info_5_hi ?? $taluka->voter->voterInformation->extra_info_5,
+                            'extra_check_1' => $taluka->voter->voterInformation->extra_check_1,
+                            'extra_check_2' => $taluka->voter->voterInformation->extra_check_2,
+                        ] : null,
+                        'address_details' => [
+                            'society' => $taluka->society_hi ?? $taluka->society,
+                            'house_no' => $taluka->house_no_hi ?? $taluka->house_no,
+                            'flat_no' => $taluka->flat_no_hi ?? $taluka->flat_no,
+                            'address' => $taluka->address_hi ?? $taluka->address,
+                            'booth' => $taluka->booth_hi ?? $taluka->booth,
+                            'village' => $taluka->village_hi ?? $taluka->village,
+                            'part_no' => $taluka->part_no_hi ?? $taluka->part_no,
+                            'srn' => $taluka->srn_hi ?? $taluka->srn,
+                            'voting_centre' => $taluka->voting_centre_hi ?? $taluka->voting_centre,
+                            'taluka' => $taluka->taluka_hi ?? $taluka->taluka,
+                        ],
+                    ];
+                });
+
+            return response()->json([
+                'status' => 200,
+                'message' => 'Voter details retrieved successfully',
+                'voters' => $users,
+            ], 200);
+        }
+
+
+
+    }
+
+    public function todayBirthdayList(Request $request)
+    {
+       $today = Carbon::now()->format('Y-m-d');
+       $voters = Voters::whereDate('dob', $today)->get();
+        // Group voters by their 'dob' (if required)
+        $todayBirthdayGrouped = $voters->groupBy('dob')->map(function ($group) {
+            return [
+                'voter_count' => $group->count(),
+            ];
+        });
+
+        // Calculate total voters with today's birthday
+        $totalBirthdayVoters = $voters->count();
+        // Return the response
+        return response()->json([
+            'status' => 200,
+            'message' => 'Today\'s birthday voters retrieved successfully',
+            'total_birthday_voters' => $totalBirthdayVoters,
+            'birthdays' => $todayBirthdayGrouped->values(), // Optional grouping result
+        ], 200);
+    }
+
+    public function todayBirthDayVotersDetails(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'lang' => 'required|in:en,mr,hi',
+
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()], 400);
+        }
+        $dob = Carbon::now()->format('Y-m-d');
+        $lang = $request->input('lang');
+        $translator = new GoogleTranslate($lang);
+        if($request->lang == 'en'){
+            $voterCount = Voters::where('dob', $dob )
+            ->with(['voterAddress', 'voterInformation']) // Adjust relationships as needed
+            ->count();
+            $voters = Voters::where('dob',$dob)
+            ->with(['voterAddress', 'voterInformation']) // Adjust relationships as needed
+            ->get()
+            ->map(function ($voter) use ($translator) {
+                return [
+                    'voter_details' => [
+                        'id' => $voter->id,
+                        'first_name' => $voter->first_name ? $translator->translate($voter->first_name) : null,
+                        'middle_name' => $voter->middle_name ? $translator->translate($voter->middle_name) : null,
+                        'surname' => $voter->surname ? $translator->translate($voter->surname) : null,
+                        'email' => $voter->email,
+                        'gender' => $voter->gender ? $translator->translate($voter->gender) : null,
+                        'age' => $voter->age,
+                        'dob' => $voter->dob,
+                        'cast' => $voter->cast ? $translator->translate($voter->cast) : null,
+                        'position' => $voter->position ? $translator->translate($voter->position) : null,
+                        'personnel' => $voter->personnel ? $translator->translate($voter->personnel) : null,
+                        'voter_id' => $voter->voter_id,
+                    ],
+                    'extra_information' => $voter->voterInformation ? [
+                        'extra_info_1' => $voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null,
+                        'extra_info_2' => $voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null,
+                        'extra_info_3' => $voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null,
+                        'extra_info_4' => $voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null,
+                        'extra_info_5' => $voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null,
+                        'extra_check_1' => $voter->voterInformation->extra_check_1,
+                        'extra_check_2' => $voter->voterInformation->extra_check_2,
+                    ] : null,
+                    'address_details' => $voter->voterAddress ? [
+                        'society' => $voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null,
+                        'house_no' => $voter->voterAddress->house_no ? $translator->translate($voter->voterAddress->house_no) : null,
+                        'flat_no' => $voter->voterAddress->flat_no ? $translator->translate($voter->voterAddress->flat_no) : null,
+                        'address' => $voter->voterAddress->address ? $translator->translate($voter->voterAddress->address) : null,
+                        'booth' => $voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null,
+                        'village' => $voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null,
+                        'part_no' => $voter->voterAddress->part_no ? $translator->translate($voter->voterAddress->part_no) : null,
+                        'srn' => $voter->voterAddress->srn ? $translator->translate($voter->voterAddress->srn) : null,
+                        'voting_centre' => $voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null,
+                    ] : null,
+                ];
+            });
+
+            return response()->json([
+                'status' => 200,
+                'message' => 'Today birth day voter details retrieved successfully in English',
+                'voters count' => $voterCount,
+                'voters' => $voters,
+            ]);
+        }
+
+        if ($request->lang == 'mr') {
+            $voterCount = Voters::where('dob', $dob)
+                ->with(['voterAddress', 'voterInformation']) // Adjust relationships as needed
+                ->count();
+            $voters = Voters::where('dob', $dob)
+                ->with(['voterAddress', 'voterInformation']) // Adjust relationships as needed
+                ->get()
+                ->map(function ($voter) use ($translator) {
+                    return [
+                        'voter_details' => [
+                            'id' => $voter->id,
+                            'first_name' => $voter->first_name_mr ?? ($voter->first_name_mr ? $translator->translate($voter->first_name_mr) : null),
+                            'middle_name' => $voter->middle_name_mr ? $translator->translate($voter->middle_name_mr) : null,
+                            'surname' => $voter->surname_mr ? $translator->translate($voter->surname_mr) : null,
+                            'email' => $voter->email,
+                            'gender' => $voter->gender_mr ? $translator->translate($voter->gender_mr) : null,
+                            'age' => $voter->age,
+                            'dob' => $voter->dob,
+                            'cast' => $voter->cast_mr ? $translator->translate($voter->cast_mr) : null,
+                            'position' => $voter->position_mr ? $translator->translate($voter->position_mr) : null,
+                            'personnel' => $voter->personnel_mr ? $translator->translate($voter->personnel_mr) : null,
+                            'voter_id' => $voter->voter_id,
+                        ],
+                        'extra_information' => $voter->voterInformation ? [
+                            'extra_info_1' => $voter->voterInformation->extra_info_1_mr ? $translator->translate($voter->voterInformation->extra_info_1_mr) : null,
+                            'extra_info_2' => $voter->voterInformation->extra_info_2_mr ? $translator->translate($voter->voterInformation->extra_info_2_mr) : null,
+                            'extra_info_3' => $voter->voterInformation->extra_info_3_mr ? $translator->translate($voter->voterInformation->extra_info_3_mr) : null,
+                            'extra_info_4' => $voter->voterInformation->extra_info_4_mr ? $translator->translate($voter->voterInformation->extra_info_4_mr) : null,
+                            'extra_info_5' => $voter->voterInformation->extra_info_5_mr ? $translator->translate($voter->voterInformation->extra_info_5_mr) : null,
+                            'extra_check_1' => $voter->voterInformation->extra_check_1,
+                            'extra_check_2' => $voter->voterInformation->extra_check_2,
+                        ] : null,
+                        'address_details' => $voter->voterAddress ? [
+                            'society' => $voter->voterAddress->society_mr ? $translator->translate($voter->voterAddress->society_mr) : null,
+                            'house_no' => $voter->voterAddress->house_no_mr ? $translator->translate($voter->voterAddress->house_no_mr) : null,
+                            'flat_no' => $voter->voterAddress->flat_no_mr ? $translator->translate($voter->voterAddress->flat_no_mr) : null,
+                            'address' => $voter->voterAddress->address_mr ? $translator->translate($voter->voterAddress->address_mr) : null,
+                            'booth' => $voter->voterAddress->booth_mr ? $translator->translate($voter->voterAddress->booth_mr) : null,
+                            'village' => $voter->voterAddress->village_mr ? $translator->translate($voter->voterAddress->village_mr) : null,
+                            'part_no' => $voter->voterAddress->part_no_mr ? $translator->translate($voter->voterAddress->part_no_mr) : null,
+                            'srn' => $voter->voterAddress->srn_mr ? $translator->translate($voter->voterAddress->srn_mr) : null,
+                            'voting_centre' => $voter->voterAddress->voting_centre_mr ? $translator->translate($voter->voterAddress->voting_centre_mr) : null,
+                        ] : null,
+                    ];
+                });
+
+            return response()->json([
+                'status' => 200,
+                'message' => 'Today birth day voter details retrieved successfully in Marathi',
+                'voters_count' => $voterCount,
+                'voters' => $voters,
+            ]);
+        }
+
+        if ($request->lang == 'hi') {
+            $voterCount = Voters::where('dob', $dob)
+                ->with(['voterAddress', 'voterInformation']) // Adjust relationships as needed
+                ->count();
+            $voters = Voters::where('dob', $dob)
+                ->with(['voterAddress', 'voterInformation']) // Adjust relationships as needed
+                ->get()
+                ->map(function ($voter) use ($translator) {
+                    return [
+                        'voter_details' => [
+                            'id' => $voter->id,
+                            'first_name' => $voter->first_name_hi ?? ($voter->first_name_hi ? $translator->translate($voter->first_name_hi) : null),
+                            'middle_name' => $voter->middle_name_hi ? $translator->translate($voter->middle_name_hi) : null,
+                            'surname' => $voter->surname_hi ? $translator->translate($voter->surname_hi) : null,
+                            'email' => $voter->email,
+                            'gender' => $voter->gender_hi ? $translator->translate($voter->gender_hi) : null,
+                            'age' => $voter->age,
+                            'dob' => $voter->dob,
+                            'cast' => $voter->cast_hi ? $translator->translate($voter->cast_hi) : null,
+                            'position' => $voter->position_hi ? $translator->translate($voter->position_hi) : null,
+                            'personnel' => $voter->personnel_hi ? $translator->translate($voter->personnel_hi) : null,
+                            'voter_id' => $voter->voter_id,
+                        ],
+                        'extra_information' => $voter->voterInformation ? [
+                            'extra_info_1' => $voter->voterInformation->extra_info_1_hi ? $translator->translate($voter->voterInformation->extra_info_1_hi) : null,
+                            'extra_info_2' => $voter->voterInformation->extra_info_2_hi ? $translator->translate($voter->voterInformation->extra_info_2_hi) : null,
+                            'extra_info_3' => $voter->voterInformation->extra_info_3_hi ? $translator->translate($voter->voterInformation->extra_info_3_hi) : null,
+                            'extra_info_4' => $voter->voterInformation->extra_info_4_hi ? $translator->translate($voter->voterInformation->extra_info_4_hi) : null,
+                            'extra_info_5' => $voter->voterInformation->extra_info_5_hi ? $translator->translate($voter->voterInformation->extra_info_5_hi) : null,
+                            'extra_check_1' => $voter->voterInformation->extra_check_1,
+                            'extra_check_2' => $voter->voterInformation->extra_check_2,
+                        ] : null,
+                        'address_details' => $voter->voterAddress ? [
+                            'society' => $voter->voterAddress->society_hi ? $translator->translate($voter->voterAddress->society_hi) : null,
+                            'house_no' => $voter->voterAddress->house_no_hi ? $translator->translate($voter->voterAddress->house_no_hi) : null,
+                            'flat_no' => $voter->voterAddress->flat_no_hi ? $translator->translate($voter->voterAddress->flat_no_hi) : null,
+                            'address' => $voter->voterAddress->address_hi ? $translator->translate($voter->voterAddress->address_hi) : null,
+                            'booth' => $voter->voterAddress->booth_hi ? $translator->translate($voter->voterAddress->booth_hi) : null,
+                            'village' => $voter->voterAddress->village_hi ? $translator->translate($voter->voterAddress->village_hi) : null,
+                            'part_no' => $voter->voterAddress->part_no_hi ? $translator->translate($voter->voterAddress->part_no_hi) : null,
+                            'srn' => $voter->voterAddress->srn_hi ? $translator->translate($voter->voterAddress->srn_hi) : null,
+                            'voting_centre' => $voter->voterAddress->voting_centre_hi ? $translator->translate($voter->voterAddress->voting_centre_hi) : null,
+                        ] : null,
+                    ];
+                });
+
+            return response()->json([
+                'status' => 200,
+                'message' => 'Today birth day voter details retrieved successfully in Hindi',
+                'voters_count' => $voterCount,
+                'voters' => $voters,
+            ]);
+        }
+
+
+
+
+    }
+
+    public function demandList(Request $request)
+    {
+        // Validate the language parameter (optional if you need translation)
+        $validator = Validator::make($request->all(), [
+            'lang' => 'required|in:en,mr,hi', // Optional if you want to support translation
+        ]);
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()], 400);
+        }
+        // Optional translation setup
+        $lang = $request->input('lang', 'en'); // Default to 'en' if not provided
+        $translator = new GoogleTranslate($lang);
+        // Fetch voters and group by caste
+        if($request->lang == 'en'){
+            $voters = Voters::all();
+            $demandGrouped = $voters->groupBy('demands')->map(function ($group, $demandGroup) use ($translator) {
+                return [
+                    'demand' => $demandGroup ?? null,
+                    'voter_count' => $group->count(),
+                ];
+            });
+            // Calculate the total unique cast and total voters
+            $totalUniqueDemand = $demandGrouped->count();
+            $totalVoters = $voters->count();
+             // Return the response
+            return response()->json([
+                'status' => 200,
+                'message' => 'Demand retrieved successfully in English',
+                'total_unique_demand' => $totalUniqueDemand,
+                'total_voters' => $totalVoters,
+                'demands' => $demandGrouped->values(), // Get values as array
+            ], 200);
+        }
+
+        if($request->lang == 'mr'){
+            $voters = Voters::all();
+            $demandGrouped = $voters->groupBy('demands_mr')->map(function ($group, $demandGroup) use ($translator) {
+                return [
+                    'demand' => $demandGroup ?? null,
+                    'voter_count' => $group->count(),
+                ];
+            });
+            // Calculate the total unique cast and total voters
+            $totalUniqueDemand = $demandGrouped->count();
+            $totalVoters = $voters->count();
+             // Return the response
+            return response()->json([
+                'status' => 200,
+                'message' => 'Demand retrieved successfully in marathi',
+                'total_unique_demand' => $totalUniqueDemand,
+                'total_voters' => $totalVoters,
+                'demands' => $demandGrouped->values(), // Get values as array
+            ], 200);
+        }
+
+        if($request->lang == 'hi'){
+            $voters = Voters::all();
+            $demandGrouped = $voters->groupBy('demands_hi')->map(function ($group, $demandGroup) use ($translator) {
+                return [
+                    'demand' => $demandGroup ?? null,
+                    'voter_count' => $group->count(),
+                ];
+            });
+            // Calculate the total unique cast and total voters
+            $totalUniqueDemand = $demandGrouped->count();
+            $totalVoters = $voters->count();
+             // Return the response
+            return response()->json([
+                'status' => 200,
+                'message' => 'Demand retrieved successfully in hindi',
+                'total_unique_demand' => $totalUniqueDemand,
+                'total_voters' => $totalVoters,
+                'demands' => $demandGrouped->values(), // Get values as array
+            ], 200);
+        }
+
+
+
+
+    }
+
+    public function searchDemand(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'lang' => 'required|in:en,mr,hi',
+            'demands' => 'required',
+        ]);
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()], 400);
+        }
+        $lang = $request->input('lang');
+        $translator = new GoogleTranslate($lang);
+        if($request->lang == 'en'){
+            $voters = Voters::where('demands', 'LIKE', '%' . $request->demands . '%')->orderBy('demands', 'asc')->get();
+            $voters = $voters->groupBy('demands')
+                ->map(function ($voters) use ($translator) {
+                    return [
+                        'demands' => $voters->first()->demands ?? null,
+                        'total_voters' => $voters->count(),
+                    ];
+                })->values();
+            return response()->json([
+                'status' => 200,
+                'message' => 'Demands searched successfully in English',
+                'voters' => $voters,
+            ], 200);
+        }
+        if($request->lang == 'mr'){
+            $voters = Voters::where('demands_mr', 'LIKE', '%' . $request->demands . '%')->orderBy('demands_mr', 'asc')->get();
+            $voters = $voters->groupBy('demands_mr')
+                ->map(function ($voters) use ($translator) {
+                    return [
+                        'demands' => $voters->first()->demands_mr ?? null,
+                        'total_voters' => $voters->count(),
+                    ];
+                })->values();
+            return response()->json([
+                'status' => 200,
+                'message' => 'Demands searched successfully in Marathi',
+                'voters' => $voters,
+            ], 200);
+        }
+        if($request->lang == 'hi'){
+            $voters = Voters::where('demands_hi', 'LIKE', '%' . $request->demands . '%')->orderBy('demands_hi', 'asc')->get();
+            $voters = $voters->groupBy('demands_hi')
+                ->map(function ($voters) use ($translator) {
+                    return [
+                        'demands' => $voters->first()->demands_hi ?? null,
+                        'total_voters' => $voters->count(),
+                    ];
+                })->values();
+            return response()->json([
+                'status' => 200,
+                'message' => 'Demands searched successfully in Hindi',
+                'voters' => $voters,
+            ], 200);
+        }
+
+    }
+
+    public function voterDetailsByDemand(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'lang' => 'required|in:en,mr,hi',
+            'demands' => 'required',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()], 400);
+        }
+
+        $lang = $request->input('lang');
+        $translator = new GoogleTranslate($lang);
+
+        if($request->lang == 'en'){
+            $voters = voters::where('demands', $request->demands)
+            ->with(['voterAddress', 'voterInformation'])
+            ->get()
+            ->map(function ($voter) use ($translator) {
+                return [
+                    'voter_details' => [
+                        'id' => $voter->id,
+                        'first_name' => $voter->first_name ? $translator->translate($voter->first_name) : null,
+                        'middle_name' => $voter->middle_name ? $translator->translate($voter->middle_name) : null,
+                        'surname' => $voter->surname ? $translator->translate($voter->surname) : null,
+                        'email' => $voter->email ? $translator->translate($voter->email) : null,
+                        'gender' => $voter->gender ? $translator->translate($voter->gender) : null,
+                        'age' => $voter->age,
+                        'dob' => $voter->dob,
+                        'cast' => $voter->cast ? $translator->translate($voter->cast) : null,
+                        'position' => $voter->position ? $translator->translate($voter->position) : null,
+                        'personnel' => $voter->personnel ? $translator->translate($voter->personnel) : null,
+                        'voter_id' => $voter->voter_id,
+                        'demands' =>$voter->demands ? $translator->translate($voter->demands) : null,
+                    ],
+                    'extra_information' => $voter->voterInformation ? [
+                        'extra_info_1' => $voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null,
+                        'extra_info_2' => $voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null,
+                        'extra_info_3' => $voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null,
+                        'extra_info_4' => $voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null,
+                        'extra_info_5' => $voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null,
+                    ] : null,
+                    'address_details' => $voter->voterAddress ? [
+                        'society' => $voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null,
+                        'house_no' => $voter->voterAddress->house_no ? $translator->translate($voter->voterAddress->house_no) : null,
+                        'flat_no' => $voter->voterAddress->flat_no ? $translator->translate($voter->voterAddress->flat_no) : null,
+                        'address' => $voter->voterAddress->address ? $translator->translate($voter->voterAddress->address) : null,
+                        'booth' => $voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null,
+                        'village' => $voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null,
+                        'part_no' => $voter->voterAddress->part_no,
+                        'srn' => $voter->voterAddress->srn,
+                        'voting_centre' => $voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null,
+                    ] : null,
+                ];
+            });
+
+            return response()->json([
+                'status' => 200,
+                'message' => 'Voter details retrieved successfully',
+                'voters' => $voters,
+            ], 200);
+        }
+
+        if ($request->lang == 'mr') {
+            $voters = Voters::where('demands_mr', $request->demands)
+                ->with(['voterAddress', 'voterInformation'])
+                ->get()
+                ->map(function ($voter) use ($translator) {
+                    return [
+                        'voter_details' => [
+                            'id' => $voter->id,
+                            'first_name' => $voter->first_name_mr ?? ($voter->first_name ? $translator->translate($voter->first_name) : null),
+                            'middle_name' => $voter->middle_name_mr ? $translator->translate($voter->middle_name_mr) : ($voter->middle_name ? $translator->translate($voter->middle_name) : null),
+                            'surname' => $voter->surname_mr ? $translator->translate($voter->surname_mr) : ($voter->surname ? $translator->translate($voter->surname) : null),
+                            'email' => $voter->email_mr ? $translator->translate($voter->email_mr) : ($voter->email ? $translator->translate($voter->email) : null),
+                            'gender' => $voter->gender_mr ? $translator->translate($voter->gender_mr) : ($voter->gender ? $translator->translate($voter->gender) : null),
+                            'age' => $voter->age,
+                            'dob' => $voter->dob,
+                            'cast' => $voter->cast_mr ? $translator->translate($voter->cast_mr) : ($voter->cast ? $translator->translate($voter->cast) : null),
+                            'position' => $voter->position_mr ? $translator->translate($voter->position_mr) : ($voter->position ? $translator->translate($voter->position) : null),
+                            'personnel' => $voter->personnel_mr ?? null,
+                            'voter_id' => $voter->voter_id,
+                            'demands' => $voter->demands_mr ?? ($voter->demands ? $translator->translate($voter->demands) : null),
+                        ],
+                        'extra_information' => $voter->voterInformation ? [
+                            'extra_info_1' => $voter->voterInformation->extra_info_1_mr ? $translator->translate($voter->voterInformation->extra_info_1_mr) : ($voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null),
+                            'extra_info_2' => $voter->voterInformation->extra_info_2_mr ? $translator->translate($voter->voterInformation->extra_info_2_mr) : ($voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null),
+                            'extra_info_3' => $voter->voterInformation->extra_info_3_mr ? $translator->translate($voter->voterInformation->extra_info_3_mr) : ($voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null),
+                            'extra_info_4' => $voter->voterInformation->extra_info_4_mr ? $translator->translate($voter->voterInformation->extra_info_4_mr) : ($voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null),
+                            'extra_info_5' => $voter->voterInformation->extra_info_5_mr ? $translator->translate($voter->voterInformation->extra_info_5_mr) : ($voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null),
+                            'extra_check_1' => $voter->voterInformation->extra_check_1,
+                            'extra_check_2' => $voter->voterInformation->extra_check_2,
+                        ] : null,
+                        'address_details' => $voter->voterAddress ? [
+                            'society' => $voter->voterAddress->society_mr ? $translator->translate($voter->voterAddress->society_mr) : ($voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null),
+                            'house_no' => $voter->voterAddress->house_no_mr ? $translator->translate($voter->voterAddress->house_no_mr) : ($voter->voterAddress->house_no ? $translator->translate($voter->voterAddress->house_no) : null),
+                            'flat_no' => $voter->voterAddress->flat_no_mr ? $translator->translate($voter->voterAddress->flat_no_mr) : ($voter->voterAddress->flat_no ? $translator->translate($voter->voterAddress->flat_no) : null),
+                            'address' => $voter->voterAddress->address_mr ? $translator->translate($voter->voterAddress->address_mr) : ($voter->voterAddress->address ? $translator->translate($voter->voterAddress->address) : null),
+                            'booth' => $voter->voterAddress->booth_mr ? $translator->translate($voter->voterAddress->booth_mr) : ($voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null),
+                            'village' => $voter->voterAddress->village_mr ? $translator->translate($voter->voterAddress->village_mr) : ($voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null),
+                            'part_no' => $voter->voterAddress->part_no_mr ? $translator->translate($voter->voterAddress->part_no_mr) : ($voter->voterAddress->part_no ? $translator->translate($voter->voterAddress->part_no) : null),
+                            'srn' => $voter->voterAddress->srn_mr ? $translator->translate($voter->voterAddress->srn_mr) : ($voter->voterAddress->srn ? $translator->translate($voter->voterAddress->srn) : null),
+                            'voting_centre' => $voter->voterAddress->voting_centre_mr ? $translator->translate($voter->voterAddress->voting_centre_mr) : ($voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null),
+                        ] : null,
+                    ];
+                });
+
+            return response()->json([
+                'status' => 200,
+                'message' => 'Voter details retrieved successfully in marathi',
+                'voters' => $voters,
+            ], 200);
+        }
+
+        if ($request->lang == 'hi') {
+            $voters = Voters::where('demands_hi', $request->demands)
+                ->with(['voterAddress', 'voterInformation'])
+                ->get()
+                ->map(function ($voter) use ($translator) {
+                    return [
+                        'voter_details' => [
+                            'id' => $voter->id,
+                            'first_name' => $voter->first_name_hi ?? ($voter->first_name ? $translator->translate($voter->first_name) : null),
+                            'middle_name' => $voter->middle_name_hi ? $translator->translate($voter->middle_name_hi) : ($voter->middle_name ? $translator->translate($voter->middle_name) : null),
+                            'surname' => $voter->surname_hi ? $translator->translate($voter->surname_hi) : ($voter->surname ? $translator->translate($voter->surname) : null),
+                            'email' => $voter->email_hi ? $translator->translate($voter->email_hi) : ($voter->email ? $translator->translate($voter->email) : null),
+                            'gender' => $voter->gender_hi ? $translator->translate($voter->gender_hi) : ($voter->gender ? $translator->translate($voter->gender) : null),
+                            'age' => $voter->age,
+                            'dob' => $voter->dob,
+                            'cast' => $voter->cast_hi ? $translator->translate($voter->cast_hi) : ($voter->cast ? $translator->translate($voter->cast) : null),
+                            'position' => $voter->position_hi ? $translator->translate($voter->position_hi) : ($voter->position ? $translator->translate($voter->position) : null),
+                            'personnel' => $voter->personnel_hi ?? null,
+                            'voter_id' => $voter->voter_id,
+                            'demands' => $voter->demands_hi ?? ($voter->demands ? $translator->translate($voter->demands) : null),
+                        ],
+                        'extra_information' => $voter->voterInformation ? [
+                            'extra_info_1' => $voter->voterInformation->extra_info_1_hi ? $translator->translate($voter->voterInformation->extra_info_1_hi) : ($voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null),
+                            'extra_info_2' => $voter->voterInformation->extra_info_2_hi ? $translator->translate($voter->voterInformation->extra_info_2_hi) : ($voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null),
+                            'extra_info_3' => $voter->voterInformation->extra_info_3_hi ? $translator->translate($voter->voterInformation->extra_info_3_hi) : ($voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null),
+                            'extra_info_4' => $voter->voterInformation->extra_info_4_hi ? $translator->translate($voter->voterInformation->extra_info_4_hi) : ($voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null),
+                            'extra_info_5' => $voter->voterInformation->extra_info_5_hi ? $translator->translate($voter->voterInformation->extra_info_5_hi) : ($voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null),
+                            'extra_check_1' => $voter->voterInformation->extra_check_1,
+                            'extra_check_2' => $voter->voterInformation->extra_check_2,
+                        ] : null,
+                        'address_details' => $voter->voterAddress ? [
+                            'society' => $voter->voterAddress->society_hi ? $translator->translate($voter->voterAddress->society_hi) : ($voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null),
+                            'house_no' => $voter->voterAddress->house_no_hi ? $translator->translate($voter->voterAddress->house_no_hi) : ($voter->voterAddress->house_no ? $translator->translate($voter->voterAddress->house_no) : null),
+                            'flat_no' => $voter->voterAddress->flat_no_hi ? $translator->translate($voter->voterAddress->flat_no_hi) : ($voter->voterAddress->flat_no ? $translator->translate($voter->voterAddress->flat_no) : null),
+                            'address' => $voter->voterAddress->address_hi ? $translator->translate($voter->voterAddress->address_hi) : ($voter->voterAddress->address ? $translator->translate($voter->voterAddress->address) : null),
+                            'booth' => $voter->voterAddress->booth_hi ? $translator->translate($voter->voterAddress->booth_hi) : ($voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null),
+                            'village' => $voter->voterAddress->village_hi ? $translator->translate($voter->voterAddress->village_hi) : ($voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null),
+                            'part_no' => $voter->voterAddress->part_no_hi ? $translator->translate($voter->voterAddress->part_no_hi) : ($voter->voterAddress->part_no ? $translator->translate($voter->voterAddress->part_no) : null),
+                            'srn' => $voter->voterAddress->srn_hi ? $translator->translate($voter->voterAddress->srn_hi) : ($voter->voterAddress->srn ? $translator->translate($voter->voterAddress->srn) : null),
+                            'voting_centre' => $voter->voterAddress->voting_centre_hi ? $translator->translate($voter->voterAddress->voting_centre_hi) : ($voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null),
+                        ] : null,
+                    ];
+                });
+
+            return response()->json([
+                'status' => 200,
+                'message' => 'Voter details retrieved successfully in hindi',
+                'voters' => $voters,
+            ], 200);
+        }
+
+
+
+
+
+    }
+
+    public function personnelList()
+    {
+        // Fetch all voters
+        $voters = Voters::all();
+          $checkedCount = Voters::where('personnel',1)->count();
+        $uncheckedCount = Voters::where('personnel',0)->count();
+        if( $checkedCount == 0 && $uncheckedCount >0 ){
+            $total_count = 1;
+        }
+        else if( $checkedCount >0 && $uncheckedCount ==0 ){
+            $total_count = 1;
+        }
+        else if( $checkedCount >0 && $uncheckedCount >0 ){
+            $total_count = 2;
+        }
+        // Group voters by their dead status and count each group
+        $groupedByStatus = $voters->groupBy('personnel')->map(function ($group, $status) {
+            return [
+                'status' => $status == 1 ? 'Personnel' : 'NonPersonnel',
+                'voter_count' => $group->count(),
+            ];
+        });
+
+        // Convert grouped data to an array
+        $statusData = $groupedByStatus->values()->toArray();
+
+        // Return the response
+        return response()->json([
+            'status' => 200,
+            'message' => 'Personnel and NonPersonel voters count retrieved successfully',
+            'total_count' =>$total_count,
+            'total_voters' => $voters->count(),
+            'voters' => $statusData,
+        ], 200);
+    }
+
+    public function personnelVotersDetails(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'lang' => 'required|in:en,mr,hi',
+            'status' => 'required|in:Personnel,NonPersonnel',
+
+        ]);
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()], 400);
+        }
+        $lang = $request->input('lang');
+        $translator = new GoogleTranslate($lang);
+        if($request->status == 'Personnel'){
+            if($request->lang == 'en'){
+                $voters = voters::where('personnel', 1)
+                ->with(['voterAddress', 'voterInformation'])
+                ->get()
+                ->map(function ($voter) use ($translator) {
+                    return [
+                        'voter_details' => [
+                            'id' => $voter->id,
+                            'first_name' => $voter->first_name ? $translator->translate($voter->first_name) : null,
+                            'middle_name' => $voter->middle_name ? $translator->translate($voter->middle_name) : null,
+                            'surname' => $voter->surname ? $translator->translate($voter->surname) : null,
+                            'email' => $voter->email ? $translator->translate($voter->email) : null,
+                            'gender' => $voter->gender ? $translator->translate($voter->gender) : null,
+                            'age' => $voter->age,
+                            'dob' => $voter->dob,
+                            'cast' => $voter->cast ? $translator->translate($voter->cast) : null,
+                            'position' => $voter->position ? $translator->translate($voter->position) : null,
+                            'personnel' => $voter->personnel ? $translator->translate($voter->personnel) : null,
+                            'voter_id' => $voter->voter_id,
+                        ],
+                        'extra_information' => $voter->voterInformation ? [
+                            'extra_info_1' => $voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null,
+                            'extra_info_2' => $voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null,
+                            'extra_info_3' => $voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null,
+                            'extra_info_4' => $voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null,
+                            'extra_info_5' => $voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null,
+                        ] : null,
+                        'address_details' => $voter->voterAddress ? [
+                            'society' => $voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null,
+                            'house_no' => $voter->voterAddress->house_no ? $translator->translate($voter->voterAddress->house_no) : null,
+                            'flat_no' => $voter->voterAddress->flat_no ? $translator->translate($voter->voterAddress->flat_no) : null,
+                            'address' => $voter->voterAddress->address ? $translator->translate($voter->voterAddress->address) : null,
+                            'booth' => $voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null,
+                            'village' => $voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null,
+                            'part_no' => $voter->voterAddress->part_no,
+                            'srn' => $voter->voterAddress->srn,
+                            'voting_centre' => $voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null,
+                        ] : null,
+                    ];
+                });
+
+                return response()->json([
+                    'status' => 200,
+                    'message' => 'Personnel voter details retrieved successfully',
+                    'voters' => $voters,
+                ], 200);
+
+            }
+
+            if ($request->lang == 'mr') {
+                $voters = Voters::where('personnel', 1)
+                    ->with(['voterAddress', 'voterInformation'])
+                    ->get()
+                    ->map(function ($voter) use ($translator) {
+                        return [
+                            'voter_details' => [
+                                'id' => $voter->id,
+                                'first_name' => $voter->first_name_mr ?? ($voter->first_name ? $translator->translate($voter->first_name) : null),
+                                'middle_name' => $voter->middle_name_mr ?? ($voter->middle_name ? $translator->translate($voter->middle_name) : null),
+                                'surname' => $voter->surname_mr ?? ($voter->surname ? $translator->translate($voter->surname) : null),
+                                'email' => $voter->email ?? null,
+                                'gender' => $voter->gender_mr ?? ($voter->gender ? $translator->translate($voter->gender) : null),
+                                'age' => $voter->age ?? null,
+                                'dob' => $voter->dob ?? null,
+                                'cast' => $voter->cast_mr ?? ($voter->cast ? $translator->translate($voter->cast) : null),
+                                'position' => $voter->position_mr ?? ($voter->position ? $translator->translate($voter->position) : null),
+                                'personnel' => $voter->personnel ?? null,
+                                'voter_id' => $voter->voter_id ?? null,
+                            ],
+                            'extra_information' => $voter->voterInformation ? [
+                                'extra_info_1' => $voter->voterInformation->extra_info_1_mr ?? ($voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null),
+                                'extra_info_2' => $voter->voterInformation->extra_info_2_mr ?? ($voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null),
+                                'extra_info_3' => $voter->voterInformation->extra_info_3_mr ?? ($voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null),
+                                'extra_info_4' => $voter->voterInformation->extra_info_4_mr ?? ($voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null),
+                                'extra_info_5' => $voter->voterInformation->extra_info_5_mr ?? ($voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null),
+                                'extra_check_1' => $voter->voterInformation->extra_check_1 ?? null,
+                                'extra_check_2' => $voter->voterInformation->extra_check_2 ?? null,
+                            ] : null,
+                            'address_details' => $voter->voterAddress ? [
+                                'society' => $voter->voterAddress->society_mr ?? ($voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null),
+                                'house_no' => $voter->voterAddress->house_no_mr ?? ($voter->voterAddress->house_no ? $translator->translate($voter->voterAddress->house_no) : null),
+                                'flat_no' => $voter->voterAddress->flat_no_mr ?? ($voter->voterAddress->flat_no ? $translator->translate($voter->voterAddress->flat_no) : null),
+                                'address' => $voter->voterAddress->address_mr ?? ($voter->voterAddress->address ? $translator->translate($voter->voterAddress->address) : null),
+                                'booth' => $voter->voterAddress->booth_mr ?? ($voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null),
+                                'village' => $voter->voterAddress->village_mr ?? ($voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null),
+                                'part_no' => $voter->voterAddress->part_no_mr ?? $voter->voterAddress->part_no,
+                                'srn' => $voter->voterAddress->srn_mr ?? $voter->voterAddress->srn,
+                                'voting_centre' => $voter->voterAddress->voting_centre_mr ?? ($voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null),
+                            ] : null,
+                        ];
+                    });
+
+                return response()->json([
+                    'status' => 200,
+                    'message' => 'Personnel voter details retrieved successfully in Marathi',
+                    'voters' => $voters,
+                ], 200);
+            }
+
+
+            if ($request->lang == 'hi') {
+                $voters = Voters::where('personnel', 1)
+                    ->with(['voterAddress', 'voterInformation'])
+                    ->get()
+                    ->map(function ($voter) use ($translator) {
+                        return [
+                            'voter_details' => [
+                                'id' => $voter->id,
+                                'first_name' => $voter->first_name_hi ?? ($voter->first_name ? $translator->translate($voter->first_name) : null),
+                                'middle_name' => $voter->middle_name_hi ?? ($voter->middle_name ? $translator->translate($voter->middle_name) : null),
+                                'surname' => $voter->surname_hi ?? ($voter->surname ? $translator->translate($voter->surname) : null),
+                                'email' => $voter->email ?? null,
+                                'gender' => $voter->gender_hi ?? ($voter->gender ? $translator->translate($voter->gender) : null),
+                                'age' => $voter->age ?? null,
+                                'dob' => $voter->dob ?? null,
+                                'cast' => $voter->cast_hi ?? ($voter->cast ? $translator->translate($voter->cast) : null),
+                                'position' => $voter->position_hi ?? ($voter->position ? $translator->translate($voter->position) : null),
+                                'personnel' => $voter->personnel ?? null,
+                                'voter_id' => $voter->voter_id ?? null,
+                            ],
+                            'extra_information' => $voter->voterInformation ? [
+                                'extra_info_1' => $voter->voterInformation->extra_info_1_hi ?? ($voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null),
+                                'extra_info_2' => $voter->voterInformation->extra_info_2_hi ?? ($voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null),
+                                'extra_info_3' => $voter->voterInformation->extra_info_3_hi ?? ($voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null),
+                                'extra_info_4' => $voter->voterInformation->extra_info_4_hi ?? ($voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null),
+                                'extra_info_5' => $voter->voterInformation->extra_info_5_hi ?? ($voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null),
+                                'extra_check_1' => $voter->voterInformation->extra_check_1 ?? null,
+                                'extra_check_2' => $voter->voterInformation->extra_check_2 ?? null,
+                            ] : null,
+                            'address_details' => $voter->voterAddress ? [
+                                'society' => $voter->voterAddress->society_hi ?? ($voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null),
+                                'house_no' => $voter->voterAddress->house_no_hi ?? ($voter->voterAddress->house_no ? $translator->translate($voter->voterAddress->house_no) : null),
+                                'flat_no' => $voter->voterAddress->flat_no_hi ?? ($voter->voterAddress->flat_no ? $translator->translate($voter->voterAddress->flat_no) : null),
+                                'address' => $voter->voterAddress->address_hi ?? ($voter->voterAddress->address ? $translator->translate($voter->voterAddress->address) : null),
+                                'booth' => $voter->voterAddress->booth_hi ?? ($voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null),
+                                'village' => $voter->voterAddress->village_hi ?? ($voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null),
+                                'part_no' => $voter->voterAddress->part_no_hi ?? $voter->voterAddress->part_no,
+                                'srn' => $voter->voterAddress->srn_hi ?? $voter->voterAddress->srn,
+                                'voting_centre' => $voter->voterAddress->voting_centre_hi ?? ($voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null),
+                            ] : null,
+                        ];
+                    });
+
+                    return response()->json([
+                        'status' => 200,
+                        'message' => 'Personnel voter details retrieved successfully in Hindi',
+                        'voters' => $voters,
+                    ], 200);
+            }
+        }
+
+        if($request->status == 'NonPersonnel'){
+            if($request->lang == 'en'){
+                $voters = voters::where('personnel', 0)
+                ->with(['voterAddress', 'voterInformation'])
+                ->get()
+                ->map(function ($voter) use ($translator) {
+                    return [
+                        'voter_details' => [
+                            'id' => $voter->id,
+                            'first_name' => $voter->first_name ? $translator->translate($voter->first_name) : null,
+                            'middle_name' => $voter->middle_name ? $translator->translate($voter->middle_name) : null,
+                            'surname' => $voter->surname ? $translator->translate($voter->surname) : null,
+                            'email' => $voter->email ? $translator->translate($voter->email) : null,
+                            'gender' => $voter->gender ? $translator->translate($voter->gender) : null,
+                            'age' => $voter->age,
+                            'dob' => $voter->dob,
+                            'cast' => $voter->cast ? $translator->translate($voter->cast) : null,
+                            'position' => $voter->position ? $translator->translate($voter->position) : null,
+                            'personnel' => $voter->personnel ? $translator->translate($voter->personnel) : null,
+                            'voter_id' => $voter->voter_id,
+                        ],
+                        'extra_information' => $voter->voterInformation ? [
+                            'extra_info_1' => $voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null,
+                            'extra_info_2' => $voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null,
+                            'extra_info_3' => $voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null,
+                            'extra_info_4' => $voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null,
+                            'extra_info_5' => $voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null,
+                        ] : null,
+                        'address_details' => $voter->voterAddress ? [
+                            'society' => $voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null,
+                            'house_no' => $voter->voterAddress->house_no ? $translator->translate($voter->voterAddress->house_no) : null,
+                            'flat_no' => $voter->voterAddress->flat_no ? $translator->translate($voter->voterAddress->flat_no) : null,
+                            'address' => $voter->voterAddress->address ? $translator->translate($voter->voterAddress->address) : null,
+                            'booth' => $voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null,
+                            'village' => $voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null,
+                            'part_no' => $voter->voterAddress->part_no,
+                            'srn' => $voter->voterAddress->srn,
+                            'voting_centre' => $voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null,
+                        ] : null,
+                    ];
+                });
+
+                return response()->json([
+                    'status' => 200,
+                    'message' => 'Personnel voter details retrieved successfully',
+                    'voters' => $voters,
+                ], 200);
+
+            }
+
+            if ($request->lang == 'mr') {
+                $voters = Voters::where('personnel', 0)
+                    ->with(['voterAddress', 'voterInformation'])
+                    ->get()
+                    ->map(function ($voter) use ($translator) {
+                        return [
+                            'voter_details' => [
+                                'id' => $voter->id,
+                                'first_name' => $voter->first_name_mr ?? ($voter->first_name ? $translator->translate($voter->first_name) : null),
+                                'middle_name' => $voter->middle_name_mr ?? ($voter->middle_name ? $translator->translate($voter->middle_name) : null),
+                                'surname' => $voter->surname_mr ?? ($voter->surname ? $translator->translate($voter->surname) : null),
+                                'email' => $voter->email ?? null,
+                                'gender' => $voter->gender_mr ?? ($voter->gender ? $translator->translate($voter->gender) : null),
+                                'age' => $voter->age ?? null,
+                                'dob' => $voter->dob ?? null,
+                                'cast' => $voter->cast_mr ?? ($voter->cast ? $translator->translate($voter->cast) : null),
+                                'position' => $voter->position_mr ?? ($voter->position ? $translator->translate($voter->position) : null),
+                                'personnel' => $voter->personnel ?? null,
+                                'voter_id' => $voter->voter_id ?? null,
+                            ],
+                            'extra_information' => $voter->voterInformation ? [
+                                'extra_info_1' => $voter->voterInformation->extra_info_1_mr ?? ($voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null),
+                                'extra_info_2' => $voter->voterInformation->extra_info_2_mr ?? ($voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null),
+                                'extra_info_3' => $voter->voterInformation->extra_info_3_mr ?? ($voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null),
+                                'extra_info_4' => $voter->voterInformation->extra_info_4_mr ?? ($voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null),
+                                'extra_info_5' => $voter->voterInformation->extra_info_5_mr ?? ($voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null),
+                                'extra_check_1' => $voter->voterInformation->extra_check_1 ?? null,
+                                'extra_check_2' => $voter->voterInformation->extra_check_2 ?? null,
+                            ] : null,
+                            'address_details' => $voter->voterAddress ? [
+                                'society' => $voter->voterAddress->society_mr ?? ($voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null),
+                                'house_no' => $voter->voterAddress->house_no_mr ?? ($voter->voterAddress->house_no ? $translator->translate($voter->voterAddress->house_no) : null),
+                                'flat_no' => $voter->voterAddress->flat_no_mr ?? ($voter->voterAddress->flat_no ? $translator->translate($voter->voterAddress->flat_no) : null),
+                                'address' => $voter->voterAddress->address_mr ?? ($voter->voterAddress->address ? $translator->translate($voter->voterAddress->address) : null),
+                                'booth' => $voter->voterAddress->booth_mr ?? ($voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null),
+                                'village' => $voter->voterAddress->village_mr ?? ($voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null),
+                                'part_no' => $voter->voterAddress->part_no_mr ?? $voter->voterAddress->part_no,
+                                'srn' => $voter->voterAddress->srn_mr ?? $voter->voterAddress->srn,
+                                'voting_centre' => $voter->voterAddress->voting_centre_mr ?? ($voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null),
+                            ] : null,
+                        ];
+                    });
+
+                return response()->json([
+                    'status' => 200,
+                    'message' => 'Personnel voter details retrieved successfully in Marathi',
+                    'voters' => $voters,
+                ], 200);
+            }
+
+
+            if ($request->lang == 'hi') {
+                $voters = Voters::where('personnel', 0)
+                    ->with(['voterAddress', 'voterInformation'])
+                    ->get()
+                    ->map(function ($voter) use ($translator) {
+                        return [
+                            'voter_details' => [
+                                'id' => $voter->id,
+                                'first_name' => $voter->first_name_hi ?? ($voter->first_name ? $translator->translate($voter->first_name) : null),
+                                'middle_name' => $voter->middle_name_hi ?? ($voter->middle_name ? $translator->translate($voter->middle_name) : null),
+                                'surname' => $voter->surname_hi ?? ($voter->surname ? $translator->translate($voter->surname) : null),
+                                'email' => $voter->email ?? null,
+                                'gender' => $voter->gender_hi ?? ($voter->gender ? $translator->translate($voter->gender) : null),
+                                'age' => $voter->age ?? null,
+                                'dob' => $voter->dob ?? null,
+                                'cast' => $voter->cast_hi ?? ($voter->cast ? $translator->translate($voter->cast) : null),
+                                'position' => $voter->position_hi ?? ($voter->position ? $translator->translate($voter->position) : null),
+                                'personnel' => $voter->personnel ?? null,
+                                'voter_id' => $voter->voter_id ?? null,
+                            ],
+                            'extra_information' => $voter->voterInformation ? [
+                                'extra_info_1' => $voter->voterInformation->extra_info_1_hi ?? ($voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null),
+                                'extra_info_2' => $voter->voterInformation->extra_info_2_hi ?? ($voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null),
+                                'extra_info_3' => $voter->voterInformation->extra_info_3_hi ?? ($voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null),
+                                'extra_info_4' => $voter->voterInformation->extra_info_4_hi ?? ($voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null),
+                                'extra_info_5' => $voter->voterInformation->extra_info_5_hi ?? ($voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null),
+                                'extra_check_1' => $voter->voterInformation->extra_check_1 ?? null,
+                                'extra_check_2' => $voter->voterInformation->extra_check_2 ?? null,
+                            ] : null,
+                            'address_details' => $voter->voterAddress ? [
+                                'society' => $voter->voterAddress->society_hi ?? ($voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null),
+                                'house_no' => $voter->voterAddress->house_no_hi ?? ($voter->voterAddress->house_no ? $translator->translate($voter->voterAddress->house_no) : null),
+                                'flat_no' => $voter->voterAddress->flat_no_hi ?? ($voter->voterAddress->flat_no ? $translator->translate($voter->voterAddress->flat_no) : null),
+                                'address' => $voter->voterAddress->address_hi ?? ($voter->voterAddress->address ? $translator->translate($voter->voterAddress->address) : null),
+                                'booth' => $voter->voterAddress->booth_hi ?? ($voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null),
+                                'village' => $voter->voterAddress->village_hi ?? ($voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null),
+                                'part_no' => $voter->voterAddress->part_no_hi ?? $voter->voterAddress->part_no,
+                                'srn' => $voter->voterAddress->srn_hi ?? $voter->voterAddress->srn,
+                                'voting_centre' => $voter->voterAddress->voting_centre_hi ?? ($voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null),
+                            ] : null,
+                        ];
+                    });
+
+                    return response()->json([
+                        'status' => 200,
+                        'message' => 'Personnel voter details retrieved successfully in Hindi',
+                        'voters' => $voters,
+                    ], 200);
+            }
+        }
+
+
+
+
+
+
+    }
+
+    //Extra Information One
+
+    public function extraInformationOneList(Request $request)
+    {
+
+        $validator = Validator::make($request->all(), [
+            'lang' => 'required|in:en,mr,hi',
+        ]);
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()], 400);
+        }
+
+        $lang = $request->input('lang');
+        $translator = new GoogleTranslate($lang);
+        $extraInformationOnes = extraInformation::all();
+        if($request->lang == 'en'){
+            $extraInformationGrouped = $extraInformationOnes->groupBy('extra_info_1')
+            ->map(function ($extraInformationGroup) use ($translator) {
+                return [
+                    'extra_information_one' => $extraInformationGroup->first()->extra_info_1 ? $translator->translate($extraInformationGroup->first()->extra_info_1) : null,
+                    'extra_information_one_count' => $extraInformationGroup->count(),
+                ];
+            })->values();
+            $totalExtraInformationOnes = $extraInformationGrouped->count();
+            return response()->json([
+                'status' => 200,
+                'message' => 'Extra Information One list retrieved successfully in English',
+                'total_extra_information_ones' => $totalExtraInformationOnes,
+                'extra_information_ones_details' => $extraInformationGrouped,
+            ], 200);
+        }
+
+        if($request->lang == 'mr'){
+            $extraInformationGrouped = $extraInformationOnes->groupBy('extra_info_1_mr')
+            ->map(function ($extraInformationGroup) use ($translator) {
+                return [
+                    'extra_information_one' => $extraInformationGroup->first()->extra_info_1_mr ?? null,
+                    'extra_information_one_count' => $extraInformationGroup->count(),
+                ];
+            })->values();
+            $totalExtraInformationOnes = $extraInformationGrouped->count();
+            return response()->json([
+                'status' => 200,
+                'message' => 'Extra Information One list retrieved successfully in Marathi',
+                'total_extra_information_ones' => $totalExtraInformationOnes,
+                'extra_information_ones_details' => $extraInformationGrouped,
+            ], 200);
+        }
+
+        if($request->lang == 'hi'){
+            $extraInformationGrouped = $extraInformationOnes->groupBy('extra_info_1_hi')
+            ->map(function ($extraInformationGroup) use ($translator) {
+                return [
+                    'extra_information_one' => $extraInformationGroup->first()->extra_info_1_hi ?? null,
+                    'extra_information_one_count' => $extraInformationGroup->count(),
+                ];
+            })->values();
+            $totalExtraInformationOnes = $extraInformationGrouped->count();
+            return response()->json([
+                'status' => 200,
+                'message' => 'Extra Information One list retrieved successfully in hindi',
+                'total_extra_information_ones' => $totalExtraInformationOnes,
+                'extra_information_ones_details' => $extraInformationGrouped,
+            ], 200);
+        }
+
+    }
+    public function searchExtraInformationOne(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'lang' => 'required|in:en,mr,hi',
+            'extra_info_1' => 'required',
+        ]);
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()], 400);
+        }
+
+        $lang = $request->input('lang');
+        $translator = new GoogleTranslate($lang);
+        if($request->lang == 'en'){
+            $extraInfoOnes = ExtraInformation::
+                where('extra_info_1', $request->extra_info_1)->orderBy('extra_info_1', 'asc')
+                ->get();
+            $extraInfoOnes = $extraInfoOnes->groupBy('extra_info_1')
+                ->map(function ($extraInfoOneGroup) use ($translator) {
+                    return [
+                        'extra_info_one' => $extraInfoOneGroup->first()->extra_info_1 ?? null,
+                        'total_voters' => $extraInfoOneGroup->count(),
+                    ];
+                })->values();
+            return response()->json([
+                'status' => 200,
+                'message' => 'Extra info one list searched successfully in English',
+                'extra_info_one_voters' => $extraInfoOnes,
+            ], 200);
+        }
+
+        if($request->lang == 'mr'){
+            $extraInfoOnes = ExtraInformation::
+                where('extra_info_1_mr', $request->extra_info_1)->orderBy('extra_info_1_mr', 'asc')
+                ->get();
+            $extraInfoOnes = $extraInfoOnes->groupBy('extra_info_1_mr')
+                ->map(function ($extraInfoOneGroup) use ($translator) {
+                    return [
+                        'extra_info_one' => $extraInfoOneGroup->first()->extra_info_1_mr ?? null,
+                        'total_voters' => $extraInfoOneGroup->count(),
+                    ];
+                })->values();
+            return response()->json([
+                'status' => 200,
+                'message' => 'Extra info one list searched successfully in Marathi',
+                'extra_info_one_voters' => $extraInfoOnes,
+            ], 200);
+        }
+
+        if($request->lang == 'hi'){
+
+            $extraInfoOnes = ExtraInformation::
+                where('extra_info_1_hi', $request->extra_info_1)->orderBy('extra_info_1_hi', 'asc')
+                ->get();
+            $extraInfoOnes = $extraInfoOnes->groupBy('extra_info_1_hi')
+                ->map(function ($extraInfoOneGroup) use ($translator) {
+                    return [
+                        'extra_info_one' => $extraInfoOneGroup->first()->extra_info_1_hi ?? null,
+                        'total_voters' => $extraInfoOneGroup->count(),
+                    ];
+                })->values();
+            return response()->json([
+                'status' => 200,
+                'message' => 'Extra info one list searched successfully in Hindi',
+                'extra_info_one_voters' => $extraInfoOnes,
+            ], 200);
+        }
+
+    }
+    public function voterDetailsByExtraInfoOne(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'lang' => 'required|in:en,mr,hi',
+            'extra_info_1' => 'required',
+        ]);
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()], 400);
+        }
+        $lang = $request->input('lang');
+        $translator = new GoogleTranslate($lang);
+        if($request->lang == 'en'){
+            $users = ExtraInformation::where('extra_info_1', $request->extra_info_1)
+            ->with(['voter', 'voter.voterAddress']) // Eager load voter and extra information
+            ->get()
+            ->map(function ($extraInfoOne) use ($translator) {
+                return [
+                    'voter_details' => [
+                        'id' => $extraInfoOne->voter->id,
+                        'first_name' => $extraInfoOne->voter->first_name ? $translator->translate($extraInfoOne->voter->first_name) : null,
+                        'middle_name' => $extraInfoOne->voter->middle_name ? $translator->translate($extraInfoOne->voter->middle_name) : null,
+                        'surname' => $extraInfoOne->voter->surname ? $translator->translate($extraInfoOne->voter->surname) : null,
+                        'email' => $extraInfoOne->voter->email ? $translator->translate($extraInfoOne->voter->email) : null,
+                        'gender' => $extraInfoOne->voter->gender ? $translator->translate($extraInfoOne->voter->gender) : null,
+                        'age' => $extraInfoOne->voter->age ? $translator->translate($extraInfoOne->voter->age) : null,
+                        'dob' => $extraInfoOne->voter->dob ? $translator->translate($extraInfoOne->voter->dob) : null,
+                        'cast' => $extraInfoOne->voter->cast ? $translator->translate($extraInfoOne->voter->cast) : null,
+                        'position' => $extraInfoOne->voter->position ? $translator->translate($extraInfoOne->voter->position) : null,
+                        'personnel' => $extraInfoOne->voter->personnel ? $translator->translate($extraInfoOne->voter->personnel) : null,
+                        'voter_id' => $extraInfoOne->voter->voter_id ? $translator->translate($extraInfoOne->voter->voter_id) : null,
+                    ],
+                    'extra_information' => $extraInfoOne ? [
+                        'extra_info_1' => $extraInfoOne->extra_info_1 ? $translator->translate($extraInfoOne->extra_info_1) : null,
+                        'extra_info_2' => $extraInfoOne->extra_info_2 ? $translator->translate($extraInfoOne->extra_info_2) : null,
+                        'extra_info_3' => $extraInfoOne->extra_info_3 ? $translator->translate($extraInfoOne->extra_info_3) : null,
+                        'extra_info_4' => $extraInfoOne->extra_info_4 ? $translator->translate($extraInfoOne->extra_info_4) : null,
+                        'extra_info_5' => $extraInfoOne->extra_info_5 ? $translator->translate($extraInfoOne->extra_info_5) : null,
+                        'extra_check_1' => $extraInfoOne->extra_check_1 ?? null,
+                        'extra_check_2' => $extraInfoOne->extra_check_2 ?? null,
+
+                        // Add more fields as needed
+                    ] : null,
+                    'address_details' => [
+                        'society' => $extraInfoOne->voter->voterAddress->society ? $translator->translate($extraInfoOne->voter->voterAddress->society) : null,
+                        'house_no' => $extraInfoOne->voter->voterAddress->house_no ? $translator->translate($extraInfoOne->voter->voterAddress->house_no) : null,
+                        'flat_no' => $extraInfoOne->voter->voterAddress->flat_no ? $translator->translate($extraInfoOne->voter->voterAddress->flat_no) : null,
+                        'address' => $extraInfoOne->voter->voterAddress->address ? $translator->translate($extraInfoOne->voter->voterAddress->address) : null,
+                        'booth' => $extraInfoOne->voter->voterAddress->booth ? $translator->translate($extraInfoOne->voter->voterAddress->booth) : null,
+                        'village' => $extraInfoOne->voter->voterAddress->village ? $translator->translate($extraInfoOne->voter->voterAddress->village) : null,
+                        'part_no' => $extraInfoOne->voter->voterAddress->part_no ? $translator->translate($extraInfoOne->voter->voterAddress->part_no) : null,
+                        'srn' => $extraInfoOne->voter->voterAddress->srn ? $translator->translate($extraInfoOne->voter->voterAddress->srn) : null,
+                        'voting_centre' => $extraInfoOne->voter->voterAddress->voting_centre ? $translator->translate($extraInfoOne->voter->voterAddress->voting_centre) : null,
+                    ],
+                ];
+            });
+            return response()->json([
+                'status' => 200,
+                'message' => 'Voter details retrieved successfully',
+                'voters' => $users,
+            ], 200);
+
+    }
+    if ($request->lang == 'mr') {
+        $users = ExtraInformation::where('extra_info_1_mr', $request->extra_info_1)
+            ->with(['voter', 'voter.voterAddress']) // Eager load voter and extra information
+            ->get()
+            ->map(function ($extraInfoOne) use ($translator) {
+                return [
+                    'voter_details' => [
+                        'id' => $extraInfoOne->voter->id,
+                        'first_name' => $extraInfoOne->voter->first_name_mr ?? ($extraInfoOne->voter->first_name ? $translator->translate($extraInfoOne->voter->first_name) : null),
+                        'middle_name' => $extraInfoOne->voter->middle_name_mr ?? ($extraInfoOne->voter->middle_name ? $translator->translate($extraInfoOne->voter->middle_name) : null),
+                        'surname' => $extraInfoOne->voter->surname_mr ?? ($extraInfoOne->voter->surname ? $translator->translate($extraInfoOne->voter->surname) : null),
+                        'email' => $extraInfoOne->voter->email ?? null,
+                        'gender' => $extraInfoOne->voter->gender_mr ?? ($extraInfoOne->voter->gender ? $translator->translate($extraInfoOne->voter->gender) : null),
+                        'age' => $extraInfoOne->voter->age_mr ?? ($extraInfoOne->voter->age ? $translator->translate($extraInfoOne->voter->age) : null),
+                        'dob' => $extraInfoOne->voter->dob_mr ?? ($extraInfoOne->voter->dob ? $translator->translate($extraInfoOne->voter->dob) : null),
+                        'cast' => $extraInfoOne->voter->cast_mr ?? ($extraInfoOne->voter->cast ? $translator->translate($extraInfoOne->voter->cast) : null),
+                        'position' => $extraInfoOne->voter->position_mr ?? ($extraInfoOne->voter->position ? $translator->translate($extraInfoOne->voter->position) : null),
+                        'personnel' => $extraInfoOne->voter->personnel ?? null,
+                        'voter_id' => $extraInfoOne->voter->voter_id_mr ?? ($extraInfoOne->voter->voter_id ? $translator->translate($extraInfoOne->voter->voter_id) : null),
+                    ],
+                    'extra_information' => $extraInfoOne ? [
+                        'extra_info_1' => $extraInfoOne->extra_info_1_mr ?? ($extraInfoOne->extra_info_1 ? $translator->translate($extraInfoOne->extra_info_1) : null),
+                        'extra_info_2' => $extraInfoOne->extra_info_2_mr ?? ($extraInfoOne->extra_info_2 ? $translator->translate($extraInfoOne->extra_info_2) : null),
+                        'extra_info_3' => $extraInfoOne->extra_info_3_mr ?? ($extraInfoOne->extra_info_3 ? $translator->translate($extraInfoOne->extra_info_3) : null),
+                        'extra_info_4' => $extraInfoOne->extra_info_4_mr ?? ($extraInfoOne->extra_info_4 ? $translator->translate($extraInfoOne->extra_info_4) : null),
+                        'extra_info_5' => $extraInfoOne->extra_info_5_mr ?? ($extraInfoOne->extra_info_5 ? $translator->translate($extraInfoOne->extra_info_5) : null),
+                        'extra_check_1' => $extraInfoOne->extra_check_1 ?? null,
+                        'extra_check_2' => $extraInfoOne->extra_check_2 ?? null,
+                    ] : null,
+                    'address_details' => [
+                        'society' => $extraInfoOne->voter->voterAddress->society_mr ?? ($extraInfoOne->voter->voterAddress->society ? $translator->translate($extraInfoOne->voter->voterAddress->society) : null),
+                        'house_no' => $extraInfoOne->voter->voterAddress->house_no_mr ?? ($extraInfoOne->voter->voterAddress->house_no ? $translator->translate($extraInfoOne->voter->voterAddress->house_no) : null),
+                        'flat_no' => $extraInfoOne->voter->voterAddress->flat_no_mr ?? ($extraInfoOne->voter->voterAddress->flat_no ? $translator->translate($extraInfoOne->voter->voterAddress->flat_no) : null),
+                        'address' => $extraInfoOne->voter->voterAddress->address_mr ?? ($extraInfoOne->voter->voterAddress->address ? $translator->translate($extraInfoOne->voter->voterAddress->address) : null),
+                        'booth' => $extraInfoOne->voter->voterAddress->booth_mr ?? ($extraInfoOne->voter->voterAddress->booth ? $translator->translate($extraInfoOne->voter->voterAddress->booth) : null),
+                        'village' => $extraInfoOne->voter->voterAddress->village_mr ?? ($extraInfoOne->voter->voterAddress->village ? $translator->translate($extraInfoOne->voter->voterAddress->village) : null),
+                        'part_no' => $extraInfoOne->voter->voterAddress->part_no_mr ?? ($extraInfoOne->voter->voterAddress->part_no ? $translator->translate($extraInfoOne->voter->voterAddress->part_no) : null),
+                        'srn' => $extraInfoOne->voter->voterAddress->srn_mr ?? ($extraInfoOne->voter->voterAddress->srn ? $translator->translate($extraInfoOne->voter->voterAddress->srn) : null),
+                        'voting_centre' => $extraInfoOne->voter->voterAddress->voting_centre_mr ?? ($extraInfoOne->voter->voterAddress->voting_centre ? $translator->translate($extraInfoOne->voter->voterAddress->voting_centre) : null),
+                    ],
+                ];
+            });
+
+        return response()->json([
+            'status' => 200,
+            'message' => 'Voter details retrieved successfully in marathi',
+            'voters' => $users,
+        ], 200);
+    }
+
+    if ($request->lang == 'hi') {
+        $users = ExtraInformation::where('extra_info_1_hi', $request->extra_info_1)
+            ->with(['voter', 'voter.voterAddress']) // Eager load voter and extra information
+            ->get()
+            ->map(function ($extraInfoOne) use ($translator) {
+                return [
+                    'voter_details' => [
+                        'id' => $extraInfoOne->voter->id,
+                        'first_name' => $extraInfoOne->voter->first_name_hi ?? ($extraInfoOne->voter->first_name ? $translator->translate($extraInfoOne->voter->first_name) : null),
+                        'middle_name' => $extraInfoOne->voter->middle_name_hi ?? ($extraInfoOne->voter->middle_name ? $translator->translate($extraInfoOne->voter->middle_name) : null),
+                        'surname' => $extraInfoOne->voter->surname_hi ?? ($extraInfoOne->voter->surname ? $translator->translate($extraInfoOne->voter->surname) : null),
+                        'email' => $extraInfoOne->voter->email ?? null,
+                        'gender' => $extraInfoOne->voter->gender_hi ?? ($extraInfoOne->voter->gender ? $translator->translate($extraInfoOne->voter->gender) : null),
+                        'age' => $extraInfoOne->voter->age_hi ?? ($extraInfoOne->voter->age ? $translator->translate($extraInfoOne->voter->age) : null),
+                        'dob' => $extraInfoOne->voter->dob_hi ?? ($extraInfoOne->voter->dob ? $translator->translate($extraInfoOne->voter->dob) : null),
+                        'cast' => $extraInfoOne->voter->cast_hi ?? ($extraInfoOne->voter->cast ? $translator->translate($extraInfoOne->voter->cast) : null),
+                        'position' => $extraInfoOne->voter->position_hi ?? ($extraInfoOne->voter->position ? $translator->translate($extraInfoOne->voter->position) : null),
+                        'personnel' => $extraInfoOne->voter->personnel ?? null,
+                        'voter_id' => $extraInfoOne->voter->voter_id_hi ?? ($extraInfoOne->voter->voter_id ? $translator->translate($extraInfoOne->voter->voter_id) : null),
+                    ],
+                    'extra_information' => $extraInfoOne ? [
+                        'extra_info_1' => $extraInfoOne->extra_info_1_hi ?? ($extraInfoOne->extra_info_1 ? $translator->translate($extraInfoOne->extra_info_1) : null),
+                        'extra_info_2' => $extraInfoOne->extra_info_2_hi ?? ($extraInfoOne->extra_info_2 ? $translator->translate($extraInfoOne->extra_info_2) : null),
+                        'extra_info_3' => $extraInfoOne->extra_info_3_hi ?? ($extraInfoOne->extra_info_3 ? $translator->translate($extraInfoOne->extra_info_3) : null),
+                        'extra_info_4' => $extraInfoOne->extra_info_4_hi ?? ($extraInfoOne->extra_info_4 ? $translator->translate($extraInfoOne->extra_info_4) : null),
+                        'extra_info_5' => $extraInfoOne->extra_info_5_hi ?? ($extraInfoOne->extra_info_5 ? $translator->translate($extraInfoOne->extra_info_5) : null),
+                        'extra_check_1' => $extraInfoOne->extra_check_1 ?? null,
+                        'extra_check_2' => $extraInfoOne->extra_check_2 ?? null,
+                    ] : null,
+                    'address_details' => [
+                        'society' => $extraInfoOne->voter->voterAddress->society_hi ?? ($extraInfoOne->voter->voterAddress->society ? $translator->translate($extraInfoOne->voter->voterAddress->society) : null),
+                        'house_no' => $extraInfoOne->voter->voterAddress->house_no_hi ?? ($extraInfoOne->voter->voterAddress->house_no ? $translator->translate($extraInfoOne->voter->voterAddress->house_no) : null),
+                        'flat_no' => $extraInfoOne->voter->voterAddress->flat_no_hi ?? ($extraInfoOne->voter->voterAddress->flat_no ? $translator->translate($extraInfoOne->voter->voterAddress->flat_no) : null),
+                        'address' => $extraInfoOne->voter->voterAddress->address_hi ?? ($extraInfoOne->voter->voterAddress->address ? $translator->translate($extraInfoOne->voter->voterAddress->address) : null),
+                        'booth' => $extraInfoOne->voter->voterAddress->booth_hi ?? ($extraInfoOne->voter->voterAddress->booth ? $translator->translate($extraInfoOne->voter->voterAddress->booth) : null),
+                        'village' => $extraInfoOne->voter->voterAddress->village_hi ?? ($extraInfoOne->voter->voterAddress->village ? $translator->translate($extraInfoOne->voter->voterAddress->village) : null),
+                        'part_no' => $extraInfoOne->voter->voterAddress->part_no_hi ?? ($extraInfoOne->voter->voterAddress->part_no ? $translator->translate($extraInfoOne->voter->voterAddress->part_no) : null),
+                        'srn' => $extraInfoOne->voter->voterAddress->srn_hi ?? ($extraInfoOne->voter->voterAddress->srn ? $translator->translate($extraInfoOne->voter->voterAddress->srn) : null),
+                        'voting_centre' => $extraInfoOne->voter->voterAddress->voting_centre_hi ?? ($extraInfoOne->voter->voterAddress->voting_centre ? $translator->translate($extraInfoOne->voter->voterAddress->voting_centre) : null),
+                    ],
+                ];
+            });
+
+        return response()->json([
+            'status' => 200,
+            'message' => 'Voter details retrieved successfully in Hindi',
+            'voters' => $users,
+        ], 200);
+    }
+
+
+    }
+
+    //Extra Information Two
+
+    public function extraInformationTwoList(Request $request)
+    {
+
+        $validator = Validator::make($request->all(), [
+            'lang' => 'required|in:en,mr,hi',
+        ]);
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()], 400);
+        }
+
+        $lang = $request->input('lang');
+        $translator = new GoogleTranslate($lang);
+        $extraInformationTwos = extraInformation::all();
+        if($request->lang == 'en'){
+            $extraInformationGrouped = $extraInformationTwos->groupBy('extra_info_2')
+            ->map(function ($extraInformationGroup) use ($translator) {
+                return [
+                    'extra_information_two' => $extraInformationGroup->first()->extra_info_2 ? $translator->translate($extraInformationGroup->first()->extra_info_2) : null,
+                    'extra_information_two_count' => $extraInformationGroup->count(),
+                ];
+            })->values();
+            $totalExtraInformationTwos = $extraInformationGrouped->count();
+            return response()->json([
+                'status' => 200,
+                'message' => 'Extra Information two list retrieved successfully in English',
+                'total_extra_information_two' => $totalExtraInformationTwos,
+                'extra_information_two_details' => $extraInformationGrouped,
+            ], 200);
+        }
+
+        if($request->lang == 'mr'){
+            $extraInformationGrouped = $extraInformationTwos->groupBy('extra_info_2_mr')
+            ->map(function ($extraInformationGroup) use ($translator) {
+                return [
+                    'extra_information_two' => $extraInformationGroup->first()->extra_info_2_mr ?? null,
+                    'extra_information_two_count' => $extraInformationGroup->count(),
+                ];
+            })->values();
+            $totalExtraInformationTwos = $extraInformationGrouped->count();
+            return response()->json([
+                'status' => 200,
+                'message' => 'Extra Information two list retrieved successfully in Marathi',
+                'total_extra_information_two' => $totalExtraInformationTwos,
+                'extra_information_two_details' => $extraInformationGrouped,
+            ], 200);
+        }
+
+        if($request->lang == 'hi'){
+            $extraInformationGrouped = $extraInformationTwos->groupBy('extra_info_2_hi')
+            ->map(function ($extraInformationGroup) use ($translator) {
+                return [
+                    'extra_information_two' => $extraInformationGroup->first()->extra_info_2_hi ?? null,
+                    'extra_information_two_count' => $extraInformationGroup->count(),
+                ];
+            })->values();
+            $totalExtraInformationTwos = $extraInformationGrouped->count();
+            return response()->json([
+                'status' => 200,
+                'message' => 'Extra Information two list retrieved successfully in Hindi',
+                'total_extra_information_two' => $totalExtraInformationTwos,
+                'extra_information_two_details' => $extraInformationGrouped,
+            ], 200);
+        }
+
+    }
+    public function searchExtraInformationTwo(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'lang' => 'required|in:en,mr,hi',
+            'extra_info_2' => 'required',
+        ]);
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()], 400);
+        }
+        $lang = $request->input('lang');
+        $translator = new GoogleTranslate($lang);
+        if($request->lang == 'en'){
+            $extraInfoTwos = ExtraInformation::
+                where('extra_info_2', $request->extra_info_2)->orderBy('extra_info_2', 'asc')
+                ->get();
+            $extraInfoTwos = $extraInfoTwos->groupBy('extra_info_2')
+                ->map(function ($extraInfoTwoGroup) use ($translator) {
+                    return [
+                        'extra_info_two' => $extraInfoTwoGroup->first()->extra_info_2 ? $translator->translate($extraInfoTwoGroup->first()->extra_info_2) : null,
+                        'total_voters' => $extraInfoTwoGroup->count(),
+                    ];
+                })->values();
+            return response()->json([
+                'status' => 200,
+                'message' => 'Extra info two list searched successfully',
+                'extra_info_two_voters' => $extraInfoTwos,
+            ], 200);
+        }
+
+        if($request->lang == 'mr'){
+            $extraInfoTwos = ExtraInformation::
+                where('extra_info_2_mr', $request->extra_info_2)->orderBy('extra_info_2_mr', 'asc')
+                ->get();
+            $extraInfoTwos = $extraInfoTwos->groupBy('extra_info_2_mr')
+                ->map(function ($extraInfoTwoGroup) use ($translator) {
+                    return [
+                        'extra_info_two' => $extraInfoTwoGroup->first()->extra_info_2_mr ?? null,
+                        'total_voters' => $extraInfoTwoGroup->count(),
+                    ];
+                })->values();
+            return response()->json([
+                'status' => 200,
+                'message' => 'Extra info two list searched successfully in Marathi',
+                'extra_info_two_voters' => $extraInfoTwos,
+            ], 200);
+        }
+
+        if($request->lang == 'hi'){
+            $extraInfoTwos = ExtraInformation::
+                where('extra_info_2_hi', $request->extra_info_2)->orderBy('extra_info_2_hi', 'asc')
+                ->get();
+            $extraInfoTwos = $extraInfoTwos->groupBy('extra_info_2_hi')
+                ->map(function ($extraInfoTwoGroup) use ($translator) {
+                    return [
+                        'extra_info_two' => $extraInfoTwoGroup->first()->extra_info_2_hi ?? null,
+                        'total_voters' => $extraInfoTwoGroup->count(),
+                    ];
+                })->values();
+            return response()->json([
+                'status' => 200,
+                'message' => 'Extra info two list searched successfully in Hindi',
+                'extra_info_two_voters' => $extraInfoTwos,
+            ], 200);
+        }
+
+    }
+    public function voterDetailsByExtraInfoTwo(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'lang' => 'required|in:en,mr,hi',
+            'extra_info_2' => 'required',
+        ]);
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()], 400);
+        }
+        $lang = $request->input('lang');
+        $translator = new GoogleTranslate($lang);
+        if($request->lang == 'en'){
+            $users = ExtraInformation::where('extra_info_2', $request->extra_info_2)
+            ->with(['voter', 'voter.voterAddress']) // Eager load voter and extra information
+            ->get()
+            ->map(function ($extraInfoTwo) use ($translator) {
+                return [
+                    'voter_details' => [
+                        'id' => $extraInfoTwo->voter->id,
+                        'first_name' => $extraInfoTwo->voter->first_name ? $translator->translate($extraInfoTwo->voter->first_name) : null,
+                        'middle_name' => $extraInfoTwo->voter->middle_name ? $translator->translate($extraInfoTwo->voter->middle_name) : null,
+                        'surname' => $extraInfoTwo->voter->surname ? $translator->translate($extraInfoTwo->voter->surname) : null,
+                        'email' => $extraInfoTwo->voter->email ? $translator->translate($extraInfoTwo->voter->email) : null,
+                        'gender' => $extraInfoTwo->voter->gender ? $translator->translate($extraInfoTwo->voter->gender) : null,
+                        'age' => $extraInfoTwo->voter->age ? $translator->translate($extraInfoTwo->voter->age) : null,
+                        'dob' => $extraInfoTwo->voter->dob ? $translator->translate($extraInfoTwo->voter->dob) : null,
+                        'cast' => $extraInfoTwo->voter->cast ? $translator->translate($extraInfoTwo->voter->cast) : null,
+                        'position' => $extraInfoTwo->voter->position ? $translator->translate($extraInfoTwo->voter->position) : null,
+                        'personnel' => $extraInfoTwo->voter->personnel ? $translator->translate($extraInfoTwo->voter->personnel) : null,
+                        'voter_id' => $extraInfoTwo->voter->voter_id ? $translator->translate($extraInfoTwo->voter->voter_id) : null,
+                    ],
+                    'extra_information' => $extraInfoTwo ? [
+                        'extra_info_1' => $extraInfoTwo->extra_info_1 ? $translator->translate($extraInfoTwo->extra_info_1) : null,
+                        'extra_info_2' => $extraInfoTwo->extra_info_2 ? $translator->translate($extraInfoTwo->extra_info_2) : null,
+                        'extra_info_3' => $extraInfoTwo->extra_info_3 ? $translator->translate($extraInfoTwo->extra_info_3) : null,
+                        'extra_info_4' => $extraInfoTwo->extra_info_4 ? $translator->translate($extraInfoTwo->extra_info_4) : null,
+                        'extra_info_5' => $extraInfoTwo->extra_info_5 ? $translator->translate($extraInfoTwo->extra_info_5) : null,
+                        'extra_check_1' => $extraInfoTwo->extra_check_1 ?? null,
+                        'extra_check_2' => $extraInfoTwo->extra_check_2 ?? null,
+
+                        // Add more fields as needed
+                    ] : null,
+                    'address_details' => [
+                        'society' => $extraInfoTwo->voter->voterAddress->society ? $translator->translate($extraInfoTwo->voter->voterAddress->society) : null,
+                        'house_no' => $extraInfoTwo->voter->voterAddress->house_no ? $translator->translate($extraInfoTwo->voter->voterAddress->house_no) : null,
+                        'flat_no' => $extraInfoTwo->voter->voterAddress->flat_no ? $translator->translate($extraInfoTwo->voter->voterAddress->flat_no) : null,
+                        'address' => $extraInfoTwo->voter->voterAddress->address ? $translator->translate($extraInfoTwo->voter->voterAddress->address) : null,
+                        'booth' => $extraInfoTwo->voter->voterAddress->booth ? $translator->translate($extraInfoTwo->voter->voterAddress->booth) : null,
+                        'village' => $extraInfoTwo->voter->voterAddress->village ? $translator->translate($extraInfoTwo->voter->voterAddress->village) : null,
+                        'part_no' => $extraInfoTwo->voter->voterAddress->part_no ? $translator->translate($extraInfoTwo->voter->voterAddress->part_no) : null,
+                        'srn' => $extraInfoTwo->voter->voterAddress->srn ? $translator->translate($extraInfoTwo->voter->voterAddress->srn) : null,
+                        'voting_centre' => $extraInfoTwo->voter->voterAddress->voting_centre ? $translator->translate($extraInfoTwo->voter->voterAddress->voting_centre) : null,
+                    ],
+                ];
+            });
+            return response()->json([
+                'status' => 200,
+                'message' => 'Voter details retrieved successfully in English',
+                'voters' => $users,
+            ], 200);
+        }
+
+        if ($request->lang == 'mr') {
+            $users = ExtraInformation::where('extra_info_2_mr', $request->extra_info_2)
+                ->with(['voter', 'voter.voterAddress']) // Eager load voter and extra information
+                ->get()
+                ->map(function ($extraInfoTwo) use ($translator) {
+                    return [
+                        'voter_details' => [
+                            'id' => $extraInfoTwo->voter->id,
+                            'first_name' => $extraInfoTwo->voter->first_name_mr ?? ($extraInfoTwo->voter->first_name ? $translator->translate($extraInfoTwo->voter->first_name) : null),
+                            'middle_name' => $extraInfoTwo->voter->middle_name_mr ?? ($extraInfoTwo->voter->middle_name ? $translator->translate($extraInfoTwo->voter->middle_name) : null),
+                            'surname' => $extraInfoTwo->voter->surname_mr ?? ($extraInfoTwo->voter->surname ? $translator->translate($extraInfoTwo->voter->surname) : null),
+                            'email' => $extraInfoTwo->voter->email ?? null,
+                            'gender' => $extraInfoTwo->voter->gender_mr ?? ($extraInfoTwo->voter->gender ? $translator->translate($extraInfoTwo->voter->gender) : null),
+                            'age' => $extraInfoTwo->voter->age_mr ?? ($extraInfoTwo->voter->age ? $translator->translate($extraInfoTwo->voter->age) : null),
+                            'dob' => $extraInfoTwo->voter->dob_mr ?? ($extraInfoTwo->voter->dob ? $translator->translate($extraInfoTwo->voter->dob) : null),
+                            'cast' => $extraInfoTwo->voter->cast_mr ?? ($extraInfoTwo->voter->cast ? $translator->translate($extraInfoTwo->voter->cast) : null),
+                            'position' => $extraInfoTwo->voter->position_mr ?? ($extraInfoTwo->voter->position ? $translator->translate($extraInfoTwo->voter->position) : null),
+                            'personnel' => $extraInfoTwo->voter->personnel ?? null,
+                            'voter_id' => $extraInfoTwo->voter->voter_id_mr ?? ($extraInfoTwo->voter->voter_id ? $translator->translate($extraInfoTwo->voter->voter_id) : null),
+                        ],
+                        'extra_information' => $extraInfoTwo ? [
+                            'extra_info_1' => $extraInfoTwo->extra_info_1_mr ?? ($extraInfoTwo->extra_info_1 ? $translator->translate($extraInfoTwo->extra_info_1) : null),
+                            'extra_info_2' => $extraInfoTwo->extra_info_2_mr ?? ($extraInfoTwo->extra_info_2 ? $translator->translate($extraInfoTwo->extra_info_2) : null),
+                            'extra_info_3' => $extraInfoTwo->extra_info_3_mr ?? ($extraInfoTwo->extra_info_3 ? $translator->translate($extraInfoTwo->extra_info_3) : null),
+                            'extra_info_4' => $extraInfoTwo->extra_info_4_mr ?? ($extraInfoTwo->extra_info_4 ? $translator->translate($extraInfoTwo->extra_info_4) : null),
+                            'extra_info_5' => $extraInfoTwo->extra_info_5_mr ?? ($extraInfoTwo->extra_info_5 ? $translator->translate($extraInfoTwo->extra_info_5) : null),
+                            'extra_check_1' => $extraInfoTwo->extra_check_1 ?? null,
+                            'extra_check_2' => $extraInfoTwo->extra_check_2 ?? null,
+                        ] : null,
+                        'address_details' => [
+                            'society' => $extraInfoTwo->voter->voterAddress->society_mr ?? ($extraInfoTwo->voter->voterAddress->society ? $translator->translate($extraInfoTwo->voter->voterAddress->society) : null),
+                            'house_no' => $extraInfoTwo->voter->voterAddress->house_no_mr ?? ($extraInfoTwo->voter->voterAddress->house_no ? $translator->translate($extraInfoTwo->voter->voterAddress->house_no) : null),
+                            'flat_no' => $extraInfoTwo->voter->voterAddress->flat_no_mr ?? ($extraInfoTwo->voter->voterAddress->flat_no ? $translator->translate($extraInfoTwo->voter->voterAddress->flat_no) : null),
+                            'address' => $extraInfoTwo->voter->voterAddress->address_mr ?? ($extraInfoTwo->voter->voterAddress->address ? $translator->translate($extraInfoTwo->voter->voterAddress->address) : null),
+                            'booth' => $extraInfoTwo->voter->voterAddress->booth_mr ?? ($extraInfoTwo->voter->voterAddress->booth ? $translator->translate($extraInfoTwo->voter->voterAddress->booth) : null),
+                            'village' => $extraInfoTwo->voter->voterAddress->village_mr ?? ($extraInfoTwo->voter->voterAddress->village ? $translator->translate($extraInfoTwo->voter->voterAddress->village) : null),
+                            'part_no' => $extraInfoTwo->voter->voterAddress->part_no_mr ?? ($extraInfoTwo->voter->voterAddress->part_no ? $translator->translate($extraInfoTwo->voter->voterAddress->part_no) : null),
+                            'srn' => $extraInfoTwo->voter->voterAddress->srn_mr ?? ($extraInfoTwo->voter->voterAddress->srn ? $translator->translate($extraInfoTwo->voter->voterAddress->srn) : null),
+                            'voting_centre' => $extraInfoTwo->voter->voterAddress->voting_centre_mr ?? ($extraInfoTwo->voter->voterAddress->voting_centre ? $translator->translate($extraInfoTwo->voter->voting_centre) : null),
+                        ],
+                    ];
+                });
+            return response()->json([
+                'status' => 200,
+                'message' => 'Voter details retrieved successfully in Marathi',
+                'voters' => $users,
+            ], 200);
+        }
+
+        if ($request->lang == 'hi') {
+            $users = ExtraInformation::where('extra_info_2_hi', $request->extra_info_2)
+                ->with(['voter', 'voter.voterAddress']) // Eager load voter and extra information
+                ->get()
+                ->map(function ($extraInfoTwo) use ($translator) {
+                    return [
+                        'voter_details' => [
+                            'id' => $extraInfoTwo->voter->id,
+                            'first_name' => $extraInfoTwo->voter->first_name_hi ?? ($extraInfoTwo->voter->first_name ? $translator->translate($extraInfoTwo->voter->first_name) : null),
+                            'middle_name' => $extraInfoTwo->voter->middle_name_hi ?? ($extraInfoTwo->voter->middle_name ? $translator->translate($extraInfoTwo->voter->middle_name) : null),
+                            'surname' => $extraInfoTwo->voter->surname_hi ?? ($extraInfoTwo->voter->surname ? $translator->translate($extraInfoTwo->voter->surname) : null),
+                            'email' => $extraInfoTwo->voter->email ?? null,
+                            'gender' => $extraInfoTwo->voter->gender_hi ?? ($extraInfoTwo->voter->gender ? $translator->translate($extraInfoTwo->voter->gender) : null),
+                            'age' => $extraInfoTwo->voter->age_hi ?? ($extraInfoTwo->voter->age ? $translator->translate($extraInfoTwo->voter->age) : null),
+                            'dob' => $extraInfoTwo->voter->dob_hi ?? ($extraInfoTwo->voter->dob ? $translator->translate($extraInfoTwo->voter->dob) : null),
+                            'cast' => $extraInfoTwo->voter->cast_hi ?? ($extraInfoTwo->voter->cast ? $translator->translate($extraInfoTwo->voter->cast) : null),
+                            'position' => $extraInfoTwo->voter->position_hi ?? ($extraInfoTwo->voter->position ? $translator->translate($extraInfoTwo->voter->position) : null),
+                            'personnel' => $extraInfoTwo->voter->personnel ?? null,
+                            'voter_id' => $extraInfoTwo->voter->voter_id_hi ?? ($extraInfoTwo->voter->voter_id ? $translator->translate($extraInfoTwo->voter->voter_id) : null),
+                        ],
+                        'extra_information' => $extraInfoTwo ? [
+                            'extra_info_1' => $extraInfoTwo->extra_info_1_hi ?? ($extraInfoTwo->extra_info_1 ? $translator->translate($extraInfoTwo->extra_info_1) : null),
+                            'extra_info_2' => $extraInfoTwo->extra_info_2_hi ?? ($extraInfoTwo->extra_info_2 ? $translator->translate($extraInfoTwo->extra_info_2) : null),
+                            'extra_info_3' => $extraInfoTwo->extra_info_3_hi ?? ($extraInfoTwo->extra_info_3 ? $translator->translate($extraInfoTwo->extra_info_3) : null),
+                            'extra_info_4' => $extraInfoTwo->extra_info_4_hi ?? ($extraInfoTwo->extra_info_4 ? $translator->translate($extraInfoTwo->extra_info_4) : null),
+                            'extra_info_5' => $extraInfoTwo->extra_info_5_hi ?? ($extraInfoTwo->extra_info_5 ? $translator->translate($extraInfoTwo->extra_info_5) : null),
+                            'extra_check_1' => $extraInfoTwo->extra_check_1 ?? null,
+                            'extra_check_2' => $extraInfoTwo->extra_check_2 ?? null,
+                        ] : null,
+                        'address_details' => [
+                            'society' => $extraInfoTwo->voter->voterAddress->society_hi ?? ($extraInfoTwo->voter->voterAddress->society ? $translator->translate($extraInfoTwo->voter->voterAddress->society) : null),
+                            'house_no' => $extraInfoTwo->voter->voterAddress->house_no_hi ?? ($extraInfoTwo->voter->voterAddress->house_no ? $translator->translate($extraInfoTwo->voter->voterAddress->house_no) : null),
+                            'flat_no' => $extraInfoTwo->voter->voterAddress->flat_no_hi ?? ($extraInfoTwo->voter->voterAddress->flat_no ? $translator->translate($extraInfoTwo->voter->voterAddress->flat_no) : null),
+                            'address' => $extraInfoTwo->voter->voterAddress->address_hi ?? ($extraInfoTwo->voter->voterAddress->address ? $translator->translate($extraInfoTwo->voter->voterAddress->address) : null),
+                            'booth' => $extraInfoTwo->voter->voterAddress->booth_hi ?? ($extraInfoTwo->voter->voterAddress->booth ? $translator->translate($extraInfoTwo->voter->voterAddress->booth) : null),
+                            'village' => $extraInfoTwo->voter->voterAddress->village_hi ?? ($extraInfoTwo->voter->voterAddress->village ? $translator->translate($extraInfoTwo->voter->voterAddress->village) : null),
+                            'part_no' => $extraInfoTwo->voter->voterAddress->part_no_hi ?? ($extraInfoTwo->voter->voterAddress->part_no ? $translator->translate($extraInfoTwo->voter->voterAddress->part_no) : null),
+                            'srn' => $extraInfoTwo->voter->voterAddress->srn_hi ?? ($extraInfoTwo->voter->voterAddress->srn ? $translator->translate($extraInfoTwo->voter->voterAddress->srn) : null),
+                            'voting_centre' => $extraInfoTwo->voter->voterAddress->voting_centre_hi ?? ($extraInfoTwo->voter->voterAddress->voting_centre ? $translator->translate($extraInfoTwo->voter->voterAddress->voting_centre) : null),
+                        ],
+                    ];
+                });
+            return response()->json([
+                'status' => 200,
+                'message' => 'Voter details retrieved successfully in Hindi',
+                'voters' => $users,
+            ], 200);
+        }
+
+
+
+
+
+
+
+    }
+
+    //Extra Information Three
+
+    public function extraInformationThreeList(Request $request)
+    {
+
+        $validator = Validator::make($request->all(), [
+            'lang' => 'required|in:en,mr,hi',
+        ]);
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()], 400);
+        }
+
+        $lang = $request->input('lang');
+        $translator = new GoogleTranslate($lang);
+        $extraInformationThrees = extraInformation::all();
+        if($request->lang == 'en'){
+            $extraInformationGrouped = $extraInformationThrees->groupBy('extra_info_3')
+            ->map(function ($extraInformationGroup) use ($translator) {
+                return [
+                    'extra_information_three' => $extraInformationGroup->first()->extra_info_3 ? $translator->translate($extraInformationGroup->first()->extra_info_3) : null,
+                    'extra_information_three_count' => $extraInformationGroup->count(),
+                ];
+            })->values();
+            $totalExtraInformationThrees = $extraInformationGrouped->count();
+            return response()->json([
+                'status' => 200,
+                'message' => 'Extra Information three list retrieved successfully in English',
+                'total_extra_information_three' => $totalExtraInformationThrees,
+                'extra_information_three_details' => $extraInformationGrouped,
+            ], 200);
+        }
+
+        if($request->lang == 'mr'){
+            $extraInformationGrouped = $extraInformationThrees->groupBy('extra_info_3_mr')
+            ->map(function ($extraInformationGroup) use ($translator) {
+                return [
+                    'extra_information_three' => $extraInformationGroup->first()->extra_info_3_mr ?? null,
+                    'extra_information_three_count' => $extraInformationGroup->count(),
+                ];
+            })->values();
+            $totalExtraInformationThrees = $extraInformationGrouped->count();
+            return response()->json([
+                'status' => 200,
+                'message' => 'Extra Information three list retrieved successfully in Marathi',
+                'total_extra_information_three' => $totalExtraInformationThrees,
+                'extra_information_three_details' => $extraInformationGrouped,
+            ], 200);
+        }
+
+        if($request->lang == 'hi'){
+            $extraInformationGrouped = $extraInformationThrees->groupBy('extra_info_3_hi')
+            ->map(function ($extraInformationGroup) use ($translator) {
+                return [
+                    'extra_information_three' => $extraInformationGroup->first()->extra_info_3_hi ?? null,
+                    'extra_information_three_count' => $extraInformationGroup->count(),
+                ];
+            })->values();
+            $totalExtraInformationThrees = $extraInformationGrouped->count();
+            return response()->json([
+                'status' => 200,
+                'message' => 'Extra Information three list retrieved successfully in Hindi',
+                'total_extra_information_three' => $totalExtraInformationThrees,
+                'extra_information_three_details' => $extraInformationGrouped,
+            ], 200);
+        }
+
+    }
+    public function searchExtraInformationThree(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'lang' => 'required|in:en,mr,hi',
+            'extra_info_3' => 'required',
+        ]);
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()], 400);
+        }
+        $lang = $request->input('lang');
+        $translator = new GoogleTranslate($lang);
+        if($request->lang == 'en'){
+            $extraInfoThrees = ExtraInformation::
+                where('extra_info_3', $request->extra_info_3)->orderBy('extra_info_3', 'asc')
+                ->get();
+            $extraInfoThrees = $extraInfoThrees->groupBy('extra_info_3')
+                ->map(function ($extraInfoThreeGroup) use ($translator) {
+                    return [
+                        'extra_info_three' => $extraInfoThreeGroup->first()->extra_info_3 ? $translator->translate($extraInfoThreeGroup->first()->extra_info_3) : null,
+                        'total_voters' => $extraInfoThreeGroup->count(),
+                    ];
+                })->values();
+            return response()->json([
+                'status' => 200,
+                'message' => 'Extra info three list searched successfully',
+                'extra_info_three_voters' => $extraInfoThrees,
+            ], 200);
+        }
+
+        if($request->lang == 'mr'){
+            $extraInfoThrees = ExtraInformation::
+                where('extra_info_3_mr', $request->extra_info_3)->orderBy('extra_info_3_mr', 'asc')
+                ->get();
+            $extraInfoThrees = $extraInfoThrees->groupBy('extra_info_3_mr')
+                ->map(function ($extraInfoThreeGroup) use ($translator) {
+                    return [
+                        'extra_info_three' => $extraInfoThreeGroup->first()->extra_info_3_mr ?? null,
+                        'total_voters' => $extraInfoThreeGroup->count(),
+                    ];
+                })->values();
+            return response()->json([
+                'status' => 200,
+                'message' => 'Extra info three list searched successfully in Marathi',
+                'extra_info_three_voters' => $extraInfoThrees,
+            ], 200);
+        }
+
+        if($request->lang == 'hi'){
+            $extraInfoThrees = ExtraInformation::
+                where('extra_info_3_hi', $request->extra_info_3)->orderBy('extra_info_3_hi', 'asc')
+                ->get();
+            $extraInfoThrees = $extraInfoThrees->groupBy('extra_info_3_hi')
+                ->map(function ($extraInfoThreeGroup) use ($translator) {
+                    return [
+                        'extra_info_three' => $extraInfoThreeGroup->first()->extra_info_3_hi ?? null,
+                        'total_voters' => $extraInfoThreeGroup->count(),
+                    ];
+                })->values();
+            return response()->json([
+                'status' => 200,
+                'message' => 'Extra info three list searched successfully in hindi',
+                'extra_info_three_voters' => $extraInfoThrees,
+            ], 200);
+        }
+
+
+
+
+    }
+    public function voterDetailsByExtraInfoThree(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'lang' => 'required|in:en,mr,hi',
+            'extra_info_3' => 'required',
+        ]);
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()], 400);
+        }
+        $lang = $request->input('lang');
+        $translator = new GoogleTranslate($lang);
+        if($request->lang == 'en'){
+            $users = ExtraInformation::where('extra_info_3', $request->extra_info_3)
+            ->with(['voter', 'voter.voterAddress']) // Eager load voter and extra information
+            ->get()
+            ->map(function ($extraInfoThree) use ($translator) {
+                return [
+                    'voter_details' => [
+                        'id' => $extraInfoThree->voter->id,
+                        'first_name' => $extraInfoThree->voter->first_name ? $translator->translate($extraInfoThree->voter->first_name) : null,
+                        'middle_name' => $extraInfoThree->voter->middle_name ? $translator->translate($extraInfoThree->voter->middle_name) : null,
+                        'surname' => $extraInfoThree->voter->surname ? $translator->translate($extraInfoThree->voter->surname) : null,
+                        'email' => $extraInfoThree->voter->email ? $translator->translate($extraInfoThree->voter->email) : null,
+                        'gender' => $extraInfoThree->voter->gender ? $translator->translate($extraInfoThree->voter->gender) : null,
+                        'age' => $extraInfoThree->voter->age ? $translator->translate($extraInfoThree->voter->age) : null,
+                        'dob' => $extraInfoThree->voter->dob ? $translator->translate($extraInfoThree->voter->dob) : null,
+                        'cast' => $extraInfoThree->voter->cast ? $translator->translate($extraInfoThree->voter->cast) : null,
+                        'position' => $extraInfoThree->voter->position ? $translator->translate($extraInfoThree->voter->position) : null,
+                        'personnel' => $extraInfoThree->voter->personnel ? $translator->translate($extraInfoThree->voter->personnel) : null,
+                        'voter_id' => $extraInfoThree->voter->voter_id ? $translator->translate($extraInfoThree->voter->voter_id) : null,
+                    ],
+                    'extra_information' => $extraInfoThree ? [
+                        'extra_info_1' => $extraInfoThree->extra_info_1 ? $translator->translate($extraInfoThree->extra_info_1) : null,
+                        'extra_info_2' => $extraInfoThree->extra_info_2 ? $translator->translate($extraInfoThree->extra_info_2) : null,
+                        'extra_info_3' => $extraInfoThree->extra_info_3 ? $translator->translate($extraInfoThree->extra_info_3) : null,
+                        'extra_info_4' => $extraInfoThree->extra_info_4 ? $translator->translate($extraInfoThree->extra_info_4) : null,
+                        'extra_info_5' => $extraInfoThree->extra_info_5 ? $translator->translate($extraInfoThree->extra_info_5) : null,
+                        'extra_check_1' => $extraInfoTwo->extra_check_1 ?? null,
+                        'extra_check_2' => $extraInfoTwo->extra_check_2 ?? null,
+
+                        // Add more fields as needed
+                    ] : null,
+                    'address_details' => [
+                        'society' => $extraInfoThree->voter->voterAddress->society ? $translator->translate($extraInfoThree->voter->voterAddress->society) : null,
+                        'house_no' => $extraInfoThree->voter->voterAddress->house_no ? $translator->translate($extraInfoThree->voter->voterAddress->house_no) : null,
+                        'flat_no' => $extraInfoThree->voter->voterAddress->flat_no ? $translator->translate($extraInfoThree->voter->voterAddress->flat_no) : null,
+                        'address' => $extraInfoThree->voter->voterAddress->address ? $translator->translate($extraInfoThree->voter->voterAddress->address) : null,
+                        'booth' => $extraInfoThree->voter->voterAddress->booth ? $translator->translate($extraInfoThree->voter->voterAddress->booth) : null,
+                        'village' => $extraInfoThree->voter->voterAddress->village ? $translator->translate($extraInfoThree->voter->voterAddress->village) : null,
+                        'part_no' => $extraInfoThree->voter->voterAddress->part_no ? $translator->translate($extraInfoThree->voter->voterAddress->part_no) : null,
+                        'srn' => $extraInfoThree->voter->voterAddress->srn ? $translator->translate($extraInfoThree->voter->voterAddress->srn) : null,
+                        'voting_centre' => $extraInfoThree->voter->voterAddress->voting_centre ? $translator->translate($extraInfoThree->voter->voterAddress->voting_centre) : null,
+                    ],
+                ];
+            });
+            return response()->json([
+                'status' => 200,
+                'message' => 'Voter details retrieved successfully',
+                'voters' => $users,
+            ], 200);
+        }
+
+        if ($request->lang == 'mr') {
+            $users = ExtraInformation::where('extra_info_3_mr', $request->extra_info_3)
+                ->with(['voter', 'voter.voterAddress']) // Eager load voter and extra information
+                ->get()
+                ->map(function ($extraInfoThree) use ($translator) {
+                    return [
+                        'voter_details' => [
+                            'id' => $extraInfoThree->voter->id,
+                            'first_name' => $extraInfoThree->voter->first_name_mr ?? ($extraInfoThree->voter->first_name ? $translator->translate($extraInfoThree->voter->first_name) : null),
+                            'middle_name' => $extraInfoThree->voter->middle_name_mr ?? ($extraInfoThree->voter->middle_name ? $translator->translate($extraInfoThree->voter->middle_name) : null),
+                            'surname' => $extraInfoThree->voter->surname_mr ?? ($extraInfoThree->voter->surname ? $translator->translate($extraInfoThree->voter->surname) : null),
+                            'email' => $extraInfoThree->voter->email ?? null,
+                            'gender' => $extraInfoThree->voter->gender_mr ?? ($extraInfoThree->voter->gender ? $translator->translate($extraInfoThree->voter->gender) : null),
+                            'age' => $extraInfoThree->voter->age_mr ?? ($extraInfoThree->voter->age ? $translator->translate($extraInfoThree->voter->age) : null),
+                            'dob' => $extraInfoThree->voter->dob_mr ?? ($extraInfoThree->voter->dob ? $translator->translate($extraInfoThree->voter->dob) : null),
+                            'cast' => $extraInfoThree->voter->cast_mr ?? ($extraInfoThree->voter->cast ? $translator->translate($extraInfoThree->voter->cast) : null),
+                            'position' => $extraInfoThree->voter->position_mr ?? ($extraInfoThree->voter->position ? $translator->translate($extraInfoThree->voter->position) : null),
+                            'personnel' => $extraInfoThree->voter->personnel_mr ?? ($extraInfoThree->voter->personnel ? $translator->translate($extraInfoThree->voter->personnel) : null),
+                            'voter_id' => $extraInfoThree->voter->voter_id_mr ?? ($extraInfoThree->voter->voter_id ? $translator->translate($extraInfoThree->voter->voter_id) : null),
+                        ],
+                        'extra_information' => $extraInfoThree ? [
+                            'extra_info_1' => $extraInfoThree->extra_info_1_mr ?? ($extraInfoThree->extra_info_1 ? $translator->translate($extraInfoThree->extra_info_1) : null),
+                            'extra_info_2' => $extraInfoThree->extra_info_2_mr ?? ($extraInfoThree->extra_info_2 ? $translator->translate($extraInfoThree->extra_info_2) : null),
+                            'extra_info_3' => $extraInfoThree->extra_info_3_mr ?? ($extraInfoThree->extra_info_3 ? $translator->translate($extraInfoThree->extra_info_3) : null),
+                            'extra_info_4' => $extraInfoThree->extra_info_4_mr ?? ($extraInfoThree->extra_info_4 ? $translator->translate($extraInfoThree->extra_info_4) : null),
+                            'extra_info_5' => $extraInfoThree->extra_info_5_mr ?? ($extraInfoThree->extra_info_5 ? $translator->translate($extraInfoThree->extra_info_5) : null),
+                            'extra_check_1' => $extraInfoThree->extra_check_1 ?? null,
+                            'extra_check_2' => $extraInfoThree->extra_check_2 ?? null,
+                        ] : null,
+                        'address_details' => [
+                            'society' => $extraInfoThree->voter->voterAddress->society_mr ?? ($extraInfoThree->voter->voterAddress->society ? $translator->translate($extraInfoThree->voter->voterAddress->society) : null),
+                            'house_no' => $extraInfoThree->voter->voterAddress->house_no_mr ?? ($extraInfoThree->voter->voterAddress->house_no ? $translator->translate($extraInfoThree->voter->voterAddress->house_no) : null),
+                            'flat_no' => $extraInfoThree->voter->voterAddress->flat_no_mr ?? ($extraInfoThree->voter->voterAddress->flat_no ? $translator->translate($extraInfoThree->voter->voterAddress->flat_no) : null),
+                            'address' => $extraInfoThree->voter->voterAddress->address_mr ?? ($extraInfoThree->voter->voterAddress->address ? $translator->translate($extraInfoThree->voter->voterAddress->address) : null),
+                            'booth' => $extraInfoThree->voter->voterAddress->booth_mr ?? ($extraInfoThree->voter->voterAddress->booth ? $translator->translate($extraInfoThree->voter->voterAddress->booth) : null),
+                            'village' => $extraInfoThree->voter->voterAddress->village_mr ?? ($extraInfoThree->voter->voterAddress->village ? $translator->translate($extraInfoThree->voter->voterAddress->village) : null),
+                            'part_no' => $extraInfoThree->voter->voterAddress->part_no_mr ?? ($extraInfoThree->voter->voterAddress->part_no ? $translator->translate($extraInfoThree->voter->voterAddress->part_no) : null),
+                            'srn' => $extraInfoThree->voter->voterAddress->srn_mr ?? ($extraInfoThree->voter->voterAddress->srn ? $translator->translate($extraInfoThree->voter->voterAddress->srn) : null),
+                            'voting_centre' => $extraInfoThree->voter->voterAddress->voting_centre_mr ?? ($extraInfoThree->voter->voterAddress->voting_centre ? $translator->translate($extraInfoThree->voter->voterAddress->voting_centre) : null),
+                        ],
+                    ];
+                });
+
+            return response()->json([
+                'status' => 200,
+                'message' => 'Voter details retrieved successfully',
+                'voters' => $users,
+            ], 200);
+        }
+
+        if ($request->lang == 'hi') {
+            $users = ExtraInformation::where('extra_info_3_hi', $request->extra_info_3)
+                ->with(['voter', 'voter.voterAddress']) // Eager load voter and extra information
+                ->get()
+                ->map(function ($extraInfoThree) use ($translator) {
+                    return [
+                        'voter_details' => [
+                            'id' => $extraInfoThree->voter->id,
+                            'first_name' => $extraInfoThree->voter->first_name_hi ?? ($extraInfoThree->voter->first_name ? $translator->translate($extraInfoThree->voter->first_name) : null),
+                            'middle_name' => $extraInfoThree->voter->middle_name_hi ?? ($extraInfoThree->voter->middle_name ? $translator->translate($extraInfoThree->voter->middle_name) : null),
+                            'surname' => $extraInfoThree->voter->surname_hi ?? ($extraInfoThree->voter->surname ? $translator->translate($extraInfoThree->voter->surname) : null),
+                            'email' => $extraInfoThree->voter->email ?? null,
+                            'gender' => $extraInfoThree->voter->gender_hi ?? ($extraInfoThree->voter->gender ? $translator->translate($extraInfoThree->voter->gender) : null),
+                            'age' => $extraInfoThree->voter->age_hi ?? ($extraInfoThree->voter->age ? $translator->translate($extraInfoThree->voter->age) : null),
+                            'dob' => $extraInfoThree->voter->dob_hi ?? ($extraInfoThree->voter->dob ? $translator->translate($extraInfoThree->voter->dob) : null),
+                            'cast' => $extraInfoThree->voter->cast_hi ?? ($extraInfoThree->voter->cast ? $translator->translate($extraInfoThree->voter->cast) : null),
+                            'position' => $extraInfoThree->voter->position_hi ?? ($extraInfoThree->voter->position ? $translator->translate($extraInfoThree->voter->position) : null),
+                            'personnel' => $extraInfoThree->voter->personnel_hi ?? ($extraInfoThree->voter->personnel ? $translator->translate($extraInfoThree->voter->personnel) : null),
+                            'voter_id' => $extraInfoThree->voter->voter_id_hi ?? ($extraInfoThree->voter->voter_id ? $translator->translate($extraInfoThree->voter->voter_id) : null),
+                        ],
+                        'extra_information' => $extraInfoThree ? [
+                            'extra_info_1' => $extraInfoThree->extra_info_1_hi ?? ($extraInfoThree->extra_info_1 ? $translator->translate($extraInfoThree->extra_info_1) : null),
+                            'extra_info_2' => $extraInfoThree->extra_info_2_hi ?? ($extraInfoThree->extra_info_2 ? $translator->translate($extraInfoThree->extra_info_2) : null),
+                            'extra_info_3' => $extraInfoThree->extra_info_3_hi ?? ($extraInfoThree->extra_info_3 ? $translator->translate($extraInfoThree->extra_info_3) : null),
+                            'extra_info_4' => $extraInfoThree->extra_info_4_hi ?? ($extraInfoThree->extra_info_4 ? $translator->translate($extraInfoThree->extra_info_4) : null),
+                            'extra_info_5' => $extraInfoThree->extra_info_5_hi ?? ($extraInfoThree->extra_info_5 ? $translator->translate($extraInfoThree->extra_info_5) : null),
+                            'extra_check_1' => $extraInfoThree->extra_check_1 ?? null,
+                            'extra_check_2' => $extraInfoThree->extra_check_2 ?? null,
+                        ] : null,
+                        'address_details' => [
+                            'society' => $extraInfoThree->voter->voterAddress->society_hi ?? ($extraInfoThree->voter->voterAddress->society ? $translator->translate($extraInfoThree->voter->voterAddress->society) : null),
+                            'house_no' => $extraInfoThree->voter->voterAddress->house_no_hi ?? ($extraInfoThree->voter->voterAddress->house_no ? $translator->translate($extraInfoThree->voter->voterAddress->house_no) : null),
+                            'flat_no' => $extraInfoThree->voter->voterAddress->flat_no_hi ?? ($extraInfoThree->voter->voterAddress->flat_no ? $translator->translate($extraInfoThree->voter->voterAddress->flat_no) : null),
+                            'address' => $extraInfoThree->voter->voterAddress->address_hi ?? ($extraInfoThree->voter->voterAddress->address ? $translator->translate($extraInfoThree->voter->voterAddress->address) : null),
+                            'booth' => $extraInfoThree->voter->voterAddress->booth_hi ?? ($extraInfoThree->voter->voterAddress->booth ? $translator->translate($extraInfoThree->voter->voterAddress->booth) : null),
+                            'village' => $extraInfoThree->voter->voterAddress->village_hi ?? ($extraInfoThree->voter->voterAddress->village ? $translator->translate($extraInfoThree->voter->voterAddress->village) : null),
+                            'part_no' => $extraInfoThree->voter->voterAddress->part_no_hi ?? ($extraInfoThree->voter->voterAddress->part_no ? $translator->translate($extraInfoThree->voter->voterAddress->part_no) : null),
+                            'srn' => $extraInfoThree->voter->voterAddress->srn_hi ?? ($extraInfoThree->voter->voterAddress->srn ? $translator->translate($extraInfoThree->voter->voterAddress->srn) : null),
+                            'voting_centre' => $extraInfoThree->voter->voterAddress->voting_centre_hi ?? ($extraInfoThree->voter->voterAddress->voting_centre ? $translator->translate($extraInfoThree->voter->voterAddress->voting_centre) : null),
+                        ],
+                    ];
+                });
+
+            return response()->json([
+                'status' => 200,
+                'message' => 'Voter details retrieved successfully in hindi',
+                'voters' => $users,
+            ], 200);
+        }
+
+
+
+
+    }
+
+    //Extra Information Four
+
+    public function extraInformationFourList(Request $request)
+    {
+
+        $validator = Validator::make($request->all(), [
+            'lang' => 'required|in:en,mr,hi',
+        ]);
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()], 400);
+        }
+
+        $lang = $request->input('lang');
+        $translator = new GoogleTranslate($lang);
+        if($request->lang == 'en'){
+            $extraInformationFours = extraInformation::all();
+            $extraInformationGrouped = $extraInformationFours->groupBy('extra_info_4')
+            ->map(function ($extraInformationGroup) use ($translator) {
+                return [
+                    'extra_information_four' => $extraInformationGroup->first()->extra_info_4 ? $translator->translate($extraInformationGroup->first()->extra_info_4) : null,
+                    'extra_information_four_count' => $extraInformationGroup->count(),
+                ];
+            })->values();
+            $totalExtraInformationFours = $extraInformationGrouped->count();
+            return response()->json([
+                'status' => 200,
+                'message' => 'Extra Information four list retrieved successfully',
+                'total_extra_information_four' => $totalExtraInformationFours,
+                'extra_information_four_details' => $extraInformationGrouped,
+            ], 200);
+        }
+
+        if($request->lang == 'mr'){
+            $extraInformationFours = extraInformation::all();
+            $extraInformationGrouped = $extraInformationFours->groupBy('extra_info_4_mr')
+            ->map(function ($extraInformationGroup) use ($translator) {
+                return [
+                    'extra_information_four' => $extraInformationGroup->first()->extra_info_4 ?? null,
+                    'extra_information_four_count' => $extraInformationGroup->count(),
+                ];
+            })->values();
+            $totalExtraInformationFours = $extraInformationGrouped->count();
+            return response()->json([
+                'status' => 200,
+                'message' => 'Extra Information four list retrieved successfully in Marathi',
+                'total_extra_information_four' => $totalExtraInformationFours,
+                'extra_information_four_details' => $extraInformationGrouped,
+            ], 200);
+        }
+
+        if($request->lang == 'hi'){
+            $extraInformationFours = extraInformation::all();
+            $extraInformationGrouped = $extraInformationFours->groupBy('extra_info_4_hi')
+            ->map(function ($extraInformationGroup) use ($translator) {
+                return [
+                    'extra_information_four' => $extraInformationGroup->first()->extra_info_4 ?? null,
+                    'extra_information_four_count' => $extraInformationGroup->count(),
+                ];
+            })->values();
+            $totalExtraInformationFours = $extraInformationGrouped->count();
+            return response()->json([
+                'status' => 200,
+                'message' => 'Extra Information four list retrieved successfully in Hindi',
+                'total_extra_information_four' => $totalExtraInformationFours,
+                'extra_information_four_details' => $extraInformationGrouped,
+            ], 200);
+        }
+
+    }
+    public function searchExtraInformationFour(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'lang' => 'required|in:en,mr,hi',
+            'extra_info_4' => 'required',
+        ]);
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()], 400);
+        }
+        $lang = $request->input('lang');
+        $translator = new GoogleTranslate($lang);
+        if($request->lang == 'en'){
+            $extraInfoFours = ExtraInformation::
+                where('extra_info_4', $request->extra_info_4)->orderBy('extra_info_4', 'asc')
+                ->get();
+            $extraInfoFours = $extraInfoFours->groupBy('extra_info_4')
+                ->map(function ($extraInfoFourGroup) use ($translator) {
+                    return [
+                        'extra_info_four' => $extraInfoFourGroup->first()->extra_info_4 ? $translator->translate($extraInfoFourGroup->first()->extra_info_4) : null,
+                        'total_voters' => $extraInfoFourGroup->count(),
+                    ];
+                })->values();
+            return response()->json([
+                'status' => 200,
+                'message' => 'Extra info four list searched successfully in English',
+                'extra_info_four_voters' => $extraInfoFours,
+            ], 200);
+        }
+
+        if($request->lang == 'mr'){
+            $extraInfoFours = ExtraInformation::
+                where('extra_info_4_mr', $request->extra_info_4)->orderBy('extra_info_4_mr', 'asc')
+                ->get();
+            $extraInfoFours = $extraInfoFours->groupBy('extra_info_4_mr')
+                ->map(function ($extraInfoFourGroup) use ($translator) {
+                    return [
+                        'extra_info_four' => $extraInfoFourGroup->first()->extra_info_4_mr ?? null,
+                        'total_voters' => $extraInfoFourGroup->count(),
+                    ];
+                })->values();
+            return response()->json([
+                'status' => 200,
+                'message' => 'Extra info four list searched successfully in Marathi',
+                'extra_info_four_voters' => $extraInfoFours,
+            ], 200);
+        }
+
+        if($request->lang == 'hi'){
+            $extraInfoFours = ExtraInformation::
+                where('extra_info_4_hi', $request->extra_info_4)->orderBy('extra_info_4_hi', 'asc')
+                ->get();
+            $extraInfoFours = $extraInfoFours->groupBy('extra_info_4_hi')
+                ->map(function ($extraInfoFourGroup) use ($translator) {
+                    return [
+                        'extra_info_four' => $extraInfoFourGroup->first()->extra_info_4_hi ?? null,
+                        'total_voters' => $extraInfoFourGroup->count(),
+                    ];
+                })->values();
+            return response()->json([
+                'status' => 200,
+                'message' => 'Extra info four list searched successfully in Hindi',
+                'extra_info_four_voters' => $extraInfoFours,
+            ], 200);
+        }
+
+    }
+    public function voterDetailsByExtraInfoFour(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'lang' => 'required|in:en,mr,hi',
+            'extra_info_4' => 'required',
+        ]);
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()], 400);
+        }
+        $lang = $request->input('lang');
+        $translator = new GoogleTranslate($lang);
+        if($request->lang == 'en'){
+            $users = ExtraInformation::where('extra_info_4', $request->extra_info_4)
+            ->with(['voter', 'voter.voterAddress']) // Eager load voter and extra information
+            ->get()
+            ->map(function ($extraInfoFour) use ($translator) {
+                return [
+                    'voter_details' => [
+                        'id' => $extraInfoFour->voter->id,
+                        'first_name' => $extraInfoFour->voter->first_name ? $translator->translate($extraInfoFour->voter->first_name) : null,
+                        'middle_name' => $extraInfoFour->voter->middle_name ? $translator->translate($extraInfoFour->voter->middle_name) : null,
+                        'surname' => $extraInfoFour->voter->surname ? $translator->translate($extraInfoFour->voter->surname) : null,
+                        'email' => $extraInfoFour->voter->email ? $translator->translate($extraInfoFour->voter->email) : null,
+                        'gender' => $extraInfoFour->voter->gender ? $translator->translate($extraInfoFour->voter->gender) : null,
+                        'age' => $extraInfoFour->voter->age ? $translator->translate($extraInfoFour->voter->age) : null,
+                        'dob' => $extraInfoFour->voter->dob ? $translator->translate($extraInfoFour->voter->dob) : null,
+                        'cast' => $extraInfoFour->voter->cast ? $translator->translate($extraInfoFour->voter->cast) : null,
+                        'position' => $extraInfoFour->voter->position ? $translator->translate($extraInfoFour->voter->position) : null,
+                        'personnel' => $extraInfoFour->voter->personnel ? $translator->translate($extraInfoFour->voter->personnel) : null,
+                        'voter_id' => $extraInfoFour->voter->voter_id ? $translator->translate($extraInfoFour->voter->voter_id) : null,
+                    ],
+                    'extra_information' => $extraInfoFour ? [
+                        'extra_info_1' => $extraInfoFour->extra_info_1 ? $translator->translate($extraInfoFour->extra_info_1) : null,
+                        'extra_info_2' => $extraInfoFour->extra_info_2 ? $translator->translate($extraInfoFour->extra_info_2) : null,
+                        'extra_info_3' => $extraInfoFour->extra_info_3 ? $translator->translate($extraInfoFour->extra_info_3) : null,
+                        'extra_info_4' => $extraInfoFour->extra_info_4 ? $translator->translate($extraInfoFour->extra_info_4) : null,
+                        'extra_info_5' => $extraInfoFour->extra_info_5 ? $translator->translate($extraInfoFour->extra_info_5) : null,
+                        'extra_check_1' => $extraInfoTwo->extra_check_1 ?? null,
+                        'extra_check_2' => $extraInfoTwo->extra_check_2 ?? null,
+
+                        // Add more fields as needed
+                    ] : null,
+                    'address_details' => [
+                        'society' => $extraInfoFour->voter->voterAddress->society ? $translator->translate($extraInfoFour->voter->voterAddress->society) : null,
+                        'house_no' => $extraInfoFour->voter->voterAddress->house_no ? $translator->translate($extraInfoFour->voter->voterAddress->house_no) : null,
+                        'flat_no' => $extraInfoFour->voter->voterAddress->flat_no ? $translator->translate($extraInfoFour->voter->voterAddress->flat_no) : null,
+                        'address' => $extraInfoFour->voter->voterAddress->address ? $translator->translate($extraInfoFour->voter->voterAddress->address) : null,
+                        'booth' => $extraInfoFour->voter->voterAddress->booth ? $translator->translate($extraInfoFour->voter->voterAddress->booth) : null,
+                        'village' => $extraInfoFour->voter->voterAddress->village ? $translator->translate($extraInfoFour->voter->voterAddress->village) : null,
+                        'part_no' => $extraInfoFour->voter->voterAddress->part_no ? $translator->translate($extraInfoFour->voter->voterAddress->part_no) : null,
+                        'srn' => $extraInfoFour->voter->voterAddress->srn ? $translator->translate($extraInfoFour->voter->voterAddress->srn) : null,
+                        'voting_centre' => $extraInfoFour->voter->voterAddress->voting_centre ? $translator->translate($extraInfoFour->voter->voterAddress->voting_centre) : null,
+                    ],
+                ];
+            });
+            return response()->json([
+                'status' => 200,
+                'message' => 'Voter details retrieved successfully',
+                'voters' => $users,
+            ], 200);
+        }
+
+        if ($request->lang == 'hi') {
+            $users = ExtraInformation::where('extra_info_4_hi', $request->extra_info_4)
+                ->with(['voter', 'voter.voterAddress']) // Eager load voter and extra information
+                ->get()
+                ->map(function ($extraInfoFour) use ($translator) {
+                    return [
+                        'voter_details' => [
+                            'id' => $extraInfoFour->voter->id,
+                            'first_name' => $extraInfoFour->voter->first_name_hi ?? ($extraInfoFour->voter->first_name ? $translator->translate($extraInfoFour->voter->first_name) : null),
+                            'middle_name' => $extraInfoFour->voter->middle_name_hi ?? ($extraInfoFour->voter->middle_name ? $translator->translate($extraInfoFour->voter->middle_name) : null),
+                            'surname' => $extraInfoFour->voter->surname_hi ?? ($extraInfoFour->voter->surname ? $translator->translate($extraInfoFour->voter->surname) : null),
+                            'email' => $extraInfoFour->voter->email ?? null,
+                            'gender' => $extraInfoFour->voter->gender_hi ?? ($extraInfoFour->voter->gender ? $translator->translate($extraInfoFour->voter->gender) : null),
+                            'age' => $extraInfoFour->voter->age ?? null,
+                            'dob' => $extraInfoFour->voter->dob ?? null,
+                            'cast' => $extraInfoFour->voter->cast_hi ?? ($extraInfoFour->voter->cast ? $translator->translate($extraInfoFour->voter->cast) : null),
+                            'position' => $extraInfoFour->voter->position_hi ?? ($extraInfoFour->voter->position ? $translator->translate($extraInfoFour->voter->position) : null),
+                            'personnel' => $extraInfoFour->voter->personnel_hi ?? ($extraInfoFour->voter->personnel ? $translator->translate($extraInfoFour->voter->personnel) : null),
+                            'voter_id' => $extraInfoFour->voter->voter_id_hi ?? ($extraInfoFour->voter->voter_id ? $translator->translate($extraInfoFour->voter->voter_id) : null),
+                        ],
+                        'extra_information' => $extraInfoFour ? [
+                            'extra_info_1' => $extraInfoFour->extra_info_1_hi ?? ($extraInfoFour->extra_info_1 ? $translator->translate($extraInfoFour->extra_info_1) : null),
+                            'extra_info_2' => $extraInfoFour->extra_info_2_hi ?? ($extraInfoFour->extra_info_2 ? $translator->translate($extraInfoFour->extra_info_2) : null),
+                            'extra_info_3' => $extraInfoFour->extra_info_3_hi ?? ($extraInfoFour->extra_info_3 ? $translator->translate($extraInfoFour->extra_info_3) : null),
+                            'extra_info_4' => $extraInfoFour->extra_info_4_hi ?? ($extraInfoFour->extra_info_4 ? $translator->translate($extraInfoFour->extra_info_4) : null),
+                            'extra_info_5' => $extraInfoFour->extra_info_5_hi ?? ($extraInfoFour->extra_info_5 ? $translator->translate($extraInfoFour->extra_info_5) : null),
+                            'extra_check_1' => $extraInfoFour->extra_check_1 ?? null,
+                            'extra_check_2' => $extraInfoFour->extra_check_2 ?? null,
+                        ] : null,
+                        'address_details' => [
+                            'society' => $extraInfoFour->voter->voterAddress->society_hi ?? ($extraInfoFour->voter->voterAddress->society ? $translator->translate($extraInfoFour->voter->voterAddress->society) : null),
+                            'house_no' => $extraInfoFour->voter->voterAddress->house_no_hi ?? ($extraInfoFour->voter->voterAddress->house_no ? $translator->translate($extraInfoFour->voter->voterAddress->house_no) : null),
+                            'flat_no' => $extraInfoFour->voter->voterAddress->flat_no_hi ?? ($extraInfoFour->voter->voterAddress->flat_no ? $translator->translate($extraInfoFour->voter->voterAddress->flat_no) : null),
+                            'address' => $extraInfoFour->voter->voterAddress->address_hi ?? ($extraInfoFour->voter->voterAddress->address ? $translator->translate($extraInfoFour->voter->voterAddress->address) : null),
+                            'booth' => $extraInfoFour->voter->voterAddress->booth_hi ?? ($extraInfoFour->voter->voterAddress->booth ? $translator->translate($extraInfoFour->voter->voterAddress->booth) : null),
+                            'village' => $extraInfoFour->voter->voterAddress->village_hi ?? ($extraInfoFour->voter->voterAddress->village ? $translator->translate($extraInfoFour->voter->voterAddress->village) : null),
+                            'part_no' => $extraInfoFour->voter->voterAddress->part_no_hi ?? ($extraInfoFour->voter->voterAddress->part_no ? $translator->translate($extraInfoFour->voter->voterAddress->part_no) : null),
+                            'srn' => $extraInfoFour->voter->voterAddress->srn_hi ?? ($extraInfoFour->voter->voterAddress->srn ? $translator->translate($extraInfoFour->voter->voterAddress->srn) : null),
+                            'voting_centre' => $extraInfoFour->voter->voterAddress->voting_centre_hi ?? ($extraInfoFour->voter->voterAddress->voting_centre ? $translator->translate($extraInfoFour->voter->voterAddress->voting_centre) : null),
+                        ],
+                    ];
+                });
+            return response()->json([
+                'status' => 200,
+                'message' => 'Voter details retrieved successfully in Hindi',
+                'voters' => $users,
+            ], 200);
+        }
+
+
+
+
+
+
+    }
+
+//Extra Information Five
+
+    public function extraInformationFiveList(Request $request)
+    {
+
+        $validator = Validator::make($request->all(), [
+            'lang' => 'required|in:en,mr,hi',
+        ]);
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()], 400);
+        }
+
+        $lang = $request->input('lang');
+        $translator = new GoogleTranslate($lang);
+        if($request->lang == 'en'){
+            $extraInformationFives = extraInformation::all();
+            $extraInformationGrouped = $extraInformationFives->groupBy('extra_info_5')
+                ->map(function ($extraInformationGroup) use ($translator) {
+                    return [
+                        'extra_information_five' => $extraInformationGroup->first()->extra_info_5 ?? null,
+                        'extra_information_five_count' => $extraInformationGroup->count(),
+                    ];
+                })->values();
+            $totalExtraInformationFives = $extraInformationGrouped->count();
+            return response()->json([
+                'status' => 200,
+                'message' => 'Extra Information five list retrieved successfully in English',
+                'total_extra_information_five' => $totalExtraInformationFives,
+                'extra_information_five_details' => $extraInformationGrouped,
+            ], 200);
+        }
+
+        if($request->lang == 'mr'){
+            $extraInformationFives = extraInformation::all();
+            $extraInformationGrouped = $extraInformationFives->groupBy('extra_info_5_mr')
+                ->map(function ($extraInformationGroup) use ($translator) {
+                    return [
+                        'extra_information_five' => $extraInformationGroup->first()->extra_info_5_mr ?? null,
+                        'extra_information_five_count' => $extraInformationGroup->count(),
+                    ];
+                })->values();
+            $totalExtraInformationFives = $extraInformationGrouped->count();
+            return response()->json([
+                'status' => 200,
+                'message' => 'Extra Information five list retrieved successfully in Marathi',
+                'total_extra_information_five' => $totalExtraInformationFives,
+                'extra_information_five_details' => $extraInformationGrouped,
+            ], 200);
+        }
+        if($request->lang == 'hi'){
+            $extraInformationFives = extraInformation::all();
+            $extraInformationGrouped = $extraInformationFives->groupBy('extra_info_5_mr')
+                ->map(function ($extraInformationGroup) use ($translator) {
+                    return [
+                        'extra_information_five' => $extraInformationGroup->first()->extra_info_5_mr ?? null,
+                        'extra_information_five_count' => $extraInformationGroup->count(),
+                    ];
+                })->values();
+            $totalExtraInformationFives = $extraInformationGrouped->count();
+            return response()->json([
+                'status' => 200,
+                'message' => 'Extra Information five list retrieved successfully in Marathi',
+                'total_extra_information_five' => $totalExtraInformationFives,
+                'extra_information_five_details' => $extraInformationGrouped,
+            ], 200);
+        }
+
+    }
+    public function searchExtraInformationFive(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'lang' => 'required|in:en,mr,hi',
+            'extra_info_5' => 'required',
+        ]);
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()], 400);
+        }
+        $lang = $request->input('lang');
+        $translator = new GoogleTranslate($lang);
+        if($request->lang == 'en'){
+            $extraInfoFives = ExtraInformation::
+                where('extra_info_5', $request->extra_info_5)->orderBy('extra_info_5', 'asc')
+                ->get();
+            $extraInfoFives = $extraInfoFives->groupBy('extra_info_5')
+                ->map(function ($extraInfoFiveGroup) use ($translator) {
+                    return [
+                        'extra_info_five' => $extraInfoFiveGroup->first()->extra_info_5 ? $translator->translate($extraInfoFiveGroup->first()->extra_info_5) : null,
+                        'total_voters' => $extraInfoFiveGroup->count(),
+                    ];
+                })->values();
+            return response()->json([
+                'status' => 200,
+                'message' => 'Extra info five list searched successfully',
+                'extra_info_five_voters' => $extraInfoFives,
+            ], 200);
+        }
+        if($request->lang == 'mr'){
+            $extraInfoFives = ExtraInformation::
+                where('extra_info_5_mr', $request->extra_info_5)->orderBy('extra_info_5_mr', 'asc')
+                ->get();
+            $extraInfoFives = $extraInfoFives->groupBy('extra_info_5_mr')
+                ->map(function ($extraInfoFiveGroup) use ($translator) {
+                    return [
+                        'extra_info_five' => $extraInfoFiveGroup->first()->extra_info_5_mr ?? null,
+                        'total_voters' => $extraInfoFiveGroup->count(),
+                    ];
+                })->values();
+            return response()->json([
+                'status' => 200,
+                'message' => 'Extra info five list searched successfully in marathi',
+                'extra_info_five_voters' => $extraInfoFives,
+            ], 200);
+        }
+
+        if($request->lang == 'hi'){
+            $extraInfoFives = ExtraInformation::
+                where('extra_info_5_hi', $request->extra_info_5)->orderBy('extra_info_5_hi', 'asc')
+                ->get();
+            $extraInfoFives = $extraInfoFives->groupBy('extra_info_5_mr')
+                ->map(function ($extraInfoFiveGroup) use ($translator) {
+                    return [
+                        'extra_info_five' => $extraInfoFiveGroup->first()->extra_info_5_hi ?? null,
+                        'total_voters' => $extraInfoFiveGroup->count(),
+                    ];
+                })->values();
+            return response()->json([
+                'status' => 200,
+                'message' => 'Extra info five list searched successfully in hindi',
+                'extra_info_five_voters' => $extraInfoFives,
+            ], 200);
+        }
+
+    }
+    public function voterDetailsByExtraInfoFive(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'lang' => 'required|in:en,mr,hi',
+            'extra_info_5' => 'required',
+        ]);
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()], 400);
+        }
+        $lang = $request->input('lang');
+        $translator = new GoogleTranslate($lang);
+        if($request->lang == 'en'){
+            $users = ExtraInformation::where('extra_info_5', $request->extra_info_5)
+            ->with(['voter', 'voter.voterAddress']) // Eager load voter and extra information
+            ->get()
+            ->map(function ($extraInfoFive) use ($translator) {
+                return [
+                    'voter_details' => [
+                        'id' => $extraInfoFive->voter->id,
+                        'first_name' => $extraInfoFive->voter->first_name ? $translator->translate($extraInfoFive->voter->first_name) : null,
+                        'middle_name' => $extraInfoFive->voter->middle_name ? $translator->translate($extraInfoFive->voter->middle_name) : null,
+                        'surname' => $extraInfoFive->voter->surname ? $translator->translate($extraInfoFive->voter->surname) : null,
+                        'email' => $extraInfoFive->voter->email ? $translator->translate($extraInfoFive->voter->email) : null,
+                        'gender' => $extraInfoFive->voter->gender ? $translator->translate($extraInfoFive->voter->gender) : null,
+                        'age' => $extraInfoFive->voter->age ? $translator->translate($extraInfoFive->voter->age) : null,
+                        'dob' => $extraInfoFive->voter->dob ? $translator->translate($extraInfoFive->voter->dob) : null,
+                        'cast' => $extraInfoFive->voter->cast ? $translator->translate($extraInfoFive->voter->cast) : null,
+                        'position' => $extraInfoFive->voter->position ? $translator->translate($extraInfoFive->voter->position) : null,
+                        'personnel' => $extraInfoFive->voter->personnel ? $translator->translate($extraInfoFive->voter->personnel) : null,
+                        'voter_id' => $extraInfoFive->voter->voter_id ? $translator->translate($extraInfoFive->voter->voter_id) : null,
+                    ],
+                    'extra_information' => $extraInfoFive ? [
+                        'extra_info_1' => $extraInfoFive->extra_info_1 ? $translator->translate($extraInfoFive->extra_info_1) : null,
+                        'extra_info_2' => $extraInfoFive->extra_info_2 ? $translator->translate($extraInfoFive->extra_info_2) : null,
+                        'extra_info_3' => $extraInfoFive->extra_info_3 ? $translator->translate($extraInfoFive->extra_info_3) : null,
+                        'extra_info_4' => $extraInfoFive->extra_info_4 ? $translator->translate($extraInfoFive->extra_info_4) : null,
+                        'extra_info_5' => $extraInfoFive->extra_info_5 ? $translator->translate($extraInfoFive->extra_info_5) : null,
+                        'extra_check_1' => $extraInfoFive->extra_check_1 ?? null,
+                        'extra_check_2' => $extraInfoFive->extra_check_2 ?? null,
+
+                        // Add more fields as needed
+                    ] : null,
+                    'address_details' => [
+                        'society' => $extraInfoFive->voter->voterAddress->society ? $translator->translate($extraInfoFive->voter->voterAddress->society) : null,
+                        'house_no' => $extraInfoFive->voter->voterAddress->house_no ? $translator->translate($extraInfoFive->voter->voterAddress->house_no) : null,
+                        'flat_no' => $extraInfoFive->voter->voterAddress->flat_no ? $translator->translate($extraInfoFive->voter->voterAddress->flat_no) : null,
+                        'address' => $extraInfoFive->voter->voterAddress->address ? $translator->translate($extraInfoFive->voter->voterAddress->address) : null,
+                        'booth' => $extraInfoFive->voter->voterAddress->booth ? $translator->translate($extraInfoFive->voter->voterAddress->booth) : null,
+                        'village' => $extraInfoFive->voter->voterAddress->village ? $translator->translate($extraInfoFive->voter->voterAddress->village) : null,
+                        'part_no' => $extraInfoFive->voter->voterAddress->part_no ? $translator->translate($extraInfoFive->voter->voterAddress->part_no) : null,
+                        'srn' => $extraInfoFive->voter->voterAddress->srn ? $translator->translate($extraInfoFive->voter->voterAddress->srn) : null,
+                        'voting_centre' => $extraInfoFive->voter->voterAddress->voting_centre ? $translator->translate($extraInfoFive->voter->voterAddress->voting_centre) : null,
+                    ],
+                ];
+            });
+            return response()->json([
+                'status' => 200,
+                'message' => 'Voter details retrieved successfully',
+                'voters' => $users,
+            ], 200);
+
+        }
+
+        if ($request->lang == 'mr') {
+            $users = ExtraInformation::where('extra_info_5_mr', $request->extra_info_5)
+                ->with(['voter', 'voter.voterAddress']) // Eager load voter and extra information
+                ->get()
+                ->map(function ($extraInfoFive) use ($translator) {
+                    return [
+                        'voter_details' => [
+                            'id' => $extraInfoFive->voter->id,
+                            'first_name' => $extraInfoFive->voter->first_name_mr ?? ($extraInfoFive->voter->first_name ? $translator->translate($extraInfoFive->voter->first_name) : null),
+                            'middle_name' => $extraInfoFive->voter->middle_name_mr ?? ($extraInfoFive->voter->middle_name ? $translator->translate($extraInfoFive->voter->middle_name) : null),
+                            'surname' => $extraInfoFive->voter->surname_mr ?? ($extraInfoFive->voter->surname ? $translator->translate($extraInfoFive->voter->surname) : null),
+                            'email' => $extraInfoFive->voter->email ? $translator->translate($extraInfoFive->voter->email) : null,
+                            'gender' => $extraInfoFive->voter->gender_mr ?? ($extraInfoFive->voter->gender ? $translator->translate($extraInfoFive->voter->gender) : null),
+                            'age' => $extraInfoFive->voter->age ? $translator->translate($extraInfoFive->voter->age) : null,
+                            'dob' => $extraInfoFive->voter->dob ? $translator->translate($extraInfoFive->voter->dob) : null,
+                            'cast' => $extraInfoFive->voter->cast_mr ?? ($extraInfoFive->voter->cast ? $translator->translate($extraInfoFive->voter->cast) : null),
+                            'position' => $extraInfoFive->voter->position_mr ?? ($extraInfoFive->voter->position ? $translator->translate($extraInfoFive->voter->position) : null),
+                            'personnel' => $extraInfoFive->voter->personnel_mr ?? ($extraInfoFive->voter->personnel ? $translator->translate($extraInfoFive->voter->personnel) : null),
+                            'voter_id' => $extraInfoFive->voter->voter_id_mr ?? ($extraInfoFive->voter->voter_id ? $translator->translate($extraInfoFive->voter->voter_id) : null),
+                        ],
+                        'extra_information' => $extraInfoFive ? [
+                            'extra_info_1' => $extraInfoFive->extra_info_1_mr ?? ($extraInfoFive->extra_info_1 ? $translator->translate($extraInfoFive->extra_info_1) : null),
+                            'extra_info_2' => $extraInfoFive->extra_info_2_mr ?? ($extraInfoFive->extra_info_2 ? $translator->translate($extraInfoFive->extra_info_2) : null),
+                            'extra_info_3' => $extraInfoFive->extra_info_3_mr ?? ($extraInfoFive->extra_info_3 ? $translator->translate($extraInfoFive->extra_info_3) : null),
+                            'extra_info_4' => $extraInfoFive->extra_info_4_mr ?? ($extraInfoFive->extra_info_4 ? $translator->translate($extraInfoFive->extra_info_4) : null),
+                            'extra_info_5' => $extraInfoFive->extra_info_5_mr ?? ($extraInfoFive->extra_info_5 ? $translator->translate($extraInfoFive->extra_info_5) : null),
+                            'extra_check_1' => $extraInfoFive->extra_check_1 ?? null,
+                            'extra_check_2' => $extraInfoFive->extra_check_2 ?? null,
+                        ] : null,
+                        'address_details' => [
+                            'society' => $extraInfoFive->voter->voterAddress->society_mr ?? ($extraInfoFive->voter->voterAddress->society ? $translator->translate($extraInfoFive->voter->voterAddress->society) : null),
+                            'house_no' => $extraInfoFive->voter->voterAddress->house_no_mr ?? ($extraInfoFive->voter->voterAddress->house_no ? $translator->translate($extraInfoFive->voter->voterAddress->house_no) : null),
+                            'flat_no' => $extraInfoFive->voter->voterAddress->flat_no_mr ?? ($extraInfoFive->voter->voterAddress->flat_no ? $translator->translate($extraInfoFive->voter->voterAddress->flat_no) : null),
+                            'address' => $extraInfoFive->voter->voterAddress->address_mr ?? ($extraInfoFive->voter->voterAddress->address ? $translator->translate($extraInfoFive->voter->voterAddress->address) : null),
+                            'booth' => $extraInfoFive->voter->voterAddress->booth_mr ?? ($extraInfoFive->voter->voterAddress->booth ? $translator->translate($extraInfoFive->voter->voterAddress->booth) : null),
+                            'village' => $extraInfoFive->voter->voterAddress->village_mr ?? ($extraInfoFive->voter->voterAddress->village ? $translator->translate($extraInfoFive->voter->voterAddress->village) : null),
+                            'part_no' => $extraInfoFive->voter->voterAddress->part_no_mr ?? ($extraInfoFive->voter->voterAddress->part_no ? $translator->translate($extraInfoFive->voter->voterAddress->part_no) : null),
+                            'srn' => $extraInfoFive->voter->voterAddress->srn_mr ?? ($extraInfoFive->voter->voterAddress->srn ? $translator->translate($extraInfoFive->voter->voterAddress->srn) : null),
+                            'voting_centre' => $extraInfoFive->voter->voterAddress->voting_centre_mr ?? ($extraInfoFive->voter->voterAddress->voting_centre ? $translator->translate($extraInfoFive->voter->voterAddress->voting_centre) : null),
+                        ],
+                    ];
+                });
+            return response()->json([
+                'status' => 200,
+                'message' => 'Voter details retrieved successfully',
+                'voters' => $users,
+            ], 200);
+        }
+
+        if ($request->lang == 'hi') {
+            $users = ExtraInformation::where('extra_info_5_hi', $request->extra_info_5)
+                ->with(['voter', 'voter.voterAddress']) // Eager load voter and extra information
+                ->get()
+                ->map(function ($extraInfoFive) use ($translator) {
+                    return [
+                        'voter_details' => [
+                            'id' => $extraInfoFive->voter->id,
+                            'first_name' => $extraInfoFive->voter->first_name_hi ?? ($extraInfoFive->voter->first_name ? $translator->translate($extraInfoFive->voter->first_name) : null),
+                            'middle_name' => $extraInfoFive->voter->middle_name_hi ?? ($extraInfoFive->voter->middle_name ? $translator->translate($extraInfoFive->voter->middle_name) : null),
+                            'surname' => $extraInfoFive->voter->surname_hi ?? ($extraInfoFive->voter->surname ? $translator->translate($extraInfoFive->voter->surname) : null),
+                            'email' => $extraInfoFive->voter->email ? $translator->translate($extraInfoFive->voter->email) : null,
+                            'gender' => $extraInfoFive->voter->gender_hi ?? ($extraInfoFive->voter->gender ? $translator->translate($extraInfoFive->voter->gender) : null),
+                            'age' => $extraInfoFive->voter->age ? $translator->translate($extraInfoFive->voter->age) : null,
+                            'dob' => $extraInfoFive->voter->dob ? $translator->translate($extraInfoFive->voter->dob) : null,
+                            'cast' => $extraInfoFive->voter->cast_hi ?? ($extraInfoFive->voter->cast ? $translator->translate($extraInfoFive->voter->cast) : null),
+                            'position' => $extraInfoFive->voter->position_hi ?? ($extraInfoFive->voter->position ? $translator->translate($extraInfoFive->voter->position) : null),
+                            'personnel' => $extraInfoFive->voter->personnel_hi ?? ($extraInfoFive->voter->personnel ? $translator->translate($extraInfoFive->voter->personnel) : null),
+                            'voter_id' => $extraInfoFive->voter->voter_id_hi ?? ($extraInfoFive->voter->voter_id ? $translator->translate($extraInfoFive->voter->voter_id) : null),
+                        ],
+                        'extra_information' => $extraInfoFive ? [
+                            'extra_info_1' => $extraInfoFive->extra_info_1_hi ?? ($extraInfoFive->extra_info_1 ? $translator->translate($extraInfoFive->extra_info_1) : null),
+                            'extra_info_2' => $extraInfoFive->extra_info_2_hi ?? ($extraInfoFive->extra_info_2 ? $translator->translate($extraInfoFive->extra_info_2) : null),
+                            'extra_info_3' => $extraInfoFive->extra_info_3_hi ?? ($extraInfoFive->extra_info_3 ? $translator->translate($extraInfoFive->extra_info_3) : null),
+                            'extra_info_4' => $extraInfoFive->extra_info_4_hi ?? ($extraInfoFive->extra_info_4 ? $translator->translate($extraInfoFive->extra_info_4) : null),
+                            'extra_info_5' => $extraInfoFive->extra_info_5_hi ?? ($extraInfoFive->extra_info_5 ? $translator->translate($extraInfoFive->extra_info_5) : null),
+                            'extra_check_1' => $extraInfoFive->extra_check_1 ?? null,
+                            'extra_check_2' => $extraInfoFive->extra_check_2 ?? null,
+                        ] : null,
+                        'address_details' => [
+                            'society' => $extraInfoFive->voter->voterAddress->society_hi ?? ($extraInfoFive->voter->voterAddress->society ? $translator->translate($extraInfoFive->voter->voterAddress->society) : null),
+                            'house_no' => $extraInfoFive->voter->voterAddress->house_no_hi ?? ($extraInfoFive->voter->voterAddress->house_no ? $translator->translate($extraInfoFive->voter->voterAddress->house_no) : null),
+                            'flat_no' => $extraInfoFive->voter->voterAddress->flat_no_hi ?? ($extraInfoFive->voter->voterAddress->flat_no ? $translator->translate($extraInfoFive->voter->voterAddress->flat_no) : null),
+                            'address' => $extraInfoFive->voter->voterAddress->address_hi ?? ($extraInfoFive->voter->voterAddress->address ? $translator->translate($extraInfoFive->voter->voterAddress->address) : null),
+                            'booth' => $extraInfoFive->voter->voterAddress->booth_hi ?? ($extraInfoFive->voter->voterAddress->booth ? $translator->translate($extraInfoFive->voter->voterAddress->booth) : null),
+                            'village' => $extraInfoFive->voter->voterAddress->village_hi ?? ($extraInfoFive->voter->voterAddress->village ? $translator->translate($extraInfoFive->voter->voterAddress->village) : null),
+                            'part_no' => $extraInfoFive->voter->voterAddress->part_no_hi ?? ($extraInfoFive->voter->voterAddress->part_no ? $translator->translate($extraInfoFive->voter->voterAddress->part_no) : null),
+                            'srn' => $extraInfoFive->voter->voterAddress->srn_hi ?? ($extraInfoFive->voter->voterAddress->srn ? $translator->translate($extraInfoFive->voter->voterAddress->srn) : null),
+                            'voting_centre' => $extraInfoFive->voter->voterAddress->voting_centre_hi ?? ($extraInfoFive->voter->voterAddress->voting_centre ? $translator->translate($extraInfoFive->voter->voterAddress->voting_centre) : null),
+                        ],
+                    ];
+                });
+            return response()->json([
+                'status' => 200,
+                'message' => 'Voter details retrieved successfully',
+                'voters' => $users,
+            ], 200);
+        }
+
+
+
+    }
+
+
+    public function repeatedNonrepeatedList(Request $request)
+    {
+        // Fetch all voters
+        $voters = Voters::all();
+        $checkedCount = Voters::where('repeated_voter',1)->count();
+        $uncheckedCount = Voters::where('repeated_voter',0)->count();
+        if( $checkedCount == 0 && $uncheckedCount >0 ){
+            $total_count = 1;
+        }
+        else if( $checkedCount >0 && $uncheckedCount ==0 ){
+            $total_count = 1;
+        }
+        else if( $checkedCount >0 && $uncheckedCount >0 ){
+            $total_count = 2;
+        }
+
+        // Group voters by their dead status and count each group
+        $groupedByStatus = $voters->groupBy('repeated_voter')->map(function ($group, $status) {
+            return [
+                'status' => $status == 1 ? 'Repeated' : 'NonRepeated',
+                'voter_count' => $group->count(),
+            ];
+        });
+
+        // Convert grouped data to an array
+        $statusData = $groupedByStatus->values()->toArray();
+
+        // Return the response
+        return response()->json([
+            'status' => 200,
+            'message' => 'Repeated and NonRepeated voters count retrieved successfully',
+            'total_count' =>$total_count,
+            'total_voters' => $voters->count(),
+            'voters' => $statusData,
+        ], 200);
+    }
+
+    public function repeatedNonrepeatedVotersDetails(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'lang' => 'required|in:en,mr,hi',
+            'status'=>'required |in:Repeated,NonRepeated',
+
+        ]);
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()], 400);
+        }
+        $lang = $request->input('lang');
+        $translator = new GoogleTranslate($lang);
+       if( $request->status == 'Repeated'){
+        if($request->lang == 'en'){
+            $voters = voters::where('repeated_voter', 1)
+            ->with(['voterAddress', 'voterInformation'])
+            ->get()
+            ->map(function ($voter) use ($translator) {
+                return [
+                    'voter_details' => [
+                        'id' => $voter->id,
+                        'first_name' => $voter->first_name ? $translator->translate($voter->first_name) : null,
+                        'middle_name' => $voter->middle_name ? $translator->translate($voter->middle_name) : null,
+                        'surname' => $voter->surname ? $translator->translate($voter->surname) : null,
+                        'email' => $voter->email ? $translator->translate($voter->email) : null,
+                        'gender' => $voter->gender ? $translator->translate($voter->gender) : null,
+                        'age' => $voter->age,
+                        'dob' => $voter->dob,
+                        'cast' => $voter->cast ? $translator->translate($voter->cast) : null,
+                        'position' => $voter->position ? $translator->translate($voter->position) : null,
+                        'personnel' => $voter->personnel ? $translator->translate($voter->personnel) : null,
+                        'voter_id' => $voter->voter_id,
+                    ],
+                    'extra_information' => $voter->voterInformation ? [
+                        'extra_info_1' => $voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null,
+                        'extra_info_2' => $voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null,
+                        'extra_info_3' => $voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null,
+                        'extra_info_4' => $voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null,
+                        'extra_info_5' => $voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null,
+                        'extra_check_1' => $voter->voterInformation->extra_check_1,
+                        'extra_check_2' => $voter->voterInformation->extra_check_2,
+                    ] : null,
+                    'address_details' => $voter->voterAddress ? [
+                        'society' => $voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null,
+                        'house_no' => $voter->voterAddress->house_no ? $translator->translate($voter->voterAddress->house_no) : null,
+                        'flat_no' => $voter->voterAddress->flat_no ? $translator->translate($voter->voterAddress->flat_no) : null,
+                        'address' => $voter->voterAddress->address ? $translator->translate($voter->voterAddress->address) : null,
+                        'booth' => $voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null,
+                        'village' => $voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null,
+                        'part_no' => $voter->voterAddress->part_no,
+                        'srn' => $voter->voterAddress->srn,
+                        'voting_centre' => $voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null,
+                    ] : null,
+                ];
+            });
+
+            return response()->json([
+                'status' => 200,
+                'message' => 'Repeated voter details retrieved successfully in English',
+                'voters' => $voters,
+            ], 200);
+        }
+
+        if ($request->lang == 'mr') {
+            $voters = voters::where('repeated_voter', 1)
+                ->with(['voterAddress', 'voterInformation'])
+                ->get()
+                ->map(function ($voter) use ($translator) {
+                    return [
+                        'voter_details' => [
+                            'id' => $voter->id,
+                            'first_name' => $voter->first_name_mr ?? ($voter->first_name ? $translator->translate($voter->first_name) : null),
+                            'middle_name' => $voter->middle_name_mr ?? ($voter->middle_name ? $translator->translate($voter->middle_name) : null),
+                            'surname' => $voter->surname_mr ?? ($voter->surname ? $translator->translate($voter->surname) : null),
+                            'email' => $voter->email_mr ?? ($voter->email ? $translator->translate($voter->email) : null),
+                            'gender' => $voter->gender_mr ?? ($voter->gender ? $translator->translate($voter->gender) : null),
+                            'age' => $voter->age_mr ?? ($voter->age ? $translator->translate($voter->age) : null),
+                            'dob' => $voter->dob_mr ?? ($voter->dob ? $translator->translate($voter->dob) : null),
+                            'cast' => $voter->cast_mr ?? ($voter->cast ? $translator->translate($voter->cast) : null),
+                            'position' => $voter->position_mr ?? ($voter->position ? $translator->translate($voter->position) : null),
+                            'personnel' => $voter->personnel ?? null,
+                            'voter_id' => $voter->voter_id ?? null,
+                        ],
+                        'extra_information' => $voter->voterInformation ? [
+                            'extra_info_1' => $voter->voterInformation->extra_info_1_mr ?? ($voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null),
+                            'extra_info_2' => $voter->voterInformation->extra_info_2_mr ?? ($voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null),
+                            'extra_info_3' => $voter->voterInformation->extra_info_3_mr ?? ($voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null),
+                            'extra_info_4' => $voter->voterInformation->extra_info_4_mr ?? ($voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null),
+                            'extra_info_5' => $voter->voterInformation->extra_info_5_mr ?? ($voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null),
+                            'extra_check_1' => $voter->voterInformation->extra_check_1,
+                            'extra_check_2' => $voter->voterInformation->extra_check_2,
+                        ] : null,
+                        'address_details' => $voter->voterAddress ? [
+                            'society' => $voter->voterAddress->society_mr ?? ($voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null),
+                            'house_no' => $voter->voterAddress->house_no_mr ?? ($voter->voterAddress->house_no ? $translator->translate($voter->voterAddress->house_no) : null),
+                            'flat_no' => $voter->voterAddress->flat_no_mr ?? ($voter->voterAddress->flat_no ? $translator->translate($voter->voterAddress->flat_no) : null),
+                            'address' => $voter->voterAddress->address_mr ?? ($voter->voterAddress->address ? $translator->translate($voter->voterAddress->address) : null),
+                            'booth' => $voter->voterAddress->booth_mr ?? ($voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null),
+                            'village' => $voter->voterAddress->village_mr ?? ($voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null),
+                            'part_no' => $voter->voterAddress->part_no_mr ?? ($voter->voterAddress->part_no ? $translator->translate($voter->voterAddress->part_no) : null),
+                            'srn' => $voter->voterAddress->srn_mr ?? ($voter->voterAddress->srn ? $translator->translate($voter->voterAddress->srn) : null),
+                            'voting_centre' => $voter->voterAddress->voting_centre_mr ?? ($voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null),
+                        ] : null,
+                    ];
+                });
+
+            return response()->json([
+                'status' => 200,
+                'message' => 'Live voter details retrieved successfully in Marathi',
+                'voters' => $voters,
+            ], 200);
+        }
+
+        if ($request->lang == 'hi') {
+            $voters = voters::where('repeated_voter', 1)
+                ->with(['voterAddress', 'voterInformation'])
+                ->get()
+                ->map(function ($voter) use ($translator) {
+                    return [
+                        'voter_details' => [
+                            'id' => $voter->id,
+                            'first_name' => $voter->first_name_hi ?? ($voter->first_name ? $translator->translate($voter->first_name) : null),
+                            'middle_name' => $voter->middle_name_hi ?? ($voter->middle_name ? $translator->translate($voter->middle_name) : null),
+                            'surname' => $voter->surname_hi ?? ($voter->surname ? $translator->translate($voter->surname) : null),
+                            'email' => $voter->email_hi ?? ($voter->email ? $translator->translate($voter->email) : null),
+                            'gender' => $voter->gender_hi ?? ($voter->gender ? $translator->translate($voter->gender) : null),
+                            'age' => $voter->age_hi ?? ($voter->age ? $translator->translate($voter->age) : null),
+                            'dob' => $voter->dob_hi ?? ($voter->dob ? $translator->translate($voter->dob) : null),
+                            'cast' => $voter->cast_hi ?? ($voter->cast ? $translator->translate($voter->cast) : null),
+                            'position' => $voter->position_hi ?? ($voter->position ? $translator->translate($voter->position) : null),
+                            'personnel' => $voter->personnel ?? null,
+                            'voter_id' => $voter->voter_id ?? null,
+                        ],
+                        'extra_information' => $voter->voterInformation ? [
+                            'extra_info_1' => $voter->voterInformation->extra_info_1_hi ?? ($voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null),
+                            'extra_info_2' => $voter->voterInformation->extra_info_2_hi ?? ($voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null),
+                            'extra_info_3' => $voter->voterInformation->extra_info_3_hi ?? ($voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null),
+                            'extra_info_4' => $voter->voterInformation->extra_info_4_hi ?? ($voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null),
+                            'extra_info_5' => $voter->voterInformation->extra_info_5_hi ?? ($voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null),
+                            'extra_check_1' => $voter->voterInformation->extra_check_1,
+                            'extra_check_2' => $voter->voterInformation->extra_check_2,
+                        ] : null,
+                        'address_details' => $voter->voterAddress ? [
+                            'society' => $voter->voterAddress->society_hi ?? ($voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null),
+                            'house_no' => $voter->voterAddress->house_no_hi ?? ($voter->voterAddress->house_no ? $translator->translate($voter->voterAddress->house_no) : null),
+                            'flat_no' => $voter->voterAddress->flat_no_hi ?? ($voter->voterAddress->flat_no ? $translator->translate($voter->voterAddress->flat_no) : null),
+                            'address' => $voter->voterAddress->address_hi ?? ($voter->voterAddress->address ? $translator->translate($voter->voterAddress->address) : null),
+                            'booth' => $voter->voterAddress->booth_hi ?? ($voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null),
+                            'village' => $voter->voterAddress->village_hi ?? ($voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null),
+                            'part_no' => $voter->voterAddress->part_no_hi ?? ($voter->voterAddress->part_no ? $translator->translate($voter->voterAddress->part_no) : null),
+                            'srn' => $voter->voterAddress->srn_hi ?? ($voter->voterAddress->srn ? $translator->translate($voter->voterAddress->srn) : null),
+                            'voting_centre' => $voter->voterAddress->voting_centre_hi ?? ($voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null),
+                        ] : null,
+                    ];
+                });
+
+            return response()->json([
+                'status' => 200,
+                'message' => 'Live voter details retrieved successfully in Hindi',
+                'voters' => $voters,
+            ], 200);
+        }
+
+       }
+
+       if( $request->status == 'NonRepeated'){
+            if($request->lang == 'en'){
+                $voters = voters::where('repeated_voter', 0)
+                ->with(['voterAddress', 'voterInformation'])
+                ->get()
+                ->map(function ($voter) use ($translator) {
+                    return [
+                        'voter_details' => [
+                            'id' => $voter->id,
+                            'first_name' => $voter->first_name ? $translator->translate($voter->first_name) : null,
+                            'middle_name' => $voter->middle_name ? $translator->translate($voter->middle_name) : null,
+                            'surname' => $voter->surname ? $translator->translate($voter->surname) : null,
+                            'email' => $voter->email ? $translator->translate($voter->email) : null,
+                            'gender' => $voter->gender ? $translator->translate($voter->gender) : null,
+                            'age' => $voter->age,
+                            'dob' => $voter->dob,
+                            'cast' => $voter->cast ? $translator->translate($voter->cast) : null,
+                            'position' => $voter->position ? $translator->translate($voter->position) : null,
+                            'personnel' => $voter->personnel ? $translator->translate($voter->personnel) : null,
+                            'voter_id' => $voter->voter_id,
+                        ],
+                        'extra_information' => $voter->voterInformation ? [
+                            'extra_info_1' => $voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null,
+                            'extra_info_2' => $voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null,
+                            'extra_info_3' => $voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null,
+                            'extra_info_4' => $voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null,
+                            'extra_info_5' => $voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null,
+                            'extra_check_1' => $voter->voterInformation->extra_check_1,
+                            'extra_check_2' => $voter->voterInformation->extra_check_2,
+                        ] : null,
+                        'address_details' => $voter->voterAddress ? [
+                            'society' => $voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null,
+                            'house_no' => $voter->voterAddress->house_no ? $translator->translate($voter->voterAddress->house_no) : null,
+                            'flat_no' => $voter->voterAddress->flat_no ? $translator->translate($voter->voterAddress->flat_no) : null,
+                            'address' => $voter->voterAddress->address ? $translator->translate($voter->voterAddress->address) : null,
+                            'booth' => $voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null,
+                            'village' => $voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null,
+                            'part_no' => $voter->voterAddress->part_no,
+                            'srn' => $voter->voterAddress->srn,
+                            'voting_centre' => $voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null,
+                        ] : null,
+                    ];
+                });
+
+                return response()->json([
+                    'status' => 200,
+                    'message' => 'Dead voter details retrieved successfully in English',
+                    'voters' => $voters,
+                ], 200);
+            }
+
+            if ($request->lang == 'mr') {
+                $voters = voters::where('repeated_voter', 0)
+                    ->with(['voterAddress', 'voterInformation'])
+                    ->get()
+                    ->map(function ($voter) use ($translator) {
+                        return [
+                            'voter_details' => [
+                                'id' => $voter->id,
+                                'first_name' => $voter->first_name_mr ?? ($voter->first_name ? $translator->translate($voter->first_name) : null),
+                                'middle_name' => $voter->middle_name_mr ?? ($voter->middle_name ? $translator->translate($voter->middle_name) : null),
+                                'surname' => $voter->surname_mr ?? ($voter->surname ? $translator->translate($voter->surname) : null),
+                                'email' => $voter->email_mr ?? ($voter->email ? $translator->translate($voter->email) : null),
+                                'gender' => $voter->gender_mr ?? ($voter->gender ? $translator->translate($voter->gender) : null),
+                                'age' => $voter->age_mr ?? ($voter->age ? $translator->translate($voter->age) : null),
+                                'dob' => $voter->dob_mr ?? ($voter->dob ? $translator->translate($voter->dob) : null),
+                                'cast' => $voter->cast_mr ?? ($voter->cast ? $translator->translate($voter->cast) : null),
+                                'position' => $voter->position_mr ?? ($voter->position ? $translator->translate($voter->position) : null),
+                                'personnel' => $voter->personnel ?? null,
+                                'voter_id' => $voter->voter_id ?? null,
+                            ],
+                            'extra_information' => $voter->voterInformation ? [
+                                'extra_info_1' => $voter->voterInformation->extra_info_1_mr ?? ($voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null),
+                                'extra_info_2' => $voter->voterInformation->extra_info_2_mr ?? ($voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null),
+                                'extra_info_3' => $voter->voterInformation->extra_info_3_mr ?? ($voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null),
+                                'extra_info_4' => $voter->voterInformation->extra_info_4_mr ?? ($voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null),
+                                'extra_info_5' => $voter->voterInformation->extra_info_5_mr ?? ($voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null),
+                                'extra_check_1' => $voter->voterInformation->extra_check_1,
+                                'extra_check_2' => $voter->voterInformation->extra_check_2,
+                            ] : null,
+                            'address_details' => $voter->voterAddress ? [
+                                'society' => $voter->voterAddress->society_mr ?? ($voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null),
+                                'house_no' => $voter->voterAddress->house_no_mr ?? ($voter->voterAddress->house_no ? $translator->translate($voter->voterAddress->house_no) : null),
+                                'flat_no' => $voter->voterAddress->flat_no_mr ?? ($voter->voterAddress->flat_no ? $translator->translate($voter->voterAddress->flat_no) : null),
+                                'address' => $voter->voterAddress->address_mr ?? ($voter->voterAddress->address ? $translator->translate($voter->voterAddress->address) : null),
+                                'booth' => $voter->voterAddress->booth_mr ?? ($voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null),
+                                'village' => $voter->voterAddress->village_mr ?? ($voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null),
+                                'part_no' => $voter->voterAddress->part_no_mr ?? ($voter->voterAddress->part_no ? $translator->translate($voter->voterAddress->part_no) : null),
+                                'srn' => $voter->voterAddress->srn_mr ?? ($voter->voterAddress->srn ? $translator->translate($voter->voterAddress->srn) : null),
+                                'voting_centre' => $voter->voterAddress->voting_centre_mr ?? ($voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null),
+                            ] : null,
+                        ];
+                    });
+
+                return response()->json([
+                    'status' => 200,
+                    'message' => 'Dead voter details retrieved successfully in Marathi',
+                    'voters' => $voters,
+                ], 200);
+            }
+
+            if ($request->lang == 'hi') {
+                $voters = voters::where('repeated_voter', 0)
+                    ->with(['voterAddress', 'voterInformation'])
+                    ->get()
+                    ->map(function ($voter) use ($translator) {
+                        return [
+                            'voter_details' => [
+                                'id' => $voter->id,
+                                'first_name' => $voter->first_name_hi ?? ($voter->first_name ? $translator->translate($voter->first_name) : null),
+                                'middle_name' => $voter->middle_name_hi ?? ($voter->middle_name ? $translator->translate($voter->middle_name) : null),
+                                'surname' => $voter->surname_hi ?? ($voter->surname ? $translator->translate($voter->surname) : null),
+                                'email' => $voter->email_hi ?? ($voter->email ? $translator->translate($voter->email) : null),
+                                'gender' => $voter->gender_hi ?? ($voter->gender ? $translator->translate($voter->gender) : null),
+                                'age' => $voter->age_hi ?? ($voter->age ? $translator->translate($voter->age) : null),
+                                'dob' => $voter->dob_hi ?? ($voter->dob ? $translator->translate($voter->dob) : null),
+                                'cast' => $voter->cast_hi ?? ($voter->cast ? $translator->translate($voter->cast) : null),
+                                'position' => $voter->position_hi ?? ($voter->position ? $translator->translate($voter->position) : null),
+                                'personnel' => $voter->personnel ?? null,
+                                'voter_id' => $voter->voter_id ?? null,
+                            ],
+                            'extra_information' => $voter->voterInformation ? [
+                                'extra_info_1' => $voter->voterInformation->extra_info_1_hi ?? ($voter->voterInformation->extra_info_1 ? $translator->translate($voter->voterInformation->extra_info_1) : null),
+                                'extra_info_2' => $voter->voterInformation->extra_info_2_hi ?? ($voter->voterInformation->extra_info_2 ? $translator->translate($voter->voterInformation->extra_info_2) : null),
+                                'extra_info_3' => $voter->voterInformation->extra_info_3_hi ?? ($voter->voterInformation->extra_info_3 ? $translator->translate($voter->voterInformation->extra_info_3) : null),
+                                'extra_info_4' => $voter->voterInformation->extra_info_4_hi ?? ($voter->voterInformation->extra_info_4 ? $translator->translate($voter->voterInformation->extra_info_4) : null),
+                                'extra_info_5' => $voter->voterInformation->extra_info_5_hi ?? ($voter->voterInformation->extra_info_5 ? $translator->translate($voter->voterInformation->extra_info_5) : null),
+                                'extra_check_1' => $voter->voterInformation->extra_check_1,
+                                'extra_check_2' => $voter->voterInformation->extra_check_2,
+                            ] : null,
+                            'address_details' => $voter->voterAddress ? [
+                                'society' => $voter->voterAddress->society_hi ?? ($voter->voterAddress->society ? $translator->translate($voter->voterAddress->society) : null),
+                                'house_no' => $voter->voterAddress->house_no_hi ?? ($voter->voterAddress->house_no ? $translator->translate($voter->voterAddress->house_no) : null),
+                                'flat_no' => $voter->voterAddress->flat_no_hi ?? ($voter->voterAddress->flat_no ? $translator->translate($voter->voterAddress->flat_no) : null),
+                                'address' => $voter->voterAddress->address_hi ?? ($voter->voterAddress->address ? $translator->translate($voter->voterAddress->address) : null),
+                                'booth' => $voter->voterAddress->booth_hi ?? ($voter->voterAddress->booth ? $translator->translate($voter->voterAddress->booth) : null),
+                                'village' => $voter->voterAddress->village_hi ?? ($voter->voterAddress->village ? $translator->translate($voter->voterAddress->village) : null),
+                                'part_no' => $voter->voterAddress->part_no_hi ?? ($voter->voterAddress->part_no ? $translator->translate($voter->voterAddress->part_no) : null),
+                                'srn' => $voter->voterAddress->srn_hi ?? ($voter->voterAddress->srn ? $translator->translate($voter->voterAddress->srn) : null),
+                                'voting_centre' => $voter->voterAddress->voting_centre_hi ?? ($voter->voterAddress->voting_centre ? $translator->translate($voter->voterAddress->voting_centre) : null),
+                            ] : null,
+                        ];
+                    });
+
+                return response()->json([
+                    'status' => 200,
+                    'message' => 'Dead voter details retrieved successfully in Hindi',
+                    'voters' => $voters,
+                ], 200);
+            }
+
+       }
+
+
+
+
+    }
+
+    public function newAddressList(Request $request)
+    {
+        // Validate the language parameter (optional if you need translation)
+        $validator = Validator::make($request->all(), [
+            'lang' => 'required|in:en,mr,hi', // Optional if you want to support translation
+        ]);
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()], 400);
+        }
+        // Optional translation setup
+        $lang = $request->input('lang', 'en'); // Default to 'en' if not provided
+        $translator = new GoogleTranslate($lang);
+        // Fetch voters and group by caste
+        if ($request->lang == 'en') {
+            $newAddress = NewAddress::all();
+
+            // Filter out null or empty values
+            $filteredAddresses = $newAddress->filter(function ($address) {
+                return !is_null($address->new_address) && $address->new_address !== '';
+            });
+
+            if ($filteredAddresses->isEmpty()) {
+                return response()->json([
+                    'status' => 200,
+                    'message' => 'No new address has been found in English',
+                ], 200);
+            }
+
+            // Group addresses by 'new_address_mr' and count voters
+            $newAddressGrouped = $filteredAddresses->groupBy('new_address')->map(function ($group, $newAddressGroup) {
+                return [
+                    'new_address_mr' => $newAddressGroup ?? null,
+                    'voter_count' => $group->count(),
+                ];
+            });
+
+            // Calculate totals
+            $totalUniqueNewAddress = $newAddressGrouped->count();
+            $totalNewAddress = $filteredAddresses->count();
+
+            // Return response
+            return response()->json([
+                'status' => 200,
+                'message' => 'New address retrieved successfully in Marathi',
+                'total_unique_new_address' => $totalUniqueNewAddress,
+                'new_address' => $newAddressGrouped->values(), // Convert collection to array
+            ], 200);
+        }
+
+
+        if ($request->lang == 'mr') {
+            $newAddress = NewAddress::all();
+
+            // Filter out null or empty values
+            $filteredAddresses = $newAddress->filter(function ($address) {
+                return !is_null($address->new_address_mr) && $address->new_address_mr !== '';
+            });
+
+            if ($filteredAddresses->isEmpty()) {
+                return response()->json([
+                    'status' => 200,
+                    'message' => 'No new address has been found in Marathi',
+                ], 200);
+            }
+
+            // Group addresses by 'new_address_mr' and count voters
+            $newAddressGrouped = $filteredAddresses->groupBy('new_address_mr')->map(function ($group, $newAddressGroup) {
+                return [
+                    'new_address_mr' => $newAddressGroup ?? null,
+                    'voter_count' => $group->count(),
+                ];
+            });
+
+            // Calculate totals
+            $totalUniqueNewAddress = $newAddressGrouped->count();
+            $totalNewAddress = $filteredAddresses->count();
+
+            // Return response
+            return response()->json([
+                'status' => 200,
+                'message' => 'New address retrieved successfully in Marathi',
+                'total_unique_new_address' => $totalUniqueNewAddress,
+                'new_address' => $newAddressGrouped->values(), // Convert collection to array
+            ], 200);
+        }
+
+        if ($request->lang == 'hi') {
+            $newAddress = NewAddress::all();
+
+            // Filter out null or empty values
+            $filteredAddresses = $newAddress->filter(function ($address) {
+                return !is_null($address->new_address_hi) && $address->new_address_hi !== '';
+            });
+
+            if ($filteredAddresses->isEmpty()) {
+                return response()->json([
+                    'status' => 200,
+                    'message' => 'No new address has been found in Hindi',
+                ], 200);
+            }
+
+            // Group addresses by 'new_address_mr' and count voters
+            $newAddressGrouped = $filteredAddresses->groupBy('new_address_mr')->map(function ($group, $newAddressGroup) {
+                return [
+                    'new_address_mr' => $newAddressGroup ?? null,
+                    'voter_count' => $group->count(),
+                ];
+            });
+
+            // Calculate totals
+            $totalUniqueNewAddress = $newAddressGrouped->count();
+            $totalNewAddress = $filteredAddresses->count();
+
+            // Return response
+            return response()->json([
+                'status' => 200,
+                'message' => 'New address retrieved successfully in Marathi',
+                'total_unique_new_address' => $totalUniqueNewAddress,
+                'new_address' => $newAddressGrouped->values(), // Convert collection to array
+            ], 200);
+        }
+
+
+
+
+    }
+
+    public function searchNewAddress(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'lang' => 'required|in:en,mr,hi',
+            'new_address' => 'required',
+        ]);
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()], 400);
+        }
+        $lang = $request->input('lang');
+        $translator = new GoogleTranslate($lang);
+        if($request->lang == 'en'){
+            $voters = NewAddress::where('new_address', 'LIKE', '%' . $request->new_address . '%')->orderBy('new_address', 'asc')->get();
+            $voters = $voters->groupBy('new_address')
+                ->map(function ($voters) use ($translator) {
+                    return [
+                        'new_address' => $voters->first()->new_address ?? null,
+                        'total_voters' => $voters->count(),
+                    ];
+                })->values();
+            return response()->json([
+                'status' => 200,
+                'message' => 'New adddress searched successfully in English',
+                'voters' => $voters,
+            ], 200);
+        }
+        if($request->lang == 'mr'){
+            $voters = NewAddress::where('new_address_mr', 'LIKE', '%' . $request->new_address . '%')->orderBy('new_address_mr', 'asc')->get();
+            $voters = $voters->groupBy('new_address')
+                ->map(function ($voters) use ($translator) {
+                    return [
+                        'new_address' => $voters->first()->new_address_mr ?? null,
+                        'total_voters' => $voters->count(),
+                    ];
+                })->values();
+            return response()->json([
+                'status' => 200,
+                'message' => 'New adddress searched successfully in Marathi',
+                'voters' => $voters,
+            ], 200);
+        }
+        if($request->lang == 'hi'){
+            $voters = NewAddress::where('new_address_hi', 'LIKE', '%' . $request->new_address . '%')->orderBy('new_address_hi', 'asc')->get();
+            $voters = $voters->groupBy('new_address')
+                ->map(function ($voters) use ($translator) {
+                    return [
+                        'new_address' => $voters->first()->new_address_hi ?? null,
+                        'total_voters' => $voters->count(),
+                    ];
+                })->values();
+            return response()->json([
+                'status' => 200,
+                'message' => 'New adddress searched successfully in Hindi',
+                'voters' => $voters,
+            ], 200);
+        }
+    }
+
+    public function voterDetailsByNewAddress(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'lang' => 'required|in:en,mr,hi',
+            'new_address' => 'required',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()], 400);
+        }
+
+        $lang = $request->input('lang');
+        $translator = new GoogleTranslate($lang);
+
+        if($request->lang == 'en'){
+            $voters = NewAddress::where('new_address', $request->new_address)
+            ->with(['voter', 'voter.voterAddress','voter.voterInformation'])
+            ->get()
+            ->map(function ($voter) use ($translator) {
+                return [
+                    'voter_details' => [
+                        'id' => $voter->id,
+                        'first_name' => $voter->voter->first_name ? $translator->translate($voter->voter->first_name) : null,
+                        'middle_name' => $voter->voter->middle_name ? $translator->translate($voter->voter->middle_name) : null,
+                        'surname' => $voter->voter->surname ? $translator->translate($voter->voter->surname) : null,
+                        'email' => $voter->voter->email ? $translator->translate($voter->voter->email) : null,
+                        'gender' => $voter->voter->gender ? $translator->translate($voter->voter->gender) : null,
+                        'age' => $voter->voter->age,
+                        'dob' => $voter->voter->dob,
+                        'cast' => $voter->voter->cast ? $translator->translate($voter->voter->cast) : null,
+                        'position' => $voter->voter->position ? $translator->translate($voter->voter->position) : null,
+                        'personnel' => $voter->voter->personnel ??  null,
+                        'voter_id' => $voter->voter->voter_id,
+                        'demands' =>$voter->voter->demands ? $translator->translate($voter->voter->demands) : null,
+                    ],
+                    'extra_information' => $voter->voter->voterInformation ? [
+                        'extra_info_1' => $voter->voter->voterInformation->extra_info_1 ? $translator->translate($voter->voter->voterInformation->extra_info_1) : null,
+                        'extra_info_2' => $voter->voter->voterInformation->extra_info_2 ? $translator->translate($voter->voter->voterInformation->extra_info_2) : null,
+                        'extra_info_3' => $voter->voter->voterInformation->extra_info_3 ? $translator->translate($voter->voter->voterInformation->extra_info_3) : null,
+                        'extra_info_4' => $voter->voter->voterInformation->extra_info_4 ? $translator->translate($voter->voter->voterInformation->extra_info_4) : null,
+                        'extra_info_5' => $voter->voter->voterInformation->extra_info_5 ? $translator->translate($voter->voter->voterInformation->extra_info_5) : null,
+                    ] : null,
+                    'address_details' => $voter->voter->voterAddress ? [
+                        'society' => $voter->voter->voterAddress->society ? $translator->translate($voter->voter->voterAddress->society) : null,
+                        'house_no' => $voter->voter->voterAddress->house_no ? $translator->translate($voter->voter->voterAddress->house_no) : null,
+                        'flat_no' => $voter->voter->voterAddress->flat_no ? $translator->translate($voter->voter->voterAddress->flat_no) : null,
+                        'address' => $voter->voter->voterAddress->address ? $translator->translate($voter->voter->voterAddress->address) : null,
+                        'booth' => $voter->voter->voterAddress->booth ? $translator->translate($voter->voter->voterAddress->booth) : null,
+                        'village' => $voter->voter->voterAddress->village ? $translator->translate($voter->voter->voterAddress->village) : null,
+                        'part_no' => $voter->voter->voterAddress->part_no,
+                        'srn' => $voter->voter->voterAddress->srn,
+                        'voting_centre' => $voter->voter->voterAddress->voting_centre ? $translator->translate($voter->voter->voterAddress->voting_centre) : null,
+                    ] : null,
+                ];
+            });
+
+            return response()->json([
+                'status' => 200,
+                'message' => 'Voter details retrieved successfully in English',
+                'voters' => $voters,
+            ], 200);
+        }
+
+        if ($request->lang == 'mr') {
+            $voters = NewAddress::where('new_address_mr', $request->new_address)
+                ->with(['voter', 'voter.voterAddress', 'voter.voterInformation'])
+                ->get()
+                ->map(function ($voter) use ($translator) {
+                    return [
+                        'voter_details' => [
+                            'id' => $voter->id,
+                            'first_name' => $voter->voter->first_name_mr ?? ($voter->voter->first_name ? $translator->translate($voter->voter->first_name) : null),
+                            'middle_name' => $voter->voter->middle_name_mr ?? ($voter->voter->middle_name ? $translator->translate($voter->voter->middle_name) : null),
+                            'surname' => $voter->voter->surname_mr ?? ($voter->voter->surname ? $translator->translate($voter->voter->surname) : null),
+                            'email' => $voter->voter->email ?? null,
+                            'gender' => $voter->voter->gender_mr ?? ($voter->voter->gender ? $translator->translate($voter->voter->gender) : null),
+                            'age' => $voter->voter->age,
+                            'dob' => $voter->voter->dob,
+                            'cast' => $voter->voter->cast_mr ?? ($voter->voter->cast ? $translator->translate($voter->voter->cast) : null),
+                            'position' => $voter->voter->position_mr ?? ($voter->voter->position ? $translator->translate($voter->voter->position) : null),
+                            'personnel' => $voter->voter->personnel ?? null,
+                            'voter_id' => $voter->voter->voter_id,
+                            'demands' => $voter->voter->demands_mr ?? ($voter->voter->demands ? $translator->translate($voter->voter->demands) : null),
+                        ],
+                        'extra_information' => $voter->voter->voterInformation ? [
+                            'extra_info_1' => $voter->voter->voter->voterInformation->extra_info_1_mr ?? ($voter->voter->voterInformation->extra_info_1 ? $translator->translate($voter->voter->voterInformation->extra_info_1) : null),
+                            'extra_info_2' => $voter->voter->voterInformation->extra_info_2_mr ?? ($voter->voter->voterInformation->extra_info_2 ? $translator->translate($voter->voter->voterInformation->extra_info_2) : null),
+                            'extra_info_3' => $voter->voter->voterInformation->extra_info_3_mr ?? ($voter->voter->voterInformation->extra_info_3 ? $translator->translate($voter->voter->voterInformation->extra_info_3) : null),
+                            'extra_info_4' => $voter->voter->voterInformation->extra_info_4_mr ?? ($voter->voter->voterInformation->extra_info_4 ? $translator->translate($voter->voter->voterInformation->extra_info_4) : null),
+                            'extra_info_5' => $voter->voter->voterInformation->extra_info_5_mr ?? ($voter->voter->voterInformation->extra_info_5 ? $translator->translate($voter->voter->voterInformation->extra_info_5) : null),
+                            'extra_check_1' => $voter->voter->voterInformation->extra_check_1,
+                            'extra_check_2' => $voter->voter->voterInformation->extra_check_2,
+                        ] : null,
+                        'address_details' => $voter->voter->voterAddress ? [
+                            'society' => $voter->voter->voterAddress->society_mr ?? ($voter->voter->voterAddress->society ? $translator->translate($voter->voter->voterAddress->society) : null),
+                            'house_no' => $voter->voter->voterAddress->house_no_mr ?? ($voter->voter->voterAddress->house_no ? $translator->translate($voter->voter->voterAddress->house_no) : null),
+                            'flat_no' => $voter->voter->voterAddress->flat_no_mr ?? ($voter->voter->voterAddress->flat_no ? $translator->translate($voter->voter->voter->voterAddress->flat_no) : null),
+                            'address' => $voter->voter->voterAddress->address_mr ?? ($voter->voter->voterAddress->address ? $translator->translate($voter->voter->voterAddress->address) : null),
+                            'booth' => $voter->voter->voterAddress->booth_mr ?? ($voter->voter->voterAddress->booth ? $translator->translate($voter->voter->voterAddress->booth) : null),
+                            'village' => $voter->voter->voterAddress->village_mr ?? ($voter->voter->voterAddress->village ? $translator->translate($voter->voter->voterAddress->village) : null),
+                            'part_no' => $voter->voter->Address->part_no_mr ?? ($voter->voter->voterAddress->part_no ? $translator->translate($voter->voter->voterAddress->part_no) : null),
+                            'srn' => $voter->voter->voterAddress->srn_mr ?? ($voter->voter->voterAddress->srn ? $translator->translate($voter->voter->voterAddress->srn) : null),
+                            'voting_centre' => $voter->voter->voterAddress->voting_centre_mr ?? ($voter->voter->voterAddress->voting_centre ? $translator->translate($voter->voter->voterAddress->voting_centre) : null),
+                        ] : null,
+                    ];
+                });
+
+            return response()->json([
+                'status' => 200,
+                'message' => 'Voter details retrieved successfully in Marathi',
+                'voters' => $voters,
+            ], 200);
+        }
+
+        if ($request->lang == 'hi') {
+            $voters = NewAddress::where('new_address_hi', $request->new_address)
+                ->with(['voter', 'voter.voterAddress', 'voter.voterInformation'])
+                ->get()
+                ->map(function ($voter) use ($translator) {
+                    return [
+                        'voter_details' => [
+                            'id' => $voter->id,
+                            'first_name' => $voter->voter->first_name_hi ?? ($voter->voter->first_name ? $translator->translate($voter->voter->first_name) : null),
+                            'middle_name' => $voter->voter->middle_name_hi ?? ($voter->voter->middle_name ? $translator->translate($voter->voter->middle_name) : null),
+                            'surname' => $voter->voter->surname_hi ?? ($voter->voter->surname ? $translator->translate($voter->voter->surname) : null),
+                            'email' => $voter->voter->email ?? null,
+                            'gender' => $voter->voter->gender_hi ?? ($voter->voter->gender ? $translator->translate($voter->voter->gender) : null),
+                            'age' => $voter->voter->age,
+                            'dob' => $voter->voter->dob,
+                            'cast' => $voter->voter->cast_hi ?? ($voter->voter->cast ? $translator->translate($voter->voter->cast) : null),
+                            'position' => $voter->voter->position_hi ?? ($voter->voter->position ? $translator->translate($voter->voter->position) : null),
+                            'personnel' => $voter->voter->personnel ?? null,
+                            'voter_id' => $voter->voter->voter_id,
+                            'demands' => $voter->voter->demands_hi ?? ($voter->voter->demands ? $translator->translate($voter->voter->demands) : null),
+                        ],
+                        'extra_information' => $voter->voter->voterInformation ? [
+                            'extra_info_1' => $voter->voter->voter->voterInformation->extra_info_1_hi ?? ($voter->voter->voterInformation->extra_info_1 ? $translator->translate($voter->voter->voterInformation->extra_info_1) : null),
+                            'extra_info_2' => $voter->voter->voterInformation->extra_info_2_hi ?? ($voter->voter->voterInformation->extra_info_2 ? $translator->translate($voter->voter->voterInformation->extra_info_2) : null),
+                            'extra_info_3' => $voter->voter->voterInformation->extra_info_3_hi ?? ($voter->voter->voterInformation->extra_info_3 ? $translator->translate($voter->voter->voterInformation->extra_info_3) : null),
+                            'extra_info_4' => $voter->voter->voterInformation->extra_info_4_hi ?? ($voter->voter->voterInformation->extra_info_4 ? $translator->translate($voter->voter->voterInformation->extra_info_4) : null),
+                            'extra_info_5' => $voter->voter->voterInformation->extra_info_5_hi ?? ($voter->voter->voterInformation->extra_info_5 ? $translator->translate($voter->voter->voterInformation->extra_info_5) : null),
+                            'extra_check_1' => $voter->voter->voterInformation->extra_check_1,
+                            'extra_check_2' => $voter->voter->voterInformation->extra_check_2,
+                        ] : null,
+                        'address_details' => $voter->voter->voterAddress ? [
+                            'society' => $voter->voter->voterAddress->society_hi ?? ($voter->voter->voterAddress->society ? $translator->translate($voter->voter->voterAddress->society) : null),
+                            'house_no' => $voter->voter->voterAddress->house_no_hi ?? ($voter->voter->voterAddress->house_no ? $translator->translate($voter->voter->voterAddress->house_no) : null),
+                            'flat_no' => $voter->voter->voterAddress->flat_no_hi ?? ($voter->voter->voterAddress->flat_no ? $translator->translate($voter->voter->voter->voterAddress->flat_no) : null),
+                            'address' => $voter->voter->voterAddress->address_hi ?? ($voter->voter->voterAddress->address ? $translator->translate($voter->voter->voterAddress->address) : null),
+                            'booth' => $voter->voter->voterAddress->booth_hi ?? ($voter->voter->voterAddress->booth ? $translator->translate($voter->voter->voterAddress->booth) : null),
+                            'village' => $voter->voter->voterAddress->village_hi ?? ($voter->voter->voterAddress->village ? $translator->translate($voter->voter->voterAddress->village) : null),
+                            'part_no' => $voter->voter->Address->part_no_hi ?? ($voter->voter->voterAddress->part_no ? $translator->translate($voter->voter->voterAddress->part_no) : null),
+                            'srn' => $voter->voter->voterAddress->srn_hi ?? ($voter->voter->voterAddress->srn ? $translator->translate($voter->voter->voterAddress->srn) : null),
+                            'voting_centre' => $voter->voter->voterAddress->voting_centre_hi ?? ($voter->voter->voterAddress->voting_centre ? $translator->translate($voter->voter->voterAddress->voting_centre) : null),
+                        ] : null,
+                    ];
+                });
+
+            return response()->json([
+                'status' => 200,
+                'message' => 'Voter details retrieved successfully in Hindi',
+                'voters' => $voters,
+            ], 200);
+        }
+
+
+
+
+
+
+
+
+
+
+    }
+
+
+
+}
